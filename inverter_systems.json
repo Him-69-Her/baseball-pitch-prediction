@@ -1,0 +1,32 @@
+{
+  "enphase": [
+    {
+      "system_id": "YOUR_ENPHASE_SYSTEM_ID",
+      "station_id": "coin-base-1",
+      "district": "McHenry_D63",
+      "label": "Walmart Woodstock Enphase IQ8+",
+      "lat": 42.31,
+      "lng": -88.44
+    }
+  ],
+  "solaredge": [
+    {
+      "site_id": "YOUR_SOLAREDGE_SITE_ID",
+      "station_id": "seller-peoria-001",
+      "district": "IL_D91",
+      "label": "Caterpillar HQ SolarEdge",
+      "lat": 40.69,
+      "lng": -89.59
+    }
+  ],
+  "tesla_powerwall": [
+    {
+      "gateway_ip": "192.168.1.50",
+      "station_id": "batt-marengo",
+      "district": "McHenry_D63",
+      "label": "Marengo Battery Powerwall",
+      "lat": 42.24,
+      "lng": -88.60
+    }
+  ]
+}

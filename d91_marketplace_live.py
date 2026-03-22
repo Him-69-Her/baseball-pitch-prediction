@@ -362,6 +362,13 @@ print(f"  TOTAL BUYERS: {len(BUYERS)}")
 
 # ── Market Parameters ───────────────────────────────────────
 AMEREN_TOLL = 0.025
+CURTAIL_FLOOR  = 0.005   # $/kWh — curtail solar if clearing price drops below this
+curtailed_count = 0      # running count of curtailed events
+
+# OpenADR demand response state
+_oadr_curtail_pct  = 0.0    # 0.0 = normal, 1.0 = full curtailment
+_oadr_event_id     = None
+_oadr_lock         = threading.Lock()
 
 # ── Deterministic order matching engine ─────────────────────
 _engine = MatchingEngine(toll=AMEREN_TOLL, mode="pro_rata")
@@ -426,9 +433,15 @@ def run_trade():
         return
 
     for mt in matched_trades:
-        # Automated curtailment — skip solar sellers if clearing price too low
+        # Automated curtailment — skip solar sellers if:
+        #   1. Clearing price below floor, OR
+        #   2. Active OpenADR DR event requires curtailment
         is_solar = mt.seller_type not in ("battery",)
-        if is_solar and mt.settled_price < CURTAIL_FLOOR:
+        with _oadr_lock:
+            oadr_pct = _oadr_curtail_pct
+        oadr_curtailed = is_solar and oadr_pct > 0 and random.random() < oadr_pct
+        price_curtailed = is_solar and mt.settled_price < CURTAIL_FLOOR
+        if oadr_curtailed or price_curtailed:
             curtailed_count += 1
             status = "CURTAILED"
             # Publish curtailment event but don't count as settled
@@ -583,11 +596,28 @@ def on_tick(message):
     message.ack()
     try:
         payload = json.loads(message.data.decode("utf-8"))
-        district = payload.get("district", "")
-        if district and district != "IL_D91":
-            return  # Not our district
     except Exception:
-        pass  # Malformed tick — run anyway
+        payload = {}
+
+    if payload.get("type") == "OADR_CURTAILMENT":
+        district = payload.get("district", "ALL")
+        if district in ("ALL", "IL_D91"):
+            global _oadr_curtail_pct, _oadr_event_id
+            curtail_pct = float(payload.get("curtail_pct", 0.0))
+            event_id    = payload.get("event_id", "unknown")
+            level_name  = payload.get("signal_name", "UNKNOWN")
+            with _oadr_lock:
+                _oadr_curtail_pct = curtail_pct
+                _oadr_event_id    = event_id if curtail_pct > 0 else None
+            if curtail_pct > 0:
+                print(f"  🔴 OpenADR DR EVENT: {level_name} | {curtail_pct*100:.0f}% curtailment | event={event_id}")
+            else:
+                print(f"  🟢 OpenADR DR EVENT cleared")
+        return
+
+    district = payload.get("district", "")
+    if district and district != "IL_D91":
+        return
 
     try:
         run_trade()

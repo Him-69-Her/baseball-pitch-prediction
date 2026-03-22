@@ -11,12 +11,15 @@ Run: python3 app.py
 import os
 import json
 import threading
+from cloudsql_api import register_postgis_routes
 from datetime import datetime
 from collections import deque
-from flask import Flask, render_template, jsonify, Response
+from flask import Flask, render_template, jsonify, Response, request
+from openadr_vtn import oadr_bp, init_vtn
 from google.cloud import pubsub_v1
 
 app = Flask(__name__)
+app.register_blueprint(oadr_bp)
 
 # ── Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
@@ -321,6 +324,19 @@ print("  ╚══════════════════════�
 print()
 
 start_subscribers()
+
+# ── OpenADR VTN init ─────────────────────────────────────────
+try:
+    from google.cloud import pubsub_v1 as _psv1
+    _vtn_pub = _psv1.PublisherClient()
+    init_vtn(_vtn_pub, PROJECT_ID, "market-ticks")
+    print("  ✅ OpenADR VTN active")
+    print("     POST /oadr/event/create  — issue DR event")
+    print("     GET  /oadr/status        — VTN health")
+except Exception as _e:
+    print(f"  ⚠️  OpenADR VTN init failed: {_e}")
+
+register_postgis_routes(app)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
