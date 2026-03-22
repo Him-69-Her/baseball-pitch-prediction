@@ -20,8 +20,6 @@ app = Flask(__name__)
 
 # ── Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 D63_SUB = "energy-pulse-dashboard-sub"
 D91_SUB = "district91-energy-dashboard-sub"
 D63_TOPIC = "energy-pulse"

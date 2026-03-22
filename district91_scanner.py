@@ -13,12 +13,9 @@ import json
 import math
 import time
 import requests
-import os
-
 # Solar API setup
 try:
     from google.cloud import secretmanager
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
     client = secretmanager.SecretManagerServiceClient()
     name = "projects/tiny-hub-network/secrets/Maps_API_Key/versions/latest"
     API_KEY = client.access_secret_version(request={"name": name}).payload.data.decode("UTF-8")

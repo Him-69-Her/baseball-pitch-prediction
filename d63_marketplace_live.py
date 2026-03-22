@@ -26,8 +26,6 @@ from weather_feed import get_weather, cloud_factor, print_weather_status
 # ── Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
 TOPIC_ID = "energy-pulse"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 

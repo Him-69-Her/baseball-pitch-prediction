@@ -116,7 +116,7 @@
         .trade-pair { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .trade-pair strong { color: #fff; font-weight: 600; }
         .trade-status { font-weight: 700; font-size: 0.48rem; letter-spacing: 0.5px; flex-shrink: 0; }
-        .trade-status.settled { color: var(--green); } .trade-status.rejected { color: var(--red); } .trade-status.island { color: var(--amber); } .trade-status.bridge { color: var(--purple); }
+        .trade-status.settled { color: var(--green); } .trade-status.rejected { color: var(--red); } .trade-status.island { color: var(--amber); } .trade-status.bridge { color: var(--purple); } .trade-status.fallback { color: #94a3b8; }
         .trade-bottom { display: flex; gap: 12px; margin-top: 2px; padding-left: 22px; font-size: 0.5rem; color: var(--text-dim); }
         .trade-bottom .val { color: var(--green); font-weight: 600; }
         .trade-bottom .val.amber { color: var(--amber); }
@@ -425,8 +425,8 @@
     function fmtKWh(mwh) { const kwh = mwh * 1000; return kwh >= 1000 ? fmt(mwh, 2) + ' MWh' : fmt(kwh, 1) + ' kWh'; }
     function fmtKWhTotal(mwh) { if (mwh >= 100) return fmt(mwh, 1) + ' MWh'; if (mwh >= 1) return fmt(mwh, 2) + ' MWh'; return fmt(mwh * 1000, 0) + ' kWh'; }
     function weatherIcon(t) { const s = t.weather_source; return s === 'open-meteo' ? ' ☀' : ''; }
-    function sClass(s) { return s === 'SETTLED' ? 'settled' : s === 'ISLAND_SETTLED' ? 'island' : s === 'REJECTED' ? 'rejected' : s === 'BRIDGE_LISTED' ? 'bridge' : ''; }
-    function sIcon(s) { return s === 'SETTLED' ? '⚡' : s === 'ISLAND_SETTLED' ? '🏝️' : s === 'REJECTED' ? '❌' : s === 'BRIDGE_LISTED' ? '🌉' : '·'; }
+    function sClass(s) { return s === 'SETTLED' ? 'settled' : s === 'ISLAND_SETTLED' ? 'island' : s === 'REJECTED' ? 'rejected' : s === 'BRIDGE_LISTED' ? 'bridge' : s === 'FALLBACK' ? 'fallback' : ''; }
+    function sIcon(s) { return s === 'SETTLED' ? '⚡' : s === 'ISLAND_SETTLED' ? '🏝️' : s === 'REJECTED' ? '❌' : s === 'BRIDGE_LISTED' ? '🌉' : s === 'FALLBACK' ? '🔌' : '·'; }
 
     function makeTradeEl(t) {
         const st = t.trade_status || ''; const seller = (t.seller_label || t.station_id || '?').substring(0, 22); const buyer = (t.buyer_label || t.buyer_type || '?').substring(0, 18);

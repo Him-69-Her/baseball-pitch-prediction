@@ -30,8 +30,6 @@ from google.cloud import pubsub_v1
 
 # ── Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 # Pub/Sub
 D63_TOPIC = "energy-pulse"
 D91_TOPIC = "district91-energy"
@@ -247,11 +245,37 @@ stats = {
     "bridged_onchain": 0,
     "failed": 0,
     "skipped": 0,
+    "duplicates": 0,
     "gas_used": 0,
     "thn_minted": 0.0,
     "thn_burned": 0.0,
 }
 stats_lock = threading.Lock()
+
+# ── Idempotency: deduplicate Pub/Sub at-least-once delivery ─
+# Pub/Sub guarantees at-least-once — the same message_id can
+# arrive twice during network hiccups or subscriber restarts.
+# We keep a bounded in-memory set of seen message IDs.
+# On L2 deploy this moves into the smart contract (on-chain mapping).
+MAX_SEEN_IDS = 10_000   # ~10K trades ≈ a few hours of history
+seen_ids: set[str] = set()
+seen_ids_order: list[str] = []   # FIFO eviction queue
+seen_ids_lock = threading.Lock()
+
+
+def is_duplicate(message_id: str) -> bool:
+    """Return True if this message_id has already been processed."""
+    with seen_ids_lock:
+        if message_id in seen_ids:
+            return True
+        # Record it
+        seen_ids.add(message_id)
+        seen_ids_order.append(message_id)
+        # Evict oldest if over limit
+        while len(seen_ids_order) > MAX_SEEN_IDS:
+            evicted = seen_ids_order.pop(0)
+            seen_ids.discard(evicted)
+        return False
 recent_txs = deque(maxlen=50)
 
 # ── Settle a trade on-chain ─────────────────────────────────
@@ -395,6 +419,13 @@ def settle_onchain(trade):
 # ── Pub/Sub Callbacks ───────────────────────────────────────
 def on_trade(message, source):
     message.ack()
+
+    # ── Idempotency check ───────────────────────────────────
+    if is_duplicate(message.message_id):
+        with stats_lock:
+            stats["duplicates"] += 1
+        return  # Already settled — do NOT mint again
+
     try:
         trade = json.loads(message.data.decode("utf-8"))
     except:
@@ -463,6 +494,7 @@ def print_scoreboard():
         print(f"  ║  Bridged on-chain:    {s['bridged_onchain']:>6}                                         ║")
         print(f"  ║  Failed:              {s['failed']:>6}                                         ║")
         print(f"  ║  Skipped (rejected):  {s['skipped']:>6}                                         ║")
+        print(f"  ║  Duplicates blocked:  {s['duplicates']:>6}                                         ║")
         print(f"  ║  Total gas used:      {s['gas_used']:>10,}                                     ║")
         print(f"  ╠═══════════════════════════════════════════════════════════════════════╣")
         print(f"  ║  CONTRACT STATE                                                      ║")

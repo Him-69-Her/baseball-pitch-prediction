@@ -25,8 +25,6 @@ PROJECT_ID = "tiny-hub-network"
 TOPIC_ID = "district91-energy"
 BUILDINGS_FILE = "district91_buildings.json"
 NAMES_FILE = "district91_names.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 

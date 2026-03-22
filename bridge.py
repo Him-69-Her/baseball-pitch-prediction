@@ -12,8 +12,6 @@ Requires:
     - npx hardhat node running (local blockchain)
     - TinyHubMarket deployed (deployment.json must exist)
 """
-
-import os
 import json
 import time
 import threading
@@ -24,8 +22,6 @@ from web3 import Web3
 # ─── GCP Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
 SUBSCRIPTION_ID = "energy-pulse-sub"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 # ─── Blockchain Config ───────────────────────────────────────────
 RPC_URL = "http://127.0.0.1:8545"  # Local Hardhat node
 

@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import random
@@ -7,8 +6,6 @@ from google.cloud import pubsub_v1
 
 PROJECT_ID = "tiny-hub-network"
 TOPIC_ID = "energy-pulse"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 

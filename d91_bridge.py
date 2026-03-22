@@ -12,8 +12,6 @@ a bridge toll applied.
 
 Run:  python3 d91_bridge.py
 """
-
-import os
 import json
 import time
 import random
@@ -24,8 +22,6 @@ from google.cloud import pubsub_v1
 
 # ── Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 # Topics
 D63_TOPIC = "energy-pulse"
 D91_TOPIC = "district91-energy"

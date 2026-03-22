@@ -1,9 +1,5 @@
-import os
 import json
 import requests
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 from google.cloud import secretmanager
 
 client = secretmanager.SecretManagerServiceClient()

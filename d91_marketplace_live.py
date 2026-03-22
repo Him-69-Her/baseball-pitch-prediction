@@ -24,14 +24,13 @@ from datetime import datetime, timezone
 from collections import defaultdict
 from google.cloud import pubsub_v1
 from weather_feed import get_weather, cloud_factor, print_weather_status
+from matching_engine import MatchingEngine
 
 # ── Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
 TOPIC_ID = "district91-energy"
 BUILDINGS_FILE = "district91_buildings.json"
 NAMES_FILE = "district91_names.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
-
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
@@ -303,6 +302,9 @@ print(f"  TOTAL BUYERS: {len(BUYERS)}")
 
 # ── Market Parameters ───────────────────────────────────────
 AMEREN_TOLL = 0.025
+
+# ── Deterministic order matching engine ─────────────────────
+_engine = MatchingEngine(toll=AMEREN_TOLL, mode="pro_rata")
 ISLAND_THRESHOLD = 0.32
 
 trade_count = 0
@@ -323,35 +325,85 @@ def run_trade():
     if islanding:
         island_events += 1
 
-    seller = random.choice(SELLERS)
+    # ── Deterministic order matching ───────────────────────
+    for seller in SELLERS:
+        mwh = solar_output(seller["capacity_mwh"], seller.get("lat", D91_LAT), seller.get("lng", D91_LNG))
+        if mwh <= 0:
+            continue
+        ask_price = round(grid_price * random.uniform(0.55, 0.85), 4)
+        if islanding:
+            ask_price = round(grid_price * random.uniform(0.3, 0.5), 4)
+        _engine.add_sell_order(
+            seller["id"], seller.get("label", seller["id"]),
+            seller.get("town", ""), seller.get("type", "solar"),
+            mwh, ask_price,
+            lat=seller.get("lat"), lng=seller.get("lng"),
+        )
 
-    # Solar output based on irradiance model
-    mwh = solar_output(seller["capacity_mwh"], seller.get("lat", D91_LAT), seller.get("lng", D91_LNG))
-    if mwh <= 0:
-        return  # No output (nighttime, no battery)
+    for buyer in BUYERS:
+        bid_price = round(min(buyer["max_bid"], grid_price * random.uniform(0.7, 1.1)), 4)
+        _engine.add_buy_order(
+            buyer["id"], buyer.get("label", buyer["id"]),
+            buyer.get("town", ""), buyer.get("type", "business"),
+            bid_price, demand_mwh=1.0,
+            lat=buyer.get("lat"), lng=buyer.get("lng"),
+        )
 
-    buyer = random.choice(BUYERS)
-    ask_price = round(grid_price * random.uniform(0.55, 0.85), 4)
-    if islanding:
-        ask_price = round(grid_price * random.uniform(0.3, 0.5), 4)
+    matched_trades = _engine.match(grid_price=grid_price)
+    _engine.clear()
 
-    bid_price = round(min(buyer["max_bid"], grid_price * random.uniform(0.7, 1.1)), 4)
-    settled = round((ask_price + bid_price) / 2, 4)
-    profit = round((settled - AMEREN_TOLL) * mwh, 4)
+    if not matched_trades:
+        rejected_count += 1
+        return
 
-    if bid_price >= ask_price:
+    for mt in matched_trades:
         status = "ISLAND_SETTLED" if islanding else "SETTLED"
         trade_count += 1
-        total_profit += profit
-        total_mwh_traded += mwh
-        town_trades[seller["town"]] += 1
-        town_mwh[seller["town"]] += mwh
-        town_profit[seller["town"]] += profit
-    else:
-        status = "REJECTED"
-        rejected_count += 1
-        settled = 0.0
-        profit = 0.0
+        total_profit += mt.net_profit
+        total_mwh_traded += mt.mwh
+        town_trades[mt.seller_town] = town_trades.get(mt.seller_town, 0) + 1
+        town_mwh[mt.seller_town]    = town_mwh.get(mt.seller_town, 0.0) + mt.mwh
+        town_profit[mt.seller_town] = town_profit.get(mt.seller_town, 0.0) + mt.net_profit
+
+        with GRID_PRICE_LOCK:
+            price_source = GRID_PRICE_CACHE.get("source", "simulated")
+            lmp_mwh = GRID_PRICE_CACHE.get("lmp_mwh", 0)
+        weather = get_weather(D91_LAT, D91_LNG)
+
+        trade_data = {
+            "station_id": mt.seller_id,
+            "district": "IL_D91",
+            "seller_type": mt.seller_type,
+            "seller_label": mt.seller_label,
+            "seller_town": mt.seller_town,
+            "buyer_id": mt.buyer_id,
+            "buyer_type": mt.buyer_type,
+            "buyer_label": mt.buyer_label,
+            "mwh": mt.mwh,
+            "ask_price": mt.ask_price,
+            "bid_price": mt.bid_price,
+            "settled_price": mt.settled_price,
+            "net_profit": mt.net_profit,
+            "grid_price": grid_price,
+            "trade_status": status,
+            "match_type": mt.match_type,
+            "distance_km": mt.distance_km,
+            "price_source": price_source,
+            "lmp_mwh": lmp_mwh,
+            "data_mode": "live" if price_source == "MISO_LMP" else "sim",
+            "weather_source": weather["source"],
+            "cloud_cover": weather["cloud_cover"],
+            "temperature": weather["temperature"],
+            "dni": weather.get("dni", 0),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        publisher.publish(topic_path, json.dumps(trade_data).encode("utf-8"))
+
+        src = "🛰️" if price_source == "MISO_LMP" else "📊"
+        icon = "🏝️" if islanding else "⚡"
+        print(f"  {icon}{src} [PR] {mt.seller_label:30} -> {mt.buyer_label:28} | {mt.mwh:6.3f} MWh | Settled: ${mt.settled_price:.4f} | ${mt.net_profit:+.4f} | {status}")
+
+    return  # already published above
 
     # Get price source
     with GRID_PRICE_LOCK:
