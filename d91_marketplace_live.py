@@ -426,10 +426,17 @@ def run_trade():
         return
 
     for mt in matched_trades:
-        status = "ISLAND_SETTLED" if islanding else "SETTLED"
-        trade_count += 1
-        total_profit += mt.net_profit
-        total_mwh_traded += mt.mwh
+        # Automated curtailment — skip solar sellers if clearing price too low
+        is_solar = mt.seller_type not in ("battery",)
+        if is_solar and mt.settled_price < CURTAIL_FLOOR:
+            curtailed_count += 1
+            status = "CURTAILED"
+            # Publish curtailment event but don't count as settled
+        else:
+            status = "ISLAND_SETTLED" if islanding else "SETTLED"
+            trade_count += 1
+            total_profit += mt.net_profit
+            total_mwh_traded += mt.mwh
         town_trades[mt.seller_town] = town_trades.get(mt.seller_town, 0) + 1
         town_mwh[mt.seller_town]    = town_mwh.get(mt.seller_town, 0.0) + mt.mwh
         town_profit[mt.seller_town] = town_profit.get(mt.seller_town, 0.0) + mt.net_profit
