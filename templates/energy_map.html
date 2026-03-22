@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny-Hub-Network | P2P Energy Map</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;500;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --green: #00ff9d; --green-dim: #008f5a; --red: #ff3e5f; --amber: #ffb800; --blue: #00b4ff; --bg: #050508; --card-bg: rgba(8, 10, 18, 0.92); --border: rgba(0, 255, 157, 0.25); }
+        body { background: var(--bg); color: var(--green); font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100vh; }
+        #map { height: 100vh; width: 100vw; }
+        .overlay { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; padding: 20px; width: 100%; height: 100%; }
+        .card { pointer-events: auto; background: var(--card-bg); border: 1px solid var(--border); backdrop-filter: blur(12px); padding: 20px; border-radius: 4px; box-shadow: 0 0 30px rgba(0,255,157,0.05), inset 0 0 30px rgba(0,0,0,0.3); }
+        .header-card { position: absolute; top: 20px; left: 20px; min-width: 300px; }
+        .logo { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.3rem; letter-spacing: 3px; color: #fff; }
+        .logo span { color: var(--green); }
+        .tagline { font-size: 0.6rem; color: var(--green-dim); letter-spacing: 1.5px; margin: 4px 0 16px 0; text-transform: uppercase; }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.72rem; }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { color: #556; text-transform: uppercase; letter-spacing: 1px; font-size: 0.6rem; }
+        .stat-val { font-weight: 700; }
+        .stat-val.green { color: var(--green); } .stat-val.amber { color: var(--amber); } .stat-val.red { color: var(--red); } .stat-val.blue { color: var(--blue); }
+        .pulse { display: inline-block; width: 7px; height: 7px; background: var(--green); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
+        .feed-card { position: absolute; bottom: 20px; left: 20px; width: 420px; max-height: 240px; }
+        .feed-title { font-size: 0.65rem; color: var(--green-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .feed-list { max-height: 180px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent; }
+        .feed-item { font-size: 0.62rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); opacity: 0; animation: fadeIn 0.4s forwards; line-height: 1.5; }
+        .feed-item .icon { margin-right: 4px; } .feed-item .settled { color: var(--green); } .feed-item .rejected { color: var(--red); } .feed-item .island { color: var(--amber); }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .legend-card { position: absolute; top: 20px; right: 20px; min-width: 180px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.62rem; padding: 3px 0; color: #889; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .info-window { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--green); padding: 4px; }
+        .info-window h3 { font-family: 'Outfit', sans-serif; color: #fff; font-size: 0.85rem; margin-bottom: 6px; }
+        .info-window .iw-row { display: flex; justify-content: space-between; padding: 2px 0; } .info-window .iw-label { color: #556; }
+        .controls-card { position: absolute; bottom: 20px; right: 20px; }
+        .btn { pointer-events: auto; background: transparent; border: 1px solid var(--green); color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; padding: 8px 16px; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; transition: all 0.2s; }
+        .btn:hover { background: var(--green); color: var(--bg); } .btn.active { background: var(--green); color: var(--bg); }
+        .btn-group { display: flex; gap: 6px; }
+    </style>
+</head>
+<body><div style="position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:999;display:flex;gap:2px;padding:6px 12px;background:rgba(5,5,8,0.92);border:1px solid rgba(0,255,157,0.25);border-top:none;border-radius:0 0 6px 6px;backdrop-filter:blur(12px);font-family:'JetBrains Mono',monospace;">
+<a href="/" style="color:#00ff9d;text-decoration:none;font-size:0.65rem;padding:4px 12px;border:1px solid #00ff9d;background:rgba(0,255,157,0.15);border-radius:2px;letter-spacing:1px;">McHENRY COUNTY</a>
+<a href="/district91" style="color:#556;text-decoration:none;font-size:0.65rem;padding:4px 12px;border:1px solid rgba(0,255,157,0.15);border-radius:2px;letter-spacing:1px;">DISTRICT 91</a>
+</div>
+    <div id="map"></div>
+    <div class="overlay">
+        <div class="card header-card">
+            <div class="logo">TINY-HUB <span>NETWORK</span></div>
+            <div class="tagline">P2P Energy Marketplace — McHenry County</div>
+            <div class="stat-row"><span class="stat-label">Status</span><span class="stat-val green" id="s-status"><span class="pulse"></span>CONNECTING...</span></div>
+            <div class="stat-row"><span class="stat-label">Trades Settled</span><span class="stat-val green" id="s-settled">0</span></div>
+            <div class="stat-row"><span class="stat-label">Rejected</span><span class="stat-val red" id="s-rejected">0</span></div>
+            <div class="stat-row"><span class="stat-label">MWh Traded</span><span class="stat-val blue" id="s-mwh">0.000</span></div>
+            <div class="stat-row"><span class="stat-label">Community Profit</span><span class="stat-val green" id="s-profit">$0.00</span></div>
+            <div class="stat-row"><span class="stat-label">Island Events</span><span class="stat-val amber" id="s-island">0</span></div>
+            <div class="stat-row"><span class="stat-label">Avg Grid Price</span><span class="stat-val" id="s-grid">$0.0000</span></div>
+            <div style="border-top:1px solid rgba(0,255,157,0.15);margin-top:8px;padding-top:8px;"><div style="font-size:0.55rem;color:var(--green-dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">⛓️ Blockchain</div></div>
+            <div class="stat-row"><span class="stat-label">On-Chain Trades</span><span class="stat-val green" id="s-chain-trades">—</span></div>
+            <div class="stat-row"><span class="stat-label">THN Supply</span><span class="stat-val blue" id="s-token-supply">—</span></div>
+            <div class="stat-row"><span class="stat-label">Chain Status</span><span class="stat-val" id="s-chain-status" style="color:#556">OFFLINE</span></div>
+        </div>
+        <div class="card legend-card">
+            <div class="feed-title">Node Types</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#00ff9d"></div> Solar Farm</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#00b4ff"></div> Battery Storage</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ffb800"></div> Commercial Rooftop</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#c084fc"></div> Municipal / Residential</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ff3e5f;width:10px;height:10px;border-radius:2px"></div> Buyer Node</div>
+        </div>
+        <div class="card feed-card"><div class="feed-title">Live Trade Feed</div><div class="feed-list" id="feed"></div></div>
+        <div class="card controls-card">
+            <div class="btn-group">
+                <button class="btn active" id="btn-connect" onclick="toggleSSE()">⚡ CONNECT PUB/SUB</button>
+                <button class="btn" id="btn-local" onclick="toggleLocalSim()">◉ LOCAL SIM</button>
+                <button class="btn" onclick="resetStats()">↻ RESET</button>
+            </div>
+            <div style="font-size:0.55rem;color:#445;margin-top:8px;text-align:center;" id="conn-info">SSE endpoint: /api/stream</div>
+        </div>
+    </div>
+
+    <script>
+    const SELLERS = [
+        { id:"coin-base-1", type:"commercial", label:"Walmart Woodstock", capacity:4.2, lat:42.297676, lng:-88.42297, color:"#ffb800" },
+        { id:"coin-base-2", type:"commercial", label:"NW Medicine", capacity:1.9, lat:42.275658, lng:-88.400391, color:"#ffb800" },
+        { id:"coin-base-3", type:"commercial", label:"Jewel-Osco", capacity:0.16, lat:42.325629, lng:-88.443165, color:"#ffb800" },
+        { id:"coin-base-4", type:"commercial", label:"Walmart Huntley", capacity:3.3, lat:42.151518, lng:-88.428891, color:"#ffb800" },
+        { id:"coin-base-5", type:"residential", label:"Woodstock Homes", capacity:0.8, lat:42.314744, lng:-88.448702, color:"#c084fc" },
+        { id:"coin-base-6", type:"municipal", label:"Marengo Municipal", capacity:1.2, lat:42.250126, lng:-88.607176, color:"#c084fc" },
+        { id:"farm-marengo", type:"solar_farm", label:"Marengo Solar Farm", capacity:6.0, lat:42.248338, lng:-88.608511, color:"#00ff9d" },
+        { id:"farm-nexamp", type:"solar_farm", label:"Nexamp Harvard", capacity:3.0, lat:42.422241, lng:-88.61371, color:"#00ff9d" },
+        { id:"farm-hebron", type:"solar_farm", label:"Hebron Solar", capacity:2.5, lat:42.471685, lng:-88.432318, color:"#00ff9d" },
+        { id:"batt-marengo", type:"battery", label:"Marengo Battery 20MW", capacity:20.0, lat:42.248338, lng:-88.608511, color:"#00b4ff" },
+        { id:"batt-mchenry", type:"battery", label:"McHenry Battery 20MW", capacity:20.0, lat:42.322304, lng:-88.304491, color:"#00b4ff" },
+    ];
+    const BUYERS = [
+        { id:"buyer-neighbor-1", type:"neighbor", label:"Residential Block A", maxBid:0.18, lat:42.234046, lng:-88.333648 },
+        { id:"buyer-neighbor-2", type:"neighbor", label:"Residential Block B", maxBid:0.16, lat:42.314744, lng:-88.448702 },
+        { id:"buyer-school-1", type:"school", label:"Woodstock North HS", maxBid:0.15, lat:42.352344, lng:-88.42706 },
+        { id:"buyer-school-2", type:"school", label:"Marengo High School", maxBid:0.14, lat:42.243172, lng:-88.58626 },
+        { id:"buyer-biz-1", type:"business", label:"Route 47 Strip Mall", maxBid:0.20, lat:42.304589, lng:-88.432159 },
+        { id:"buyer-biz-2", type:"business", label:"NW Medicine Ops", maxBid:0.22, lat:42.317299, lng:-88.279093 },
+        { id:"buyer-dc-1", type:"datacenter", label:"Google Aurora Hub", maxBid:0.25, lat:41.777303, lng:-88.255852 },
+        { id:"buyer-dc-2", type:"datacenter", label:"Equinix Chicago", maxBid:0.23, lat:41.85319, lng:-87.618365 },
+        { id:"buyer-grid-1", type:"grid", label:"ComEd Buyback", maxBid:0.08, lat:42.314744, lng:-88.448702 },
+        { id:"buyer-muni-1", type:"municipal", label:"Harvard Fire Dept", maxBid:0.14, lat:42.417791, lng:-88.612504 },
+        { id:"buyer-muni-2", type:"municipal", label:"Woodstock PD", maxBid:0.15, lat:42.307364, lng:-88.438042 },
+    ];
+    const DARK_STYLE = [];
+    let map, sellerMarkers=[], buyerMarkers=[];
+    window.initMap = function() {
+        map = new google.maps.Map(document.getElementById("map"), { center:{lat:42.30,lng:-88.48}, zoom:11, styles:DARK_STYLE, disableDefaultUI:true, zoomControl:true, zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_CENTER}, backgroundColor:"#f0f0f0" });
+        SELLERS.forEach(s => {
+            const circle = new google.maps.Circle({ map, center:{lat:s.lat,lng:s.lng}, radius:300+Math.min(s.capacity,10)*120, fillColor:s.color, fillOpacity:0.5, strokeColor:s.color, strokeWeight:2, clickable:true });
+            const iw = new google.maps.InfoWindow({ content:'<div class="info-window"><h3>⚡ '+s.label+'</h3><div class="iw-row"><span class="iw-label">Type</span><span>'+s.type+'</span></div><div class="iw-row"><span class="iw-label">Capacity</span><span>'+s.capacity+' MWh</span></div><div class="iw-row"><span class="iw-label">Role</span><span style="color:'+s.color+'">SELLER</span></div></div>' });
+            circle.addListener("click", () => { iw.setPosition({lat:s.lat,lng:s.lng}); iw.open(map); });
+            sellerMarkers.push({data:s, circle});
+        });
+        BUYERS.forEach(b => {
+            const marker = new google.maps.Marker({ map, position:{lat:b.lat,lng:b.lng}, title:b.label, icon:{path:"M -6 -6 L 6 -6 L 6 6 L -6 6 Z",fillColor:"#ff3e5f",fillOpacity:0.8,strokeColor:"#ff3e5f",strokeWeight:1,scale:1} });
+            const iw = new google.maps.InfoWindow({ content:'<div class="info-window"><h3>🏠 '+b.label+'</h3><div class="iw-row"><span class="iw-label">Type</span><span>'+b.type+'</span></div><div class="iw-row"><span class="iw-label">Max Bid</span><span>$'+b.maxBid.toFixed(2)+'/MWh</span></div><div class="iw-row"><span class="iw-label">Role</span><span style="color:#ff3e5f">BUYER</span></div></div>' });
+            marker.addListener("click", () => iw.open({anchor:marker,map}));
+            buyerMarkers.push({data:b, marker});
+        });
+        setTimeout(() => { connectSSE(); }, 2000);
+    };
+    const COMED_TOLL=0.02, ISLAND_THRESHOLD=0.30;
+    let tradeLines=[], eventSource=null, localSimInterval=null, localSimRunning=false;
+    let stats={settled:0,rejected:0,mwh:0,profit:0,island:0,gridPrices:[]};
+    const sellerById={}; SELLERS.forEach((s,i)=>{sellerById[s.id]=i;});
+    const buyersByType={}; BUYERS.forEach((b,i)=>{if(!buyersByType[b.type])buyersByType[b.type]=[];buyersByType[b.type].push(i);});
+    function processTrade(data){const status=data.trade_status;const mwh=data.mwh||0;const settledPrice=data.settled_price||0;const profit=data.net_profit||0;if(status==="SETTLED"||status==="ISLAND_SETTLED"){stats.settled++;stats.mwh+=mwh;stats.profit+=profit;}else{stats.rejected++;}if(status==="ISLAND_SETTLED")stats.island++;const gridEst=data.ask_price?data.ask_price/0.7:0;if(gridEst>0)stats.gridPrices.push(gridEst);if(stats.gridPrices.length>200)stats.gridPrices=stats.gridPrices.slice(-200);updateDashboard();const si=sellerById[data.station_id];const buyerPool=buyersByType[data.buyer_type]||[];const bi=buyerPool.length>0?buyerPool[Math.floor(Math.random()*buyerPool.length)]:Math.floor(Math.random()*BUYERS.length);const seller=SELLERS[si!==undefined?si:0];const buyer=BUYERS[bi];addFeedItem(seller,buyer,mwh,settledPrice,profit,status);if(status==="SETTLED"||status==="ISLAND_SETTLED"){drawTradeLine(seller,buyer,status==="ISLAND_SETTLED"?"#ffb800":"#00ff9d",mwh);if(si!==undefined&&sellerMarkers[si])pulseMarker(si,seller.color);}else{drawTradeLine(seller,buyer,"#ff3e5f33",mwh);}}
+    function connectSSE(){if(eventSource)eventSource.close();const s=document.getElementById("s-status");const i=document.getElementById("conn-info");s.innerHTML='<span class="pulse"></span>CONNECTING...';s.className="stat-val amber";eventSource=new EventSource("/api/stream");eventSource.onopen=()=>{s.innerHTML='<span class="pulse"></span>PUB/SUB LIVE';s.className="stat-val green";i.textContent="Connected to energy-pulse via SSE";document.getElementById("btn-connect").classList.add("active");document.getElementById("btn-connect").textContent="⚡ DISCONNECT";};eventSource.onmessage=(e)=>{try{processTrade(JSON.parse(e.data));}catch(err){console.warn("Bad SSE:",err);}};eventSource.onerror=()=>{s.innerHTML='<span class="pulse" style="background:var(--red);box-shadow:0 0 8px var(--red)"></span>DISCONNECTED';s.className="stat-val red";i.textContent="SSE connection lost — retrying...";};}
+    function disconnectSSE(){if(eventSource){eventSource.close();eventSource=null;}document.getElementById("s-status").innerHTML="OFFLINE";document.getElementById("s-status").className="stat-val";document.getElementById("btn-connect").classList.remove("active");document.getElementById("btn-connect").textContent="⚡ CONNECT PUB/SUB";document.getElementById("conn-info").textContent="SSE endpoint: /api/stream";}
+    function toggleSSE(){if(localSimRunning)toggleLocalSim();if(eventSource)disconnectSSE();else connectSSE();}
+    function getGridPrice(){const h=new Date().getHours();const b=(h<6||h>22)?0.04:0.20;if(Math.random()>0.92)return+(b*(2.5+Math.random()*1.5)).toFixed(4);return+(b*(0.8+Math.random()*0.5)).toFixed(4);}
+    function runLocalTrade(){const gp=getGridPrice();const il=gp>=ISLAND_THRESHOLD;const s=SELLERS[Math.floor(Math.random()*SELLERS.length)];const b=BUYERS[Math.floor(Math.random()*BUYERS.length)];const m=+(Math.random()*s.capacity*0.4+0.05).toFixed(3);let ap=+(gp*(0.55+Math.random()*0.3)).toFixed(4);if(il)ap=+(gp*(0.3+Math.random()*0.2)).toFixed(4);const bp=+(Math.min(b.maxBid,gp*(0.7+Math.random()*0.4))).toFixed(4);const st=+((ap+bp)/2).toFixed(4);const pr=+((st-COMED_TOLL)*m).toFixed(4);const mt=bp>=ap;processTrade({station_id:s.id,buyer_type:b.type,mwh:m,ask_price:ap,bid_price:bp,settled_price:mt?st:0,net_profit:mt?pr:0,trade_status:mt?(il?"ISLAND_SETTLED":"SETTLED"):"REJECTED",timestamp:new Date().toISOString()});}
+    function toggleLocalSim(){if(eventSource)disconnectSSE();const btn=document.getElementById("btn-local");const s=document.getElementById("s-status");if(localSimRunning){clearInterval(localSimInterval);localSimRunning=false;btn.classList.remove("active");btn.textContent="◉ LOCAL SIM";s.innerHTML="PAUSED";s.className="stat-val";document.getElementById("conn-info").textContent="Local simulation paused";}else{localSimInterval=setInterval(runLocalTrade,1500);localSimRunning=true;btn.classList.add("active");btn.textContent="⏸ PAUSE SIM";s.innerHTML='<span class="pulse"></span>LOCAL SIM';s.className="stat-val blue";document.getElementById("conn-info").textContent="Running client-side simulation (no GCP)";}}
+    function drawTradeLine(seller,buyer,color,mwh){if(!map)return;const line=new google.maps.Polyline({path:[{lat:seller.lat,lng:seller.lng},{lat:buyer.lat,lng:buyer.lng}],geodesic:true,strokeColor:color,strokeOpacity:0.7,strokeWeight:Math.min(1+mwh*1.5,5),map});tradeLines.push(line);setTimeout(()=>{let o=0.7;const f=setInterval(()=>{o-=0.07;if(o<=0){clearInterval(f);line.setMap(null);tradeLines=tradeLines.filter(l=>l!==line);}else{line.setOptions({strokeOpacity:o});}},50);},3000);}
+    function pulseMarker(si,color){if(si===undefined||!sellerMarkers[si])return;const c=sellerMarkers[si].circle;c.setOptions({fillOpacity:0.9,strokeWeight:4});setTimeout(()=>{c.setOptions({fillOpacity:0.5,strokeWeight:2});},600);}
+    function updateDashboard(){document.getElementById("s-settled").textContent=stats.settled;document.getElementById("s-rejected").textContent=stats.rejected;document.getElementById("s-mwh").textContent=stats.mwh.toFixed(3);document.getElementById("s-profit").textContent="$"+stats.profit.toFixed(2);document.getElementById("s-island").textContent=stats.island;if(stats.gridPrices.length>0){const a=stats.gridPrices.reduce((a,b)=>a+b,0)/stats.gridPrices.length;document.getElementById("s-grid").textContent="$"+a.toFixed(4);}}
+    function addFeedItem(seller,buyer,mwh,settled,profit,status){const feed=document.getElementById("feed");const item=document.createElement("div");item.className="feed-item";let icon,cls;if(status==="ISLAND_SETTLED"){icon="🏝️";cls="island";}else if(status==="SETTLED"){icon="⚡";cls="settled";}else{icon="❌";cls="rejected";}item.innerHTML='<span class="icon">'+icon+'</span> <span class="'+cls+'">'+seller.label+'</span> → '+buyer.label+' | '+mwh.toFixed(3)+' MWh | $'+settled.toFixed(4)+' | <span class="'+cls+'">'+status+'</span>';feed.insertBefore(item,feed.firstChild);while(feed.children.length>50)feed.removeChild(feed.lastChild);}
+    function resetStats(){stats={settled:0,rejected:0,mwh:0,profit:0,island:0,gridPrices:[]};tradeLines.forEach(l=>l.setMap(null));tradeLines=[];document.getElementById("feed").innerHTML="";updateDashboard();}
+    async function fetchChainStats(){try{const r=await fetch("/api/chain");const d=await r.json();if(d.connected){document.getElementById("s-chain-status").textContent="CONNECTED";document.getElementById("s-chain-status").style.color="var(--green)";if(d.trade_count!==undefined)document.getElementById("s-chain-trades").textContent=d.trade_count;if(d.token_supply!==undefined)document.getElementById("s-token-supply").textContent=d.token_supply.toFixed(3)+" THN";}else{document.getElementById("s-chain-status").textContent="OFFLINE";document.getElementById("s-chain-status").style.color="#556";}}catch(e){document.getElementById("s-chain-status").textContent="OFFLINE";document.getElementById("s-chain-status").style.color="#556";}}
+    fetchChainStats();setInterval(fetchChainStats,5000);
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ maps_api_key }}&callback=initMap" async defer></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+key.json
+deployment.json
+node_modules/
+venv/
+logs/
+build/
+artifacts/
+cache/
+__pycache__/
+*.pyc
