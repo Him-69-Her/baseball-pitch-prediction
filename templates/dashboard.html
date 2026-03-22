@@ -148,6 +148,7 @@
             <div>ENERGY<span class="tval green" id="total-mwh">0</span></div>
             <div>PROFIT<span class="tval amber" id="total-profit">$0</span></div>
             <div>BRIDGES<span class="tval purple" id="total-bridges">0</span></div>
+            <div>CO₂<span class="tval green" id="total-co2">0t</span></div>
         </div>
     </div>
 
@@ -166,6 +167,7 @@
                     <div class="srow"><span class="slabel">Energy Traded</span><span class="sval blue" id="d91-mwh">0.000</span></div>
                     <div class="srow"><span class="slabel">Community Profit</span><span class="sval amber" id="d91-profit">$0.00</span></div>
                     <div class="srow"><span class="slabel">Island Events</span><span class="sval amber" id="d91-island">0</span></div>
+                    <div class="srow"><span class="slabel">CO₂ Offset</span><span class="sval green" id="d91-co2">0.00 t</span></div>
                     <div class="srow"><span class="slabel">Avg Grid Price</span><span class="sval green" id="d91-grid">$0.0000</span></div>
                     <div class="srow"><span class="slabel">Sellers on Map</span><span class="sval green" id="d91-seller-count">—</span></div>
                     <div class="srow"><span class="slabel">Buyers on Map</span><span class="sval blue" id="d91-buyer-count">—</span></div>
@@ -230,6 +232,7 @@
                     <div class="srow"><span class="slabel">Energy Traded</span><span class="sval blue" id="d63-mwh">0.000</span></div>
                     <div class="srow"><span class="slabel">Community Profit</span><span class="sval amber" id="d63-profit">$0.00</span></div>
                     <div class="srow"><span class="slabel">Island Events</span><span class="sval amber" id="d63-island">0</span></div>
+                    <div class="srow"><span class="slabel">CO₂ Offset</span><span class="sval green" id="d63-co2">0.00 t</span></div>
                     <div class="srow"><span class="slabel">Avg Grid Price</span><span class="sval green" id="d63-grid">$0.0000</span></div>
                     <div class="chain-section">
                         <div class="chain-title">⛓ Blockchain</div>
@@ -508,8 +511,10 @@
     function updateStats(s) {
         $('d91-settled').textContent = s.d91.settled.toLocaleString(); $('d91-rejected').textContent = s.d91.rejected.toLocaleString();
         $('d91-mwh').textContent = fmtKWhTotal(s.d91.mwh); $('d91-profit').textContent = '$' + fmt(s.d91.profit); $('d91-island').textContent = s.d91.island;
+        if($('d91-co2')) $('d91-co2').textContent = (s.d91.co2||0).toFixed(2) + ' t';
         $('d63-settled').textContent = s.d63.settled.toLocaleString(); $('d63-rejected').textContent = s.d63.rejected.toLocaleString();
         $('d63-mwh').textContent = fmtKWhTotal(s.d63.mwh); $('d63-profit').textContent = '$' + fmt(s.d63.profit); $('d63-island').textContent = s.d63.island;
+        if($('d63-co2')) $('d63-co2').textContent = (s.d63.co2||0).toFixed(2) + ' t';
         $('f-d63-settled').textContent = s.d63.settled; $('f-d63-rejected').textContent = s.d63.rejected;
         $('f-d63-rate').textContent = s.d63.rate + '%'; $('f-d63-mwh').textContent = fmtKWhTotal(s.d63.mwh); $('f-d63-profit').textContent = '$' + fmt(s.d63.profit);
         $('f-d91-settled').textContent = s.d91.settled; $('f-d91-rejected').textContent = s.d91.rejected;
@@ -539,6 +544,55 @@
         } catch (e) { }
     }
     loadRecent(); connectSSE(); pollStats(); setInterval(pollStats, 3000);
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+    // ═══ WEBSOCKET ═══
+    let wsSocket = null;
+    function connectWebSocket() {
+        if (typeof io === 'undefined') return;
+        try {
+            wsSocket = io({ transports: ['websocket', 'polling'] });
+            wsSocket.on('connect', () => {
+                console.log('WebSocket connected');
+                $('conn-status').textContent = 'WS LIVE';
+                $('conn-status').style.color = 'var(--green)';
+            });
+            wsSocket.on('trade', (t) => { try { processTrade(t); } catch(e) {} });
+            wsSocket.on('stats_update', (s) => { try { updateStats(s); } catch(e) {} });
+            wsSocket.on('battery_event', (e) => {
+                console.log('Battery event:', e);
+            });
+            wsSocket.on('disconnect', () => {
+                console.log('WebSocket disconnected — falling back to SSE');
+                $('conn-status').textContent = 'SSE';
+                connectSSE();
+            });
+        } catch(e) {
+            console.warn('WebSocket failed, using SSE:', e);
+            connectSSE();
+        }
+    }
+    // Try WebSocket first, fall back to SSE
+    if (typeof io !== 'undefined') {
+        connectWebSocket();
+    } else {
+        connectSSE();
+    }
+
+    // Battery discharge trigger
+    function triggerDischarge(stationId, mwh) {
+        if (wsSocket && wsSocket.connected) {
+            wsSocket.emit('trigger_discharge', { station_id: stationId, mwh: mwh });
+            wsSocket.once('discharge_result', (r) => {
+                if (r.success) {
+                    console.log('Discharge OK:', r.actual_mwh, 'MWh');
+                } else {
+                    console.warn('Discharge failed:', r.error);
+                }
+            });
+        }
+    }
     </script>
 </body>
 </html>

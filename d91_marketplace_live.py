@@ -177,18 +177,30 @@ def solar_output(capacity_mwh, lat=D91_LAT, lng=D91_LNG):
             return round(capacity_mwh * random.uniform(0.05, 0.15), 3)
         return 0.0
 
-    # Irradiance factor: 0 at horizon, 1 at 90°
-    irradiance = math.sin(math.radians(alt_deg))
-
-    # Cloud cover: real weather from Open-Meteo
+    # Real DNI from Open-Meteo (W/m², 0-1000 typical range)
     weather = get_weather(lat, lng)
-    cloud = cloud_factor(weather["cloud_cover"])
+    dni = weather.get("dni", 0.0)
 
-    # Panel efficiency (degrades slightly at very high/low angles)
+    if dni <= 0 and alt_deg <= 2:
+        # Night / deep twilight — no output
+        if random.random() < 0.15:
+            return round(capacity_mwh * random.uniform(0.05, 0.15), 3)
+        return 0.0
+
+    # Normalize DNI to 0-1 (1000 W/m² = clear sky peak)
+    irradiance = min(dni / 1000.0, 1.0)
+
+    # If Open-Meteo returned 0 DNI but sun is up, fall back to sin(altitude)
+    if irradiance < 0.01 and alt_deg > 5:
+        irradiance = math.sin(math.radians(alt_deg))
+        cloud = cloud_factor(weather["cloud_cover"])
+        irradiance *= cloud
+
+    # Panel efficiency (degrades at low sun angles)
     efficiency = 0.85 if alt_deg > 15 else 0.65
 
-    # Output
-    mwh = capacity_mwh * irradiance * cloud * efficiency * random.uniform(0.2, 0.4)
+    # Output — DNI already accounts for cloud cover, no double-dipping
+    mwh = capacity_mwh * irradiance * efficiency * random.uniform(0.2, 0.4)
     return round(max(0.01, mwh), 3)
 
 
@@ -362,6 +374,7 @@ print(f"  TOTAL BUYERS: {len(BUYERS)}")
 
 # ── Market Parameters ───────────────────────────────────────
 AMEREN_TOLL = 0.025
+CO2_TONS_PER_MWH = 0.42   # EPA eGRID 2022 — Illinois grid mix
 CURTAIL_FLOOR  = 0.005   # $/kWh — curtail solar if clearing price drops below this
 curtailed_count = 0      # running count of curtailed events
 
@@ -485,6 +498,7 @@ def run_trade():
             "temperature": weather["temperature"],
             "dni": weather.get("dni", 0),
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "co2_tons": round(mt.mwh * CO2_TONS_PER_MWH, 4),
         }
         publisher.publish(topic_path, json.dumps(trade_data).encode("utf-8"))
 

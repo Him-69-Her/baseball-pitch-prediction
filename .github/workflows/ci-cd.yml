@@ -1,0 +1,97 @@
+name: Tiny-Hub CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Smart Contract Tests ──────────────────────────────────
+  contracts:
+    name: Smart Contract Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx hardhat compile
+      - run: npx hardhat test
+
+  # ── Python Linting + Tests ────────────────────────────────
+  python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - run: pip install pytest flake8
+      - name: Lint
+        run: flake8 *.py --max-line-length=120 --ignore=E501,W503,E402 --count
+      - name: Test matching engine
+        run: python -c "
+          from matching_engine import MatchingEngine;
+          e = MatchingEngine(toll=0.025, mode='pro_rata');
+          e.add_sell_order('s1','Solar A','Town','solar',1.0,0.05,lat=40.6,lng=-89.5);
+          e.add_buy_order('b1','Buyer A','Town','business',0.10,demand_mwh=0.5,lat=40.6,lng=-89.5);
+          trades = e.match(grid_price=0.08);
+          assert len(trades) > 0, 'No trades matched';
+          print(f'  ✅ {len(trades)} trades matched');
+          "
+      - name: Test fraud detection
+        run: python -c "
+          from fraud_detection import FraudDetector;
+          d = FraudDetector();
+          r = d.check_trade({'mwh':0.1,'station_id':'test','seller_type':'solar'}, {'area_sqft':10000,'lat':40.6,'lng':-89.5});
+          print(f'  ✅ Fraud check: flagged={r.flagged}, severity={r.severity}');
+          "
+      - name: Test VNM reporting
+        run: python -c "
+          from vnm_reporting import VNMReporter;
+          r = VNMReporter();
+          trades = [{'trade_status':'SETTLED','mwh':1.0,'station_id':'s1','seller_label':'Test','buyer_id':'b1','buyer_label':'Buyer','settled_price':0.08,'co2_tons':0.42}];
+          report = r.generate_monthly_report('2025-06', trades);
+          assert report.total_mwh == 1.0;
+          print(f'  ✅ VNM report: {report.total_mwh} MWh, \${report.total_credits} credits');
+          "
+
+  # ── Docker Build ──────────────────────────────────────────
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [contracts, python]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Python image
+        run: docker build -t tinyhub-python .
+      - name: Build Hardhat image
+        run: docker build -f Dockerfile.hardhat -t tinyhub-hardhat .
+      - name: Verify compose config
+        run: docker compose config --quiet
+
+  # ── Deploy (only on main push) ────────────────────────────
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 35.209.110.230
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/tiny-hub
+            git pull origin main
+            sudo docker-compose up -d --build
+            sudo docker-compose ps

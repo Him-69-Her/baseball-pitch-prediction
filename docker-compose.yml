@@ -1,0 +1,108 @@
+version: "3.8"
+
+# ═══════════════════════════════════════════════════════════════
+#  TINY-HUB NETWORK — Docker Compose
+#  Replaces screen sessions with proper containers + auto-restart.
+#
+#  Usage:
+#    docker compose up -d          # start everything
+#    docker compose ps             # check status
+#    docker compose logs -f d91    # tail a service
+#    docker compose down           # stop everything
+#    docker compose restart d91    # restart one service
+# ═══════════════════════════════════════════════════════════════
+
+x-python-service: &python-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  working_dir: /app
+  restart: unless-stopped
+  env_file: .env
+  volumes:
+    - shared:/shared
+    - ./templates:/app/templates
+  depends_on:
+    hardhat:
+      condition: service_healthy
+
+services:
+  # ── Hardhat Blockchain (Chain 31337) ──────────────────────
+  hardhat:
+    build:
+      context: .
+      dockerfile: Dockerfile.hardhat
+    container_name: tinyhub-hardhat
+    restart: unless-stopped
+    ports:
+      - "8545:8545"
+    volumes:
+      - shared:/shared
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8545',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_blockNumber',params:[],id:1})}).then(r=>r.json()).then(d=>{if(d.result)process.exit(0);else process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # ── D91 Marketplace (Peoria / Ameren / MISO) ─────────────
+  d91:
+    <<: *python-base
+    container_name: tinyhub-d91
+    command: python3 -u d91_marketplace_live.py
+    environment:
+      - RPC_URL=http://hardhat:8545
+
+  # ── D63 Marketplace (McHenry / ComEd / PJM) ──────────────
+  d63:
+    <<: *python-base
+    container_name: tinyhub-d63
+    command: python3 -u d63_marketplace_live.py
+    environment:
+      - RPC_URL=http://hardhat:8545
+
+  # ── On-Chain Settler ──────────────────────────────────────
+  settler:
+    <<: *python-base
+    container_name: tinyhub-settler
+    command: python3 -u d91_settler.py
+    environment:
+      - RPC_URL=http://hardhat:8545
+    depends_on:
+      hardhat:
+        condition: service_healthy
+      d91:
+        condition: service_started
+      d63:
+        condition: service_started
+
+  # ── Cross-District Bridge ─────────────────────────────────
+  bridge:
+    <<: *python-base
+    container_name: tinyhub-bridge
+    command: python3 -u d91_bridge.py
+    environment:
+      - RPC_URL=http://hardhat:8545
+
+  # ── Dashboard (Flask + SSE + PostGIS) ─────────────────────
+  dashboard:
+    <<: *python-base
+    container_name: tinyhub-dashboard
+    command: python3 -u app.py
+    ports:
+      - "5000:5000"
+    environment:
+      - RPC_URL=http://hardhat:8545
+      - FLASK_HOST=0.0.0.0
+
+  # ── Inverter Telemetry API ────────────────────────────────
+  inverter:
+    <<: *python-base
+    container_name: tinyhub-inverter
+    command: python3 -u inverter_api.py
+    ports:
+      - "5001:5001"
+
+volumes:
+  shared:
+    driver: local

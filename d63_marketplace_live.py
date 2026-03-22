@@ -151,11 +151,25 @@ def solar_output(capacity_mwh, lat=D63_LAT, lng=D63_LNG, is_battery=False):
     if alt_deg <= 0:
         return 0.0
 
-    irradiance = math.sin(math.radians(alt_deg))
+    # Real DNI from Open-Meteo (W/m², 0-1000 typical range)
     weather = get_weather(lat, lng)
-    cloud = cloud_factor(weather["cloud_cover"])
+    dni = weather.get("dni", 0.0)
+
+    if dni <= 0 and alt_deg <= 2:
+        return 0.0
+
+    # Normalize DNI to 0-1 (1000 W/m² = clear sky peak)
+    irradiance = min(dni / 1000.0, 1.0)
+
+    # Fallback to sin(altitude) if DNI is 0 but sun is up
+    if irradiance < 0.01 and alt_deg > 5:
+        irradiance = math.sin(math.radians(alt_deg))
+        cloud = cloud_factor(weather["cloud_cover"])
+        irradiance *= cloud
+
     efficiency = 0.85 if alt_deg > 15 else 0.65
-    mwh = capacity_mwh * irradiance * cloud * efficiency * random.uniform(0.2, 0.4)
+    # DNI already includes atmospheric conditions — no cloud double-dip
+    mwh = capacity_mwh * irradiance * efficiency * random.uniform(0.2, 0.4)
     return round(max(0.01, mwh), 3)
 
 
@@ -190,6 +204,7 @@ BUYERS = [
 
 # ── Market Parameters ───────────────────────────────────────
 COMED_TOLL = 0.02
+CO2_TONS_PER_MWH = 0.42   # EPA eGRID 2022
 ISLAND_THRESHOLD = 0.30
 
 trade_count = 0
@@ -265,6 +280,7 @@ def run_trade():
         "temperature": weather["temperature"],
         "dni": weather.get("dni", 0),
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "co2_tons": round(mwh * CO2_TONS_PER_MWH, 4),
     }
 
     msg = json.dumps(data).encode("utf-8")

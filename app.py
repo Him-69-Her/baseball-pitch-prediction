@@ -16,10 +16,15 @@ from datetime import datetime
 from collections import deque
 from flask import Flask, render_template, jsonify, Response, request
 from openadr_vtn import oadr_bp, init_vtn
+from smart_meter import get_meter_client
+from fraud_detection import get_detector
+from websocket_handler import init_socketio, broadcast_trade as ws_broadcast_trade, broadcast_stats as ws_broadcast_stats
+from vnm_reporting import VNMReporter
 from google.cloud import pubsub_v1
 
 app = Flask(__name__)
 app.register_blueprint(oadr_bp)
+socketio = init_socketio(app)
 
 # ── Config ──────────────────────────────────────────────────
 PROJECT_ID = "tiny-hub-network"
@@ -36,8 +41,8 @@ bridge_trades = deque(maxlen=MAX_TRADES)
 
 # ── Stats ───────────────────────────────────────────────────
 stats = {
-    "d63": {"trades": 0, "settled": 0, "rejected": 0, "mwh": 0.0, "profit": 0.0, "island": 0},
-    "d91": {"trades": 0, "settled": 0, "rejected": 0, "mwh": 0.0, "profit": 0.0, "island": 0},
+    "d63": {"trades": 0, "settled": 0, "rejected": 0, "mwh": 0.0, "profit": 0.0, "island": 0, "co2": 0.0},
+    "d91": {"trades": 0, "settled": 0, "rejected": 0, "mwh": 0.0, "profit": 0.0, "island": 0, "co2": 0.0},
     "bridge": {"d63_to_d91": 0, "d91_to_d63": 0, "mwh_bridged": 0.0, "toll_revenue": 0.0},
 }
 stats_lock = threading.Lock()
@@ -338,5 +343,196 @@ except Exception as _e:
 
 register_postgis_routes(app)
 
+
+# ── Smart Meter API ─────────────────────────────────────────
+@app.route("/api/meter/<meter_id>/readings")
+def api_meter_readings(meter_id):
+    """Get 15-min interval readings for a meter."""
+    hours = request.args.get("hours", 24, type=int)
+    hours = min(hours, 168)  # cap at 1 week
+    client = get_meter_client()
+    readings = client.get_readings(meter_id, hours=hours)
+    return jsonify({
+        "meter_id": meter_id,
+        "hours": hours,
+        "readings": [
+            {"timestamp": r.timestamp, "kwh": r.kwh,
+             "interval_min": r.interval_min, "source": r.source,
+             "quality": r.quality}
+            for r in readings
+        ],
+        "count": len(readings),
+        "total_kwh": round(sum(r.kwh for r in readings), 2),
+    })
+
+
+@app.route("/api/meter/<meter_id>/verify")
+def api_meter_verify(meter_id):
+    """Verify a buyer's claimed demand against smart meter data."""
+    claimed = request.args.get("claimed_kwh", 0, type=float)
+    window = request.args.get("window_hours", 1.0, type=float)
+    tolerance = request.args.get("tolerance_pct", 20.0, type=float)
+    client = get_meter_client()
+    v = client.verify_demand(meter_id, claimed, window, tolerance)
+    return jsonify({
+        "meter_id": meter_id,
+        "verified": v.verified,
+        "actual_kwh": v.actual_kwh,
+        "claimed_kwh": v.claimed_kwh,
+        "variance_pct": v.variance_pct,
+        "readings_count": v.readings_count,
+        "source": v.source,
+        "window_hours": v.window_hours,
+    })
+
+
+@app.route("/api/meter/<meter_id>/summary")
+def api_meter_summary(meter_id):
+    """Get 24-hour consumption summary with peak/off-peak breakdown."""
+    client = get_meter_client()
+    return jsonify(client.get_daily_summary(meter_id))
+
+
+@app.route("/api/meter/upload-greenbutton", methods=["POST"])
+def api_meter_upload_gb():
+    """Upload Green Button XML for a meter."""
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    f = request.files["file"]
+    if not f.filename.endswith(".xml"):
+        return jsonify({"error": "File must be .xml"}), 400
+
+    # Save temp file and parse
+    import tempfile
+    tmp = tempfile.NamedTemporaryFile(suffix=".xml", delete=False)
+    f.save(tmp.name)
+    tmp.close()
+
+    client = get_meter_client()
+    readings = client.parse_green_button_xml(tmp.name)
+
+    import os
+    os.unlink(tmp.name)
+
+    if not readings:
+        return jsonify({"error": "No interval data found in XML"}), 400
+
+    return jsonify({
+        "readings": [
+            {"timestamp": r.timestamp, "kwh": r.kwh,
+             "interval_min": r.interval_min, "source": r.source}
+            for r in readings
+        ],
+        "count": len(readings),
+        "total_kwh": round(sum(r.kwh for r in readings), 2),
+    })
+
+
+@app.route("/api/meter/status")
+def api_meter_status():
+    """Smart meter client status."""
+    client = get_meter_client()
+    return jsonify(client.stats())
+
+
+
+# ── Fraud Detection API ─────────────────────────────────────
+@app.route("/api/fraud/stats")
+def api_fraud_stats():
+    """Fraud detection statistics."""
+    detector = get_detector()
+    return jsonify(detector.get_stats())
+
+
+@app.route("/api/fraud/check", methods=["POST"])
+def api_fraud_check():
+    """
+    Check a trade for physics-based fraud.
+    POST body: {"trade": {...}, "building": {...}}
+    """
+    data = request.get_json(silent=True) or {}
+    trade = data.get("trade", {})
+    building = data.get("building")
+    detector = get_detector()
+    result = detector.check_trade(trade, building)
+    return jsonify({
+        "flagged": result.flagged,
+        "severity": result.severity,
+        "reason": result.reason,
+        "claimed_mwh": result.claimed_mwh,
+        "max_possible_mwh": result.max_possible_mwh,
+        "roof_sqft": result.roof_sqft,
+        "dni_wm2": result.dni_wm2,
+        "checks_passed": result.checks_passed,
+        "checks_failed": result.checks_failed,
+    })
+
+
+
+# ── VNM Regulatory Reporting API ─────────────────────────────
+_vnm_reporter = VNMReporter()
+
+@app.route("/api/vnm/report")
+def api_vnm_report():
+    """Generate ICC-compliant VNM settlement report."""
+    period = request.args.get("period", datetime.utcnow().strftime("%Y-%m"))
+    district = request.args.get("district", "IL_D91")
+
+    # Collect trades from buffer
+    trades_source = list(d91_trades) if "D91" in district else list(d63_trades)
+    report = _vnm_reporter.generate_monthly_report(period, trades_source, district)
+    return jsonify(_vnm_reporter.to_summary_dict(report))
+
+
+@app.route("/api/vnm/csv")
+def api_vnm_csv():
+    """Download VNM credit allocations as CSV."""
+    period = request.args.get("period", datetime.utcnow().strftime("%Y-%m"))
+    district = request.args.get("district", "IL_D91")
+
+    trades_source = list(d91_trades) if "D91" in district else list(d63_trades)
+    report = _vnm_reporter.generate_monthly_report(period, trades_source, district)
+    csv_data = _vnm_reporter.to_csv(report)
+
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment;filename=vnm_{district}_{period}.csv"}
+    )
+
+
+@app.route("/api/vnm/edi")
+def api_vnm_edi():
+    """Download EDI 867 format for utility interchange."""
+    period = request.args.get("period", datetime.utcnow().strftime("%Y-%m"))
+    district = request.args.get("district", "IL_D91")
+
+    trades_source = list(d91_trades) if "D91" in district else list(d63_trades)
+    report = _vnm_reporter.generate_monthly_report(period, trades_source, district)
+    edi_data = _vnm_reporter.to_edi_867(report)
+
+    return Response(
+        edi_data,
+        mimetype="text/plain",
+        headers={"Content-Disposition": f"attachment;filename=vnm_edi867_{district}_{period}.txt"}
+    )
+
+
+
+# ── WebSocket Status API ─────────────────────────────────────
+@app.route("/api/ws/status")
+def api_ws_status():
+    """WebSocket connection status."""
+    from websocket_handler import get_client_count
+    return jsonify({
+        "websocket_enabled": True,
+        "connected_clients": get_client_count(),
+        "transport": "websocket + sse",
+    })
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+    if socketio:
+        socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)
+    else:
+        app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)

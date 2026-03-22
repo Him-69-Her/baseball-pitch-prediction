@@ -1,0 +1,9 @@
+flask>=3.0
+web3>=6.0
+google-cloud-pubsub>=2.0
+google-cloud-bigquery>=3.0
+google-cloud-secret-manager>=2.0
+gridstatus>=0.27
+requests>=2.31
+psycopg2-binary>=2.9
+flask-socketio>=5.3
