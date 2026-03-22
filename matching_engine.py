@@ -33,6 +33,7 @@ Usage (drop into any marketplace file):
 """
 
 from __future__ import annotations
+from battery_vpp import get_battery, all_battery_status
 import math
 from dataclasses import dataclass, field
 
@@ -108,6 +109,17 @@ def _haversine_km(lat1, lng1, lat2, lng2) -> float:
     dlam = math.radians(lng2 - lng1)
     a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2) ** 2
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def battery_output(station_id: str, label: str, capacity_mwh: float,
+                   grid_price_kwh: float, toll: float = 0.025) -> float:
+    """
+    VPP arbitrage wrapper for battery sellers.
+    Returns MWh to sell this tick (0 if charging or idle).
+    Automatically manages state of charge and LCOS economics.
+    """
+    vpp = get_battery(station_id, label, capacity_mwh, toll)
+    return vpp.get_output(grid_price_kwh)
 
 
 class MatchingEngine:
@@ -329,4 +341,5 @@ class MatchingEngine:
             "pending_buy_orders":  len(self._buy_orders),
             "sell_mwh_available":  sum(s.remaining_mwh for s in self._sell_orders),
             "buy_mwh_demanded":    sum(b.remaining_mwh for b in self._buy_orders),
+            "batteries":           all_battery_status(),
         }

@@ -190,6 +190,15 @@ def api_buildings_d91():
             with open("district91_names.json") as f:
                 names = json.load(f)
 
+        # Deterministically assign 15% of residential sellers as EV battery homes
+        # Uses hash of osm_id so assignment is stable across restarts
+        import hashlib
+        def _is_ev_battery(osm_id, category):
+            if category != "residential":
+                return False
+            h = int(hashlib.md5(str(osm_id).encode()).hexdigest(), 16)
+            return (h % 100) < 15  # 15% of residential
+
         sellers = []
         for s in bdata.get("sellers", []):
             osm_id = str(s.get("osm_id", ""))
@@ -197,6 +206,7 @@ def api_buildings_d91():
             label = ext_name if ext_name and ext_name != "Unidentified" else s.get("name", "")
             if not label:
                 label = f"{s['category'].title()} ({s['area_sqft']:,} sqft)"
+            ev = _is_ev_battery(osm_id, s.get("category", ""))
             sellers.append({
                 "la": s["lat"], "ln": s["lng"],
                 "n": label[:45], "t": s["town"],
@@ -204,6 +214,7 @@ def api_buildings_d91():
                 "mwh": s["solar"]["mwh_per_year"],
                 "cat": s["category"],
                 "ti": "mega" if s["area_sqft"] >= 100000 else "large" if s["area_sqft"] >= 50000 else "medium" if s["area_sqft"] >= 20000 else "small" if s["area_sqft"] >= 10000 else "micro",
+                "ev": ev,   # EV battery flag
             })
 
         buyers = []
@@ -219,10 +230,25 @@ def api_buildings_d91():
                 "sq": b["area_sqft"],
             })
 
+        # Add residential sellers (from scan_residential_d91.py)
+        res_sellers = []
+        for r in bdata.get("residential_sellers", []):
+            res_sellers.append({
+                "la": r["lat"], "ln": r["lng"],
+                "n":  (r["name"] or f"Home {r['county']}") [:45],
+                "t":  r["county"],
+                "sq": r["area_sqft"],
+                "mwh": r["solar_mwh_yr"],
+                "cat": "residential",
+                "ti":  "micro",
+                "ev":  r.get("ev_battery", False),
+            })
+
         return jsonify({
-            "sellers": sellers,
+            "sellers": sellers + res_sellers,
             "buyers": buyers,
             "residential_count": bdata.get("residential_count", 0),
+            "ev_battery_count": bdata.get("ev_battery_count", 0),
             "summary": bdata.get("summary", {}),
         })
     except Exception as e:

@@ -346,14 +346,33 @@
 
             const tierColor = { mega: '#ff3e5f', large: '#ff8c00', medium: '#ffb800', small: '#00ff9d', micro: '#00b4ff' };
             const tierRadius = { mega: 10, large: 7, medium: 5, small: 4, micro: 3 };
+            const EV_COLOR = '#00ffff';   // cyan — EV battery residential homes
+
+            // Residential layer group — hidden until zoom 14
+            const residentialLayer = L.layerGroup().addTo(mapD91);
+            const RESIDENTIAL_ZOOM = 14;
 
             // Plot sellers
             data.sellers.forEach(s => {
-                const c = tierColor[s.ti] || '#ffb800';
-                const r = tierRadius[s.ti] || 4;
-                const m = L.circleMarker([s.la, s.ln], { radius: r, color: c, fillColor: c, fillOpacity: 0.6, weight: 1 })
-                    .addTo(mapD91)
-                    .bindPopup(`<div style="font-family:'JetBrains Mono',monospace;font-size:11px"><b>${s.n}</b><br>${s.t}<br>${s.sq.toLocaleString()} sqft · ${s.mwh.toLocaleString()} MWh/yr<br>${s.ti} · ${s.cat}</div>`);
+                const isResidential = s.cat === 'residential';
+                const isEV = s.ev === true;
+                const c = isEV ? EV_COLOR : (tierColor[s.ti] || '#ffb800');
+                const r = isEV ? 5 : (tierRadius[s.ti] || 4);
+                const evLabel = isEV ? '<br>⚡ EV Battery — Seller + Buyer' : '';
+                const marker = L.circleMarker([s.la, s.ln], {
+                    radius: r,
+                    color: isEV ? '#00ffff' : c,
+                    fillColor: c,
+                    fillOpacity: isEV ? 0.9 : 0.6,
+                    weight: isEV ? 2 : 1,
+                })
+                    .bindPopup(`<div style="font-family:'JetBrains Mono',monospace;font-size:11px"><b>${s.n}</b><br>${s.t}<br>${s.sq.toLocaleString()} sqft · ${s.mwh.toLocaleString()} MWh/yr<br>${s.ti} · ${s.cat}${evLabel}</div>`);
+
+                if (isResidential) {
+                    residentialLayer.addLayer(marker);
+                } else {
+                    marker.addTo(mapD91);
+                }
                 // Index by partial name for flash matching
                 d91SellerIndex[s.n.substring(0, 10)] = { la: s.la, ln: s.ln };
             });
@@ -369,6 +388,18 @@
             $('d91-seller-count').textContent = data.sellers.length.toLocaleString();
             $('d91-buyer-count').textContent = data.buyers.length.toLocaleString();
             $('d91-loading').classList.add('hidden');
+
+            // Show/hide residential layer based on zoom
+            function updateResidentialVisibility() {
+                const z = mapD91.getZoom();
+                if (z >= RESIDENTIAL_ZOOM) {
+                    if (!mapD91.hasLayer(residentialLayer)) mapD91.addLayer(residentialLayer);
+                } else {
+                    if (mapD91.hasLayer(residentialLayer)) mapD91.removeLayer(residentialLayer);
+                }
+            }
+            mapD91.on('zoomend', updateResidentialVisibility);
+            updateResidentialVisibility(); // Apply on load
 
         } catch (e) {
             console.error('Failed to load D91 buildings:', e);
