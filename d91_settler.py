@@ -37,7 +37,7 @@ SETTLER_D63_SUB = "energy-pulse-settler-sub"
 SETTLER_D91_SUB = "district91-energy-settler-sub"
 
 # Hardhat local node
-RPC_URL = "http://127.0.0.1:8545"
+RPC_URL = os.environ.get("RPC_URL", "http://127.0.0.1:8545")
 CONTRACT_ADDRESS = None  # loaded from deployment.json
 
 # Load deployment address

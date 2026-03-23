@@ -25,14 +25,14 @@
         .logo { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 1.1rem; letter-spacing: 3px; color: #fff; }
         .logo span { color: var(--green); }
         .nav-tabs { display: flex; gap: 2px; }
-        .nav-tab { background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 1.5px; padding: 7px 16px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-bottom: 2px solid transparent; }
+        .nav-tab { background: transparent; border: 1px solid var(--border); color: rgba(255,255,255,0.85); font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 1.5px; padding: 7px 16px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-bottom: 2px solid transparent; }
         .nav-tab:first-child { border-radius: 3px 0 0 3px; }
         .nav-tab:last-child { border-radius: 0 3px 3px 0; }
         .nav-tab:hover { color: var(--green); border-color: var(--green); }
         .nav-tab.active-d91 { background: rgba(255,184,0,0.1); border-color: var(--amber); border-bottom-color: var(--amber); color: var(--amber); font-weight: 700; }
         .nav-tab.active-d63 { background: rgba(0,180,255,0.1); border-color: var(--blue); border-bottom-color: var(--blue); color: var(--blue); font-weight: 700; }
         .nav-tab.active-feeds { background: rgba(0,255,157,0.1); border-color: var(--green); border-bottom-color: var(--green); color: var(--green); font-weight: 700; }
-        .topbar-stats { display: flex; gap: 20px; font-size: 0.55rem; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
+        .topbar-stats { display: flex; gap: 20px; font-size: 0.55rem; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.85); }
         .topbar-stats .tval { font-weight: 700; margin-left: 4px; }
         .pulse { display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; margin-right: 4px; vertical-align: middle; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -50,7 +50,7 @@
         .map-logo span { color: var(--green); }
         .map-subtitle { font-size: 0.5rem; color: var(--green-dim); letter-spacing: 1.5px; margin-bottom: 12px; text-transform: uppercase; }
         .srow { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.6rem; }
-        .slabel { color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-size: 0.48rem; }
+        .slabel { color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1px; font-size: 0.48rem; }
         .sval { font-weight: 700; }
         .sval.green { color: var(--green); } .sval.amber { color: var(--amber); } .sval.blue { color: var(--blue); } .sval.red { color: var(--red); } .sval.purple { color: var(--purple); }
         .chain-section { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 8px; }
@@ -62,7 +62,7 @@
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
         .map-trade-card { position: absolute; bottom: 14px; left: 14px; padding: 12px 14px; width: 380px; max-height: 220px; display: flex; flex-direction: column; }
-        .map-trade-title { font-size: 0.48rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+        .map-trade-title { font-size: 0.48rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.85); margin-bottom: 6px; }
         .map-trade-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent; }
         .map-trade-list::-webkit-scrollbar { width: 3px; }
         .map-trade-list::-webkit-scrollbar-thumb { background: var(--green-dim); }
@@ -76,9 +76,9 @@
         .btn-red:hover { background: #e0354f; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
         .btn-outline:hover { border-color: var(--green); color: var(--green); }
-        .action-status { font-size: 0.45rem; color: var(--text-dim); letter-spacing: 1px; text-align: right; }
+        .action-status { font-size: 0.45rem; color: rgba(255,255,255,0.85); letter-spacing: 1px; text-align: right; }
 
-        .town-card { position: absolute; bottom: 250px; left: 14px; padding: 10px 14px; }
+        .town-card { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); padding: 10px 14px; z-index: 500; }
         .town-title { font-size: 0.45rem; color: var(--green-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
         .town-btns { display: flex; flex-wrap: wrap; gap: 3px; }
         .town-btn { pointer-events: auto; background: transparent; border: 1px solid var(--border); color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; padding: 4px 8px; cursor: pointer; letter-spacing: 1px; border-radius: 2px; transition: all 0.2s; }
@@ -98,7 +98,7 @@
         .dtag-d91 { background: rgba(255,184,0,0.12); border: 1px solid rgba(255,184,0,0.3); color: var(--amber); }
         .stat-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
         .stat-card { background: var(--card); border: 1px solid var(--border); padding: 8px 10px; border-radius: 3px; }
-        .stat-card .sc-label { font-size: 0.45rem; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
+        .stat-card .sc-label { font-size: 0.45rem; color: rgba(255,255,255,0.85); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
         .stat-card .sc-value { font-size: 1rem; font-weight: 700; }
         .stat-card .sc-value.green { color: var(--green); }
         .stat-card .sc-value.red { color: var(--red); }
@@ -117,13 +117,13 @@
         .trade-pair strong { color: #fff; font-weight: 600; }
         .trade-status { font-weight: 700; font-size: 0.48rem; letter-spacing: 0.5px; flex-shrink: 0; }
         .trade-status.settled { color: var(--green); } .trade-status.rejected { color: var(--red); } .trade-status.island { color: var(--amber); } .trade-status.bridge { color: var(--purple); } .trade-status.fallback { color: #94a3b8; }
-        .trade-bottom { display: flex; gap: 12px; margin-top: 2px; padding-left: 22px; font-size: 0.5rem; color: var(--text-dim); }
+        .trade-bottom { display: flex; gap: 12px; margin-top: 2px; padding-left: 22px; font-size: 0.5rem; color: rgba(255,255,255,0.85); }
         .trade-bottom .val { color: var(--green); font-weight: 600; }
         .trade-bottom .val.amber { color: var(--amber); }
 
         .bridge-bar { flex-shrink: 0; padding: 7px 20px; display: flex; align-items: center; gap: 20px; background: rgba(8,10,18,0.95); border-top: 2px solid rgba(192,132,252,0.25); z-index: 100; }
         .bridge-label { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.5rem; letter-spacing: 3px; text-transform: uppercase; color: var(--purple); white-space: nowrap; }
-        .bridge-stats { display: flex; gap: 16px; font-size: 0.5rem; color: var(--text-dim); }
+        .bridge-stats { display: flex; gap: 16px; font-size: 0.5rem; color: rgba(255,255,255,0.85); }
         .bridge-stats .bval { color: var(--purple); font-weight: 700; margin-left: 3px; }
         .bridge-feed { flex: 1; overflow: hidden; height: 1em; }
         .bridge-ticker { display: flex; gap: 40px; animation: ticker 40s linear infinite; white-space: nowrap; font-size: 0.48rem; color: var(--purple); }
@@ -173,9 +173,9 @@
                     <div class="srow"><span class="slabel">Buyers on Map</span><span class="sval blue" id="d91-buyer-count">—</span></div>
                     <div class="chain-section">
                         <div class="chain-title">⛓ Blockchain</div>
-                        <div class="srow"><span class="slabel">On-Chain Trades</span><span class="sval purple">—</span></div>
-                        <div class="srow"><span class="slabel">THN Supply</span><span class="sval purple">—</span></div>
-                        <div class="srow"><span class="slabel">Chain Status</span><span class="sval" style="color:var(--text-dim)">OFFLINE</span></div>
+                        <div class="srow"><span class="slabel">On-Chain Trades</span><span class="sval purple" id="d91-chain-trades">—</span></div>
+                        <div class="srow"><span class="slabel">THN Supply</span><span class="sval purple" id="d91-token-supply">—</span></div>
+                        <div class="srow"><span class="slabel">Chain Status</span><span class="sval" style="color:rgba(255,255,255,0.85)" id="d91-chain-status">OFFLINE</span></div>
                     </div>
                 </div>
                 <div class="glass-card map-legend">
@@ -238,7 +238,7 @@
                         <div class="chain-title">⛓ Blockchain</div>
                         <div class="srow"><span class="slabel">On-Chain Trades</span><span class="sval purple">—</span></div>
                         <div class="srow"><span class="slabel">THN Supply</span><span class="sval purple">—</span></div>
-                        <div class="srow"><span class="slabel">Chain Status</span><span class="sval" style="color:var(--text-dim)">OFFLINE</span></div>
+                        <div class="srow"><span class="slabel">Chain Status</span><span class="sval" style="color:rgba(255,255,255,0.85)">OFFLINE</span></div>
                     </div>
                 </div>
                 <div class="glass-card map-legend">
@@ -544,6 +544,22 @@
         } catch (e) { }
     }
     loadRecent(); connectSSE(); pollStats(); setInterval(pollStats, 3000);
+    async function fetchChain() {
+        try {
+            const d = await (await fetch('/api/chain')).json();
+            const ct = document.getElementById('d91-chain-trades');
+            const ts = document.getElementById('d91-token-supply');
+            const cs = document.getElementById('d91-chain-status');
+            if (d.connected) {
+                if (ct) ct.textContent = d.trade_count !== undefined ? d.trade_count.toLocaleString() : '—';
+                if (ts) ts.textContent = d.token_supply !== undefined ? d.token_supply.toFixed(3) + ' THN' : '—';
+                if (cs) { cs.textContent = 'CONNECTED'; cs.style.color = 'var(--green)'; }
+            } else {
+                if (cs) { cs.textContent = 'OFFLINE'; cs.style.color = 'var(--red)'; }
+            }
+        } catch (e) {}
+    }
+    fetchChain(); setInterval(fetchChain, 5000);
     </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
     <script>

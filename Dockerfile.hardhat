@@ -2,19 +2,16 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package files and install deps
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy Hardhat config, contracts, and deploy script
 COPY hardhat.config.js ./
 COPY contracts/ ./contracts/
-COPY deploy_v2.js ./
+COPY deploy.js deploy_v2.js ./
+COPY build/ ./build/
+COPY TinyHubMarket.json ./TinyHubMarket.json
 
-# Expose RPC
 EXPOSE 8545
-
-# Shared volume for deployment.json
 VOLUME /shared
 
 COPY hardhat-start.sh .

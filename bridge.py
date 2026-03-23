@@ -1,3 +1,4 @@
+import os
 """
 TINY-HUB-NETWORK — Pub/Sub → Blockchain Bridge
 Subscribes to energy-pulse, and when a trade is SETTLED,
@@ -23,7 +24,7 @@ from web3 import Web3
 PROJECT_ID = "tiny-hub-network"
 SUBSCRIPTION_ID = "energy-pulse-sub"
 # ─── Blockchain Config ───────────────────────────────────────────
-RPC_URL = "http://127.0.0.1:8545"  # Local Hardhat node
+RPC_URL = os.environ.get("RPC_URL", "http://127.0.0.1:8545")  # Local Hardhat node
 
 # Hardhat default accounts (pre-funded with 10000 ETH each)
 # Account 0 = seller, Account 1 = buyer

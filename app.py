@@ -12,9 +12,10 @@ import os
 import json
 import threading
 from cloudsql_api import register_postgis_routes
+from chain_api import register_chain_routes
 from datetime import datetime
 from collections import deque
-from flask import Flask, render_template, jsonify, Response, request
+from flask import Flask, render_template, jsonify, Response, request, session, redirect, url_for
 from openadr_vtn import oadr_bp, init_vtn
 from smart_meter import get_meter_client
 from fraud_detection import get_detector
@@ -22,8 +23,64 @@ from websocket_handler import init_socketio, broadcast_trade as ws_broadcast_tra
 from vnm_reporting import VNMReporter
 from google.cloud import pubsub_v1
 
+import os as _os
+import functools
+import hashlib
+import secrets
+
+# ── Auth Config ─────────────────────────────────────────────
+ADMIN_USER = _os.environ.get("TINYHUB_ADMIN_USER", "admin")
+ADMIN_PASS = _os.environ.get("TINYHUB_ADMIN_PASS", "tinyhub2026")
+SECRET_KEY = _os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
+
 app = Flask(__name__)
+app.secret_key = SECRET_KEY
 app.register_blueprint(oadr_bp)
+
+# ── Auth Routes + Decorator ─────────────────────────────────
+def login_required(f):
+    """Decorator to require authentication."""
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("authenticated"):
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Authentication required"}), 401
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.before_request
+def check_auth():
+    """Check auth on every request except login and static files."""
+    open_paths = ["/login", "/static", "/favicon.ico", "/api/", "/oadr/"]
+    if any(request.path.startswith(p) for p in open_paths):
+        return None
+    if not session.get("authenticated"):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Authentication required"}), 401
+        return redirect(url_for("login"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Login page."""
+    if request.method == "POST":
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+        if username == ADMIN_USER and password == ADMIN_PASS:
+            session["authenticated"] = True
+            session["user"] = username
+            return redirect("/")
+        return render_template("login.html", error="Invalid username or password")
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    """Clear session and redirect to login."""
+    session.clear()
+    return redirect(url_for("login"))
 socketio = init_socketio(app)
 
 # ── Config ──────────────────────────────────────────────────
@@ -342,6 +399,7 @@ except Exception as _e:
     print(f"  ⚠️  OpenADR VTN init failed: {_e}")
 
 register_postgis_routes(app)
+register_chain_routes(app)
 
 
 # ── Smart Meter API ─────────────────────────────────────────

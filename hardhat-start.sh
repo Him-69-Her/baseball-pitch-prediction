@@ -19,14 +19,25 @@ done
 
 echo "  ✅ Hardhat node ready"
 
-# Deploy contracts
+# Deploy contracts (deploy.js deploys Market + Token)
 echo "  Deploying smart contracts..."
-npx hardhat run deploy_v2.js --network localhost
+if [ -f deploy.js ] && [ -f TinyHubMarket.json ]; then
+    npx hardhat run deploy.js --network localhost || echo "  ⚠️  deploy.js failed, trying deploy_v2.js..."
+fi
+
+# Fallback to deploy_v2.js if deploy.js didn't create deployment.json
+if [ ! -f deployment.json ] && [ -f deploy_v2.js ]; then
+    echo "  Trying deploy_v2.js..."
+    npx hardhat run deploy_v2.js --network localhost || echo "  ❌ deploy_v2.js also failed"
+fi
 
 # Copy deployment.json to shared volume
 if [ -f deployment.json ]; then
     cp deployment.json /shared/deployment.json
     echo "  ✅ deployment.json → /shared/"
+    cat deployment.json
+else
+    echo "  ❌ No deployment.json created"
 fi
 
 # Keep node running

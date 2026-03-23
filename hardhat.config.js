@@ -4,7 +4,7 @@ require("@nomicfoundation/hardhat-toolbox");
 module.exports = {
   solidity: "0.8.19",
   paths: {
-    sources: ".",       // Compile .sol files from root (no folders)
+    sources: "./contracts",       // Compile .sol files from root (no folders)
     cache: "./cache",
     artifacts: "./artifacts",
   },

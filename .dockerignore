@@ -1,0 +1,10 @@
+node_modules/
+venv/
+.git/
+__pycache__/
+*.pyc
+artifacts/
+cache/
+*.log
+.db_env
+key.json
