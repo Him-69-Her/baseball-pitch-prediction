@@ -21,6 +21,25 @@ jobs:
       - run: npx hardhat compile
       - run: npx hardhat test
 
+  # ── L2 Contract Compilation ───────────────────────────────
+  contracts-l2:
+    name: L2 Contract Compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Compile V3 + TokenL2
+        run: npx hardhat compile
+      - name: Verify V3 artifacts exist
+        run: |
+          test -f artifacts/contracts/TinyHubMarketV3.sol/TinyHubMarketV3.json
+          test -f artifacts/contracts/TinyHubTokenL2.sol/TinyHubTokenL2.json
+          echo "  ✅ L2 contract artifacts verified"
+
   # ── Python Linting + Tests ────────────────────────────────
   python:
     name: Python Tests
@@ -66,7 +85,7 @@ jobs:
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [contracts, python]
+    needs: [contracts, contracts-l2, python]
     steps:
       - uses: actions/checkout@v4
       - name: Build Python image
@@ -76,7 +95,7 @@ jobs:
       - name: Verify compose config
         run: docker compose config --quiet
 
-  # ── Deploy (only on main push) ────────────────────────────
+  # ── Deploy to VM (only on main push) ──────────────────────
   deploy:
     name: Deploy to VM
     runs-on: ubuntu-latest
@@ -95,3 +114,40 @@ jobs:
             git pull origin main
             sudo docker-compose up -d --build
             sudo docker-compose ps
+
+  # ── Deploy L2 Contracts (manual trigger) ──────────────────
+  deploy-l2:
+    name: Deploy L2 Contracts
+    runs-on: ubuntu-latest
+    needs: [contracts-l2]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: arbitrum-sepolia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx hardhat compile
+      - name: Deploy to Arbitrum Sepolia
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          SETTLER_ADDRESS: ${{ secrets.SETTLER_ADDRESS }}
+          ARBISCAN_API_KEY: ${{ secrets.ARBISCAN_API_KEY }}
+        run: npx hardhat run deploy_l2.js --network arbitrumSepolia
+      - name: Save deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-l2
+          path: deployment_l2.json
+      - name: Copy deployment to VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 35.209.110.230
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/tiny-hub
+            git pull origin main
+            echo "  ✅ L2 deployment synced to VM"

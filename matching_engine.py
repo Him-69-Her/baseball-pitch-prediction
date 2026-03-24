@@ -34,11 +34,23 @@ Usage (drop into any marketplace file):
 
 from __future__ import annotations
 from battery_vpp import get_battery, all_battery_status
+from pricing_agent import get_pricing_agent
 import math
 from dataclasses import dataclass, field
 
 # Ameren IL retail rate — fallback price when no P2P seller available
 AMEREN_RETAIL_RATE = 0.12   # $/kWh (typical IL residential retail)
+
+# ── Unbundled Rate Components (ICC filings) ─────────────────
+# Retail = Supply + Delivery. P2P only displaces Supply.
+# Buyers always pay Delivery to the utility regardless.
+#
+# Ameren IL (D91):  Supply ~$70/MWh, Delivery ~$50/MWh
+# ComEd (D63):      Supply ~$65/MWh, Delivery ~$55/MWh
+AMEREN_SUPPLY_RATE   = 0.070   # $/kWh — the rate P2P competes against
+AMEREN_DELIVERY_RATE = 0.050   # $/kWh — paid to utility regardless
+COMED_SUPPLY_RATE    = 0.065   # $/kWh
+COMED_DELIVERY_RATE  = 0.055   # $/kWh
 AMEREN_SELLER_ID   = "ameren-macro-grid"
 AMEREN_SELLER_LABEL = "Ameren IL Macro-Grid"
 AMEREN_SELLER_TOWN  = "District-wide"
@@ -140,19 +152,28 @@ class MatchingEngine:
 
     def __init__(self, toll: float = 0.025, mode: str = "pro_rata",
                  fallback_routing: bool = True,
-                 retail_rate: float = AMEREN_RETAIL_RATE):
+                 retail_rate: float = AMEREN_RETAIL_RATE,
+                 supply_rate: float = AMEREN_SUPPLY_RATE,
+                 delivery_rate: float = AMEREN_DELIVERY_RATE):
         """
         Args:
             toll:             Grid toll in $/kWh (Ameren=0.025, ComEd=0.02)
             mode:             "pro_rata", "price_priority", or "proximity"
             fallback_routing: If True, unmatched buyers get macro-grid supply
                               at retail_rate. Zero disruption to buyer.
-            retail_rate:      Ameren/ComEd retail rate for fallback trades.
+            retail_rate:      Full retail rate (supply + delivery).
+            supply_rate:      Utility supply-only rate — the rate P2P competes against.
+                              Ameren=0.070, ComEd=0.065
+            delivery_rate:    Utility delivery/logistics rate — buyer pays this
+                              to the utility regardless of P2P trading.
+                              Ameren=0.050, ComEd=0.055
         """
         self.toll = toll
         self.mode = mode
         self.fallback_routing = fallback_routing
         self.retail_rate = retail_rate
+        self.supply_rate = supply_rate
+        self.delivery_rate = delivery_rate
         self._sell_orders: list[SellOrder] = []
         self._buy_orders:  list[BuyOrder]  = []
 
@@ -388,8 +409,12 @@ class MatchingEngine:
 
             generated_mwh = min(s.remaining_mwh, b.remaining_mwh)
             delivered_mwh = round(generated_mwh * (1 - LINE_LOSS_PCT), 4)
-            settled  = round((s.ask_price + b.bid_price) / 2, 4)
+            # Unbundled clearing: midpoint capped at supply rate
+            raw_settled = (s.ask_price + b.bid_price) / 2
+            settled  = round(min(raw_settled, self.supply_rate * 0.95), 4)
             profit   = round((settled - self.toll) * generated_mwh, 4)
+            savings  = round((self.supply_rate - settled) * delivered_mwh, 4)
+            savings_pct = round((1 - settled / self.supply_rate) * 100, 1) if self.supply_rate > 0 else 0
             dist     = self._distance(s, b)
 
             trades.append(MatchedTrade(
@@ -401,6 +426,10 @@ class MatchingEngine:
                 bid_price=b.bid_price, settled_price=settled,
                 net_profit=profit, grid_price=grid_price,
                 match_type="price_priority", distance_km=dist,
+                supply_rate=self.supply_rate,
+                delivery_rate=self.delivery_rate,
+                buyer_savings=savings,
+                savings_pct=savings_pct,
             ))
 
             s.remaining_mwh -= generated_mwh

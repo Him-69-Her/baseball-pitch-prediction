@@ -183,3 +183,25 @@ def get_battery(station_id: str, label: str, capacity_mwh: float,
 def all_battery_status() -> list[dict]:
     """Return status of all registered batteries."""
     return [b.status() for b in _registry.values()]
+
+
+# ── Dispatch Optimizer Integration (#23) ────────────────────
+# When dispatch_optimizer is available, get_battery() returns
+# an OptimizedBattery instead of a basic BatteryVPP.
+try:
+    from dispatch_optimizer import get_optimized_battery, all_optimized_battery_status
+
+    _original_get_battery = get_battery
+
+    def get_battery(station_id: str, label: str, capacity_mwh: float,
+                    toll: float = 0.025) -> BatteryVPP:
+        """Upgraded: returns OptimizedBattery with lookahead dispatch."""
+        return get_optimized_battery(station_id, label, capacity_mwh, toll)
+
+    def all_battery_status() -> list[dict]:
+        """Upgraded: includes optimization metrics."""
+        return all_optimized_battery_status()
+
+    print("  🤖 Dispatch optimizer loaded — batteries using lookahead scheduling")
+except ImportError:
+    print("  ⚠️  dispatch_optimizer not found — using basic threshold logic")

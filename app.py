@@ -160,6 +160,7 @@ def d63_callback(message):
                 stats["d63"]["settled"] += 1
                 stats["d63"]["mwh"] += trade.get("mwh", 0)
                 stats["d63"]["profit"] += trade.get("net_profit", 0)
+                stats["d63"]["co2"] += trade.get("co2_tons", trade.get("mwh", 0) * 0.42)
             elif status == "REJECTED":
                 stats["d63"]["rejected"] += 1
             if "ISLAND" in status:
@@ -194,6 +195,7 @@ def d91_callback(message):
                 stats["d91"]["settled"] += 1
                 stats["d91"]["mwh"] += trade.get("mwh", 0)
                 stats["d91"]["profit"] += trade.get("net_profit", 0)
+                stats["d91"]["co2"] += trade.get("co2_tons", trade.get("mwh", 0) * 0.42)
             elif status == "REJECTED":
                 stats["d91"]["rejected"] += 1
             if "ISLAND" in status:

@@ -9,3 +9,6 @@ cache/
 __pycache__/
 *.pyc
 .db_env
+.env
+deployment-l2.json
+deployment_l2.json

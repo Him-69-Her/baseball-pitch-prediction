@@ -277,34 +277,80 @@ def is_duplicate(message_id: str) -> bool:
             seen_ids.discard(evicted)
         return False
 recent_txs = deque(maxlen=50)
+# ── Nonce Manager (Task #2 fix) ─────────────────────────────
+# Prevents nonce collisions when multiple Pub/Sub messages arrive
+# concurrently. Tracks the pending nonce locally instead of
+# querying the chain each time (which returns the confirmed count,
+# not the pending count).
+chain_lock = threading.Lock()  # Serialize ALL on-chain operations
+
+class NonceManager:
+    """Thread-safe local nonce tracker per account."""
+    def __init__(self, w3_instance):
+        self._w3 = w3_instance
+        self._nonces = {}  # account_address -> next_nonce
+        self._lock = threading.Lock()
+
+    def get_nonce(self, account: str) -> int:
+        """Get the next nonce for an account. Call inside chain_lock."""
+        with self._lock:
+            if account not in self._nonces:
+                # First call: sync from chain
+                self._nonces[account] = self._w3.eth.get_transaction_count(account)
+            nonce = self._nonces[account]
+            self._nonces[account] += 1
+            return nonce
+
+    def resync(self, account: str):
+        """Resync nonce from chain after a failure."""
+        with self._lock:
+            self._nonces[account] = self._w3.eth.get_transaction_count(account)
+
+    def reset_all(self):
+        """Clear all tracked nonces (force resync on next call)."""
+        with self._lock:
+            self._nonces.clear()
+
+nonce_mgr = NonceManager(w3)
+
 
 # ── Settle a trade on-chain ─────────────────────────────────
 def settle_onchain(trade):
     """
-    Two-step on-chain settlement:
-    1. Seller lists the resource
-    2. Buyer purchases it
+    Two-step on-chain settlement with nonce management.
+    Serialized via chain_lock to prevent nonce collisions.
+
+    Steps:
+      1. Seller calls listResource()
+      2. Buyer calls purchaseResource() (or bridgeResource())
+      3. Mint THN tokens to seller
+      4. Burn toll from seller
+
+    Retries once on failure with nonce resync.
     """
+    with chain_lock:
+        return _settle_onchain_inner(trade, retry=True)
+
+
+def _settle_onchain_inner(trade, retry=True):
+    """Inner settlement logic — always called inside chain_lock."""
     station_id = trade.get("station_id", "unknown")
     district = trade.get("district", "IL_D91")
     mwh = trade.get("mwh", 0)
     settled_price = trade.get("settled_price", 0)
     is_bridge = trade.get("trade_status") == "BRIDGE_LISTED"
 
-    # Convert to wei-compatible integers
-    # amount = MWh * 1000 (to avoid decimals, use milliMWh)
     amount_milli = int(mwh * 1000)
     if amount_milli <= 0:
         return None
 
-    # price per unit in wei (settled_price is $/MWh, scale to wei)
-    # Using 1 wei = $0.0001 for simulation (arbitrary mapping)
     price_wei = int(settled_price * 10000)
     if price_wei <= 0:
         price_wei = 1
 
     try:
         # Step 1: Seller lists the resource
+        seller_nonce = nonce_mgr.get_nonce(SELLER_ACCOUNT)
         tx_list = contract.functions.listResource(
             station_id,
             district,
@@ -313,36 +359,39 @@ def settle_onchain(trade):
             0  # ResourceType.Energy
         ).build_transaction({
             "from": SELLER_ACCOUNT,
-            "nonce": w3.eth.get_transaction_count(SELLER_ACCOUNT),
+            "nonce": seller_nonce,
             "gas": 300000,
             "gasPrice": w3.eth.gas_price,
         })
         tx_hash_list = w3.eth.send_transaction(tx_list)
         receipt_list = w3.eth.wait_for_transaction_receipt(tx_hash_list, timeout=30)
 
-        # Get the trade ID from the contract
         trade_id = contract.functions.tradeCount().call()
 
         # Step 2: Buyer purchases (or bridges)
+        buyer_nonce = nonce_mgr.get_nonce(BUYER_ACCOUNT)
         total_cost = (amount_milli * price_wei) + platform_fee
+
         if is_bridge:
             buyer_district = trade.get("origin_district", "McHenry_D63")
-            total_cost = (amount_milli * price_wei) + (platform_fee * 2)  # 2x fee for bridge
+            total_cost = (amount_milli * price_wei) + (platform_fee * 2)
             tx_buy = contract.functions.bridgeResource(
                 trade_id,
                 buyer_district
             ).build_transaction({
                 "from": BUYER_ACCOUNT,
-                "nonce": w3.eth.get_transaction_count(BUYER_ACCOUNT),
-                "gas": 200000,
+                "nonce": buyer_nonce,
+                "gas": 300000,
                 "gasPrice": w3.eth.gas_price,
                 "value": total_cost,
             })
         else:
-            tx_buy = contract.functions.purchaseResource(trade_id).build_transaction({
+            tx_buy = contract.functions.purchaseResource(
+                trade_id
+            ).build_transaction({
                 "from": BUYER_ACCOUNT,
-                "nonce": w3.eth.get_transaction_count(BUYER_ACCOUNT),
-                "gas": 200000,
+                "nonce": buyer_nonce,
+                "gas": 300000,
                 "gasPrice": w3.eth.gas_price,
                 "value": total_cost,
             })
@@ -352,42 +401,46 @@ def settle_onchain(trade):
 
         total_gas = receipt_list.gasUsed + receipt_buy.gasUsed
 
-        # Step 3: Mint THN tokens (1 THN = 1 MWh)
+        # Step 3 & 4: Mint THN + burn toll (non-critical)
         thn_minted = 0.0
         thn_burned = 0.0
         if token_contract:
             try:
-                # Mint MWh amount to seller
-                mint_amount = w3.to_wei(mwh, 'ether')  # 1 THN = 1e18, like 1 ETH
-                toll = 0.02 if district == "McHenry_D63" else 0.025  # ComEd vs Ameren
-                burn_amount = w3.to_wei(toll, 'ether')
+                token_amount = int(mwh * 1e18)
+                toll = int(0.02 * 1e18)  # Grid toll in THN
 
+                mint_nonce = nonce_mgr.get_nonce(SELLER_ACCOUNT)
                 tx_mint = token_contract.functions.mint(
-                    SELLER_ACCOUNT, mint_amount, station_id
+                    SELLER_ACCOUNT,
+                    token_amount,
+                    station_id
                 ).build_transaction({
                     "from": SELLER_ACCOUNT,
-                    "nonce": w3.eth.get_transaction_count(SELLER_ACCOUNT),
-                    "gas": 100000,
+                    "nonce": mint_nonce,
+                    "gas": 200000,
                     "gasPrice": w3.eth.gas_price,
                 })
                 w3.eth.send_transaction(tx_mint)
 
-                # Burn toll
+                burn_nonce = nonce_mgr.get_nonce(SELLER_ACCOUNT)
                 tx_burn = token_contract.functions.burn(
-                    SELLER_ACCOUNT, burn_amount, f"grid_toll_{district}"
+                    SELLER_ACCOUNT,
+                    toll,
+                    "grid_toll"
                 ).build_transaction({
                     "from": SELLER_ACCOUNT,
-                    "nonce": w3.eth.get_transaction_count(SELLER_ACCOUNT),
-                    "gas": 100000,
+                    "nonce": burn_nonce,
+                    "gas": 200000,
                     "gasPrice": w3.eth.gas_price,
                 })
                 w3.eth.send_transaction(tx_burn)
 
                 thn_minted = mwh
-                thn_burned = toll
+                thn_burned = 0.02
             except Exception as te:
-                pass  # Token ops are non-critical
+                print(f"  ⚠️  Token ops failed (non-critical): {te}")
 
+        # Update stats
         with stats_lock:
             if is_bridge:
                 stats["bridged_onchain"] += 1
@@ -411,9 +464,20 @@ def settle_onchain(trade):
         return result
 
     except Exception as e:
-        with stats_lock:
-            stats["failed"] += 1
-        return {"error": str(e)}
+        if retry and ("nonce" in str(e).lower() or "underpriced" in str(e).lower()):
+            # Nonce desync — resync and retry once
+            print(f"  ⚠️  Nonce error, resyncing: {e}")
+            nonce_mgr.resync(SELLER_ACCOUNT)
+            nonce_mgr.resync(BUYER_ACCOUNT)
+            return _settle_onchain_inner(trade, retry=False)
+        else:
+            with stats_lock:
+                stats["failed"] += 1
+            print(f"  ❌ Settlement failed: {e}")
+            # Resync nonces even on non-retry failure
+            nonce_mgr.resync(SELLER_ACCOUNT)
+            nonce_mgr.resync(BUYER_ACCOUNT)
+            return {"error": str(e)}
 
 
 # ── Pub/Sub Callbacks ───────────────────────────────────────
@@ -549,7 +613,7 @@ for sub_id, topic_id in [(SETTLER_D63_SUB, D63_TOPIC), (SETTLER_D91_SUB, D91_TOP
             raise
 
 # ── Subscribe ───────────────────────────────────────────────
-flow = pubsub_v1.types.FlowControl(max_messages=5)  # Throttle to avoid nonce issues
+flow = pubsub_v1.types.FlowControl(max_messages=1)  # Serialize to prevent nonce races  # Throttle to avoid nonce issues
 
 d63_sub_path = subscriber.subscription_path(PROJECT_ID, SETTLER_D63_SUB)
 d91_sub_path = subscriber.subscription_path(PROJECT_ID, SETTLER_D91_SUB)

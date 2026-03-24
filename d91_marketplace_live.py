@@ -384,7 +384,7 @@ _oadr_event_id     = None
 _oadr_lock         = threading.Lock()
 
 # ── Deterministic order matching engine ─────────────────────
-_engine = MatchingEngine(toll=AMEREN_TOLL, mode="pro_rata")
+_engine = MatchingEngine(toll=AMEREN_TOLL, supply_rate=0.070, delivery_rate=0.050, mode="pro_rata")
 ISLAND_THRESHOLD = 0.32
 
 trade_count = 0
