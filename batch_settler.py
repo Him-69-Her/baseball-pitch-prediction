@@ -243,7 +243,7 @@ def flush_batch():
                 # Step 1: Bulk list for this seller
                 seller_nonce = nonce_mgr.get_nonce(SELLER_ACCOUNT)
                 tx_list = contract.functions.listResource(
-                    station_id, district, amount_milli, price_wei, 0
+                    station_id, amount_milli, price_wei, 0
                 ).build_transaction({
                     "from": SELLER_ACCOUNT,
                     "nonce": seller_nonce,

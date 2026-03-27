@@ -387,7 +387,7 @@ class MatchingEngine:
 
         return trades
 
-        def _match_price_priority(self, grid_price: float) -> list[MatchedTrade]:
+    def _match_price_priority(self, grid_price: float) -> list[MatchedTrade]:
         """
         Standard order book: cheapest seller fills highest bidder first.
         Greedy. Produces 1 trade per seller-buyer pair.
