@@ -67,7 +67,7 @@ services:
     command: python3 -u batch_settler.py
     environment:
       - RPC_URL=http://hardhat:8545
-      - BATCH_INTERVAL_SEC=3600
+      - BATCH_INTERVAL_SEC=300
     depends_on:
       hardhat:
         condition: service_healthy
