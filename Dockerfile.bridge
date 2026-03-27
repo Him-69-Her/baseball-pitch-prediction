@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+WORKDIR /app
+
+ENV PIP_ROOT_USER_ACTION=ignore
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN pip install --upgrade pip && pip install --no-cache-dir web3 google-cloud-pubsub google-cloud-secret-manager
+
+COPY d91_bridge_l2.py service_wrapper.py ./
+COPY TinyHubMarket.json ./
+
+CMD ["python3", "-u", "service_wrapper.py"]
