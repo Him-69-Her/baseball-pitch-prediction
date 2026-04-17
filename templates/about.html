@@ -155,13 +155,24 @@ section.block:last-child{margin-bottom:0}
 .mission-words .w2{color:var(--cyan);text-shadow:0 0 10px var(--cyan-dim);padding-left:clamp(1rem,3vw,2.5rem)}
 .mission-words .w3{color:var(--magenta);text-shadow:0 0 10px var(--magenta);padding-left:clamp(2rem,6vw,5rem)}
 .mission-statement-block{
-  border-left:2px solid var(--sun-2);padding:1.2rem 0 1.2rem 1.5rem;
-  background:linear-gradient(90deg,rgba(255,149,0,0.08),transparent 80%);
+  border:1px solid var(--sun-2);padding:2.2rem 2rem;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(255,149,0,0.1), transparent 70%),
+    linear-gradient(135deg, rgba(255,204,0,0.04), rgba(255,85,0,0.02));
+  position:relative;
+}
+.mission-statement-block::before{
+  content:"";position:absolute;top:-1px;left:-1px;width:24px;height:24px;
+  border-top:2px solid var(--sun-1);border-left:2px solid var(--sun-1);
+}
+.mission-statement-block::after{
+  content:"";position:absolute;bottom:-1px;right:-1px;width:24px;height:24px;
+  border-bottom:2px solid var(--sun-1);border-right:2px solid var(--sun-1);
 }
 .mission-statement-block p{
   font-family:'Inter',sans-serif;
-  font-size:clamp(1rem,1.3vw,1.15rem);
-  line-height:1.65;color:var(--ink);font-weight:400;
+  font-size:clamp(1.2rem,1.8vw,1.45rem);
+  line-height:1.7;color:var(--ink);font-weight:400;
 }
 
 /* ─── PROBLEM ─── */
@@ -190,7 +201,7 @@ section.block:last-child{margin-bottom:0}
 }
 .stat-label{
   font-family:'JetBrains Mono',monospace;
-  font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cyan-dim);
+  font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan-dim);
   line-height:1.5;
 }
 
@@ -201,11 +212,10 @@ section.block:last-child{margin-bottom:0}
   font-size:.9rem;letter-spacing:.15em;text-transform:uppercase;
   color:var(--sun-1);text-shadow:0 0 6px var(--sun-2);
   margin-bottom:.8rem;font-weight:700;
-  display:flex;align-items:center;gap:.8rem;
 }
-.problem-sub h3::before{content:"▸";color:var(--cyan);font-size:.95rem}
-.problem-sub h3::after{content:"";flex:1;height:1px;background:linear-gradient(to right,rgba(255,149,0,0.4),transparent)}
-.problem-sub p{font-size:1rem;line-height:1.7;color:var(--ink-body);margin-bottom:.9rem;font-weight:300;max-width:68ch}
+.problem-sub h3::after{content:"";display:block;margin-top:.4rem;height:1px;background:linear-gradient(to right,rgba(255,149,0,0.4),transparent)}
+.problem-sub p{font-size:1rem;line-height:1.7;color:var(--ink-body);margin-bottom:.9rem;font-weight:300;max-width:68ch;
+  padding-left:1.2rem;border-left:2px solid rgba(0,240,255,0.3);}
 .problem-sub p strong{color:var(--ink);font-weight:500}
 
 .problem-close{
@@ -406,7 +416,7 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 01 MISSION -->
   <section class="block" id="mission">
-    <h2 class="section-title">01. Mission</h2>
+    <h2 class="section-title">Mission</h2>
     <div class="mission-statement-block">
         <p>Providing grid upgrades for the future of energy through an affordable, sustainable, and transparent marketplace where communities generate, share, and profit from their own power.</p>
       </div>
@@ -414,14 +424,14 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 02 PROBLEM -->
   <section class="block" id="problem">
-    <h2 class="section-title">02. The Problem</h2>
+    <h2 class="section-title">The Problem</h2>
 
     <p class="problem-intro">The grid was built to move power one way, from centralized plants to passive customers. <strong>That model is breaking down.</strong> Data centers are driving record load growth, old generation is retiring, and severe weather is straining infrastructure that was never designed for any of it. To cover the gap, utilities are raising rates faster than their customers can absorb them.</p>
 
     <div class="stat-row">
-      <div class="stat"><div class="stat-num">≈2x</div><div class="stat-label">Ameren Rate<br>5-Year Rise</div></div>
+      <div class="stat"><div class="stat-num">2x</div><div class="stat-label">Ameren Rate<br>5-Year Rise</div></div>
       <div class="stat"><div class="stat-num">$606M</div><div class="stat-label">ComEd Delivery<br>Rate Hike</div></div>
-      <div class="stat"><div class="stat-num">1,000%+</div><div class="stat-label">PJM Capacity<br>Price Surge</div></div>
+      <div class="stat"><div class="stat-num">+1,000%</div><div class="stat-label">PJM Capacity<br>Price Surge</div></div>
       <div class="stat"><div class="stat-num">22x</div><div class="stat-label">MISO Auction<br>Price Spike</div></div>
     </div>
 
@@ -454,7 +464,7 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 03 THESIS -->
   <section class="block" id="thesis">
-    <h2 class="section-title">03. Thesis</h2>
+    <h2 class="section-title">Thesis</h2>
 
     <div class="thesis-intro">
       <p>The energy conversation for the last decade has mostly been about generation. How do we make more clean power? Solar, wind, batteries, nuclear, all of it.</p>
@@ -504,7 +514,7 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 04 WHERE WE ARE NOW -->
   <section class="block" id="status">
-    <h2 class="section-title">04. Where We Are Now</h2>
+    <h2 class="section-title">Where We Are Now</h2>
 
     <div class="status-grid">
       <div class="status-card">
@@ -562,7 +572,7 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 05 FOUNDER NOTE -->
   <section class="block" id="founder">
-    <h2 class="section-title">05. Founder Note</h2>
+    <h2 class="section-title">Founder Note</h2>
 
     <div class="founder-letter">
       <p>I grew up in a small town. That's not a line in a pitch deck. It's the whole reason Tiny-Hub exists.</p>
