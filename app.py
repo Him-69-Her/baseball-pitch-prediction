@@ -305,7 +305,7 @@ def api_buildings_d91():
             })
 
         return jsonify({
-            "sellers": sellers + res_sellers,
+            "sellers": sorted(sellers + res_sellers, key=lambda x: x["mwh"], reverse=True)[:2000],
             "buyers": buyers,
             "residential_count": bdata.get("residential_count", 0),
             "ev_battery_count": bdata.get("ev_battery_count", 0),
