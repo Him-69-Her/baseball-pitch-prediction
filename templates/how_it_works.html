@@ -22,12 +22,12 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
 nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:1.2rem 2rem;background:linear-gradient(to bottom,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.75) 70%,transparent);border-bottom:1px solid rgba(0,240,255,0.15);backdrop-filter:blur(6px)}
 .logo{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:.15em;color:var(--sun-1);text-decoration:none;text-shadow:0 0 8px var(--sun-2),0 0 24px var(--sun-3)}
 .nav-links{display:flex;gap:1.4rem;list-style:none;flex-wrap:wrap;justify-content:flex-end}
-.nav-links a{color:var(--cyan);text-decoration:none;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;transition:all .2s;text-shadow:0 0 4px var(--cyan-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.nav-links a{color:var(--cyan);text-decoration:none;font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;transition:all .2s;text-shadow:0 0 4px var(--cyan-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace;font-weight:700}
 .nav-links a:hover{color:var(--magenta);text-shadow:0 0 8px var(--magenta)}
 .nav-links a.active{color:var(--sun-1);text-shadow:0 0 8px var(--sun-2)}
 
 /* HERO */
-.page-hero{position:relative;height:42vh;min-height:300px;overflow:hidden}
+.page-hero{position:relative;height:42vh;min-height:300px;overflow:hidden;background:linear-gradient(to bottom,#000 0%,#020a18 40%,#0a1628 70%,#0d1a2d 100%)}
 .stars{position:absolute;inset:0;z-index:0;pointer-events:none;
   background:
     radial-gradient(1px 1px at 10% 15%,#fff 50%,transparent 100%),
@@ -64,7 +64,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:
 
 /* Section nav */
 .section-nav{display:flex;justify-content:center;gap:0;border-bottom:1px solid rgba(0,240,255,0.2);background:rgba(0,0,0,0.92);z-index:45;backdrop-filter:blur(6px)}
-.section-nav a{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-dim);text-decoration:none;padding:.9rem 1.4rem;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.section-nav a{font-family:'JetBrains Mono',monospace;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-dim);text-decoration:none;padding:.9rem 1.4rem;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
 .section-nav a:hover{color:var(--cyan);border-bottom-color:var(--cyan)}
 .section-nav a.active-tab{color:var(--sun-1);border-bottom-color:var(--sun-1);text-shadow:0 0 6px var(--sun-2)}
 @media(max-width:700px){.section-nav{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch}.section-nav a{padding:.8rem 1rem;font-size:.6rem}}
@@ -134,7 +134,7 @@ footer .brand{color:var(--sun-2)}
 <body>
 
 <nav>
-  <a href="/" class="logo">TINY&middot;HUB</a>
+  <a href="/" class="logo">TINYHUB</a>
   <ul class="nav-links">
     <li><a href="/about">About</a></li>
     <li><a href="/how-it-works" class="active">How It Works</a></li>
@@ -175,9 +175,9 @@ footer .brand{color:var(--sun-2)}
 
 <div class="section-nav" id="section-nav">
   <a href="#" data-tab="overview" class="active-tab">Overview</a>
-  <a href="#" data-tab="match">01. Match</a>
-  <a href="#" data-tab="settle">02. Settle</a>
-  <a href="#" data-tab="deliver">03. Deliver</a>
+  <a href="#" data-tab="match">Match</a>
+  <a href="#" data-tab="settle">Settle</a>
+  <a href="#" data-tab="deliver">Deliver</a>
 </div>
 
 <main>
@@ -214,8 +214,7 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 01 MATCH -->
   <section class="block" id="match">
-    <div class="step-num">01</div>
-    <h2 class="section-title">01. Match</h2>
+    <h2 class="section-title">Match</h2>
     <div class="prose">
       <p>Every 5 minutes, the matching engine scans all active sellers and buyers in the district. Sellers are ranked by surplus output (driven by real-time solar irradiance). Buyers are ranked by demand. The engine pairs them using <em>proximity-first matching</em>: the closest seller to each buyer wins.</p>
       <p>This isn't theoretical. The engine runs against a digital twin of District 91 (Ameren / MISO territory) with over a thousand real buildings mapped with lat/lng coordinates and solar capacity data.</p>
@@ -252,8 +251,7 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 02 SETTLE -->
   <section class="block" id="settle">
-    <div class="step-num">02</div>
-    <h2 class="section-title">02. Settle</h2>
+    <h2 class="section-title">Settle</h2>
     <div class="prose">
       <p>Matched trades don't settle one at a time. They batch-aggregate off-chain in 5-minute windows, then settle as a single transaction on Arbitrum L2. This is <em>optimistic settlement</em>: trades clear immediately based on live inverter telemetry, and the utility's delayed Green Button data becomes a trailing audit, not a blocker.</p>
       <p>The result: roughly 95% gas savings compared to settling each trade individually on-chain, and a settlement speed that actually matches the physical grid.</p>
@@ -290,8 +288,7 @@ footer .brand{color:var(--sun-2)}
 
   <!-- 03 DELIVER -->
   <section class="block" id="deliver">
-    <div class="step-num">03</div>
-    <h2 class="section-title">03. Deliver</h2>
+    <h2 class="section-title">Deliver</h2>
     <div class="prose">
       <p>The electrons move over the existing wire. ComEd or Ameren's distribution infrastructure carries the power from seller to buyer exactly the way it always has. We don't build new lines. We don't ask the utility for permission. We route around their pricing model while using their physical infrastructure.</p>
       <p>The legal basis: <em>FERC Order 2222</em> establishes federal preemption for distributed energy resource aggregators. Tiny-Hub positions as a federally protected Demand Response Optimizer, which overrides state-level ICC jurisdiction on interstate grid operations. This is a structural legal moat, not just a memo.</p>
@@ -329,7 +326,7 @@ footer .brand{color:var(--sun-2)}
 </main>
 
 <footer>
-  <div><span class="brand">TINY&middot;HUB ENERGY</span> &nbsp;//&nbsp; Upgrading the grid, one neighborhood at a time.</div>
+  <div><span class="brand">TINYHUB ENERGY</span> &nbsp;//&nbsp; Upgrading the grid, one neighborhood at a time.</div>
   <div>&copy; 2026 // tinyhub.energy</div>
 </footer>
 
