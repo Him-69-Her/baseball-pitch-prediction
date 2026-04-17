@@ -66,11 +66,11 @@ def logout():
 socketio = init_socketio(app)
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = "tinyhub-data-dev"
 D63_SUB = "energy-pulse-dashboard-sub"
-D91_SUB = "district91-energy-dashboard-sub"
+D91_SUB = "d91-dashboard-sub"
 D63_TOPIC = "energy-pulse"
-D91_TOPIC = "district91-energy"
+D91_TOPIC = "d91-trades"
 
 # ── Trade Buffers ───────────────────────────────────────────
 MAX_TRADES = 200
