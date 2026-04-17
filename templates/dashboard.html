@@ -370,6 +370,7 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+    function $(id) { return document.getElementById(id); }
     // ═══ NAV ═══
     let currentView = 'd91';
     const maps = {};
@@ -550,7 +551,6 @@
     });
 
     // ═══ HELPERS ═══
-    function $(id) { return document.getElementById(id); }
     function fmt(n, d = 2) { return Number(n).toFixed(d); }
     function fmtK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'K' : fmt(n, 2); }
     function fmtKWh(mwh) { const kwh = mwh * 1000; return kwh >= 1000 ? fmt(mwh, 2) + ' MWh' : fmt(kwh, 1) + ' kWh'; }
