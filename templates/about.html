@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>About preview</title>
+<title>TINY-HUB ENERGY // About</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Monoton&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#000;--cyan:#00f0ff;--cyan-dim:#00b8c7;--magenta:#ff2d95;
@@ -12,19 +12,51 @@
   --ink:#e6f8ff;--ink-dim:#7ba9b3;--ink-body:#cdd8db;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden}
+html,body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden;scroll-behavior:smooth}
+html{scroll-padding-top:8.5rem}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
   background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,0.15) 3px,rgba(0,0,0,0) 4px);mix-blend-mode:multiply}
 
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:1.2rem 2rem;background:linear-gradient(to bottom,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.75) 70%,transparent);border-bottom:1px solid rgba(0,240,255,0.15);backdrop-filter:blur(6px)}
-.logo{font-family:'Monoton',cursive;font-size:1.6rem;letter-spacing:.15em;color:var(--sun-1);text-decoration:none;text-shadow:0 0 8px var(--sun-2),0 0 24px var(--sun-3)}
+.logo{font-family:'Orbitron',sans-serif;font-size:1.6rem;letter-spacing:.15em;color:var(--sun-1);text-decoration:none;text-shadow:0 0 8px var(--sun-2),0 0 24px var(--sun-3)}
 .nav-links{display:flex;gap:1.4rem;list-style:none;flex-wrap:wrap;justify-content:flex-end}
 .nav-links a{color:var(--cyan);text-decoration:none;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;transition:all .2s;text-shadow:0 0 4px var(--cyan-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace}
 .nav-links a.active{color:var(--sun-1);text-shadow:0 0 8px var(--sun-2)}
 
 /* HERO (no title/eyebrow) */
 .page-hero{position:relative;height:42vh;min-height:300px;overflow:hidden}
+
+/* Stars in the sky */
+.stars{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1px 1px at 10% 15%, #fff 50%, transparent 100%),
+    radial-gradient(1px 1px at 25% 8%, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 40% 22%, #fff 50%, transparent 100%),
+    radial-gradient(1px 1px at 55% 5%, rgba(255,255,255,0.7) 50%, transparent 100%),
+    radial-gradient(1px 1px at 70% 18%, #fff 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 85% 12%, rgba(255,255,255,0.9) 50%, transparent 100%),
+    radial-gradient(1px 1px at 15% 35%, rgba(255,255,255,0.6) 50%, transparent 100%),
+    radial-gradient(1px 1px at 30% 28%, #fff 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 32%, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(1px 1px at 65% 25%, rgba(255,255,255,0.7) 50%, transparent 100%),
+    radial-gradient(1px 1px at 80% 30%, #fff 50%, transparent 100%),
+    radial-gradient(1px 1px at 92% 20%, rgba(255,255,255,0.6) 50%, transparent 100%),
+    radial-gradient(1px 1px at 5% 10%, rgba(255,255,255,0.5) 50%, transparent 100%),
+    radial-gradient(2px 2px at 48% 12%, rgba(255,255,255,0.9) 50%, transparent 100%),
+    radial-gradient(1px 1px at 35% 42%, rgba(255,255,255,0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 72% 38%, rgba(255,255,255,0.7) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 18% 45%, rgba(255,255,255,0.6) 50%, transparent 100%),
+    radial-gradient(1px 1px at 88% 8%, #fff 50%, transparent 100%),
+    radial-gradient(1px 1px at 95% 35%, rgba(255,255,255,0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 3% 25%, rgba(255,255,255,0.8) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 60% 10%, rgba(255,255,255,0.7) 50%, transparent 100%),
+    radial-gradient(1px 1px at 45% 40%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  animation:twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes twinkle{0%{opacity:.8}100%{opacity:1}}
+
 .atmosphere{position:absolute;left:0;right:0;bottom:50%;height:50%;z-index:1;pointer-events:none;
   background:radial-gradient(ellipse 50% 70% at 50% 100%,rgba(255,204,0,0.35) 0%,rgba(255,149,0,0.22) 20%,rgba(255,85,0,0.12) 45%,transparent 70%),linear-gradient(to top,rgba(255,149,0,0.25) 0%,rgba(255,85,0,0.14) 25%,rgba(199,44,0,0.08) 50%,transparent 100%);filter:blur(4px);animation:atmos-breathe 8s ease-in-out infinite}
 @keyframes atmos-breathe{0%,100%{opacity:.85}50%{opacity:1}}
@@ -33,9 +65,52 @@ nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:
 @keyframes sun-breathe{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.02)}}
 .horizon{position:absolute;bottom:50%;left:0;right:0;height:2px;z-index:4;background:linear-gradient(to right,transparent,var(--cyan) 15%,var(--cyan) 85%,transparent);box-shadow:0 0 12px var(--cyan),0 0 32px var(--cyan),0 0 60px rgba(0,240,255,0.5)}
 .grid-wrap{position:absolute;bottom:0;left:0;right:0;height:50%;perspective:400px;perspective-origin:50% 0%;z-index:2;pointer-events:none;overflow:hidden}
-.grid-floor{position:absolute;bottom:0;left:-50%;width:200%;height:100%;background-image:linear-gradient(to right,var(--cyan) 2px,transparent 2px),linear-gradient(to bottom,var(--cyan) 2px,transparent 2px);background-size:80px 80px;transform:rotateX(70deg);transform-origin:50% 100%;animation:grid-scroll 6s linear infinite;filter:drop-shadow(0 0 6px var(--cyan));opacity:.85}
+/* Grid floor: magenta near horizon fading to cyan at the bottom */
+.grid-floor{
+  position:absolute;bottom:0;left:-50%;width:200%;height:100%;
+  background-image:
+    linear-gradient(to right, var(--cyan) 2px, transparent 2px),
+    linear-gradient(to bottom, var(--cyan) 2px, transparent 2px);
+  background-size:80px 80px;
+  transform:rotateX(70deg);transform-origin:50% 100%;
+  animation:grid-scroll 6s linear infinite;
+  opacity:.85;
+}
+/* Pink/magenta overlay that fades from horizon down into cyan */
+.grid-glow{
+  position:absolute;bottom:0;left:0;right:0;height:50%;z-index:2;pointer-events:none;
+  background:linear-gradient(to bottom,
+    rgba(255,45,149,0.45) 0%,
+    rgba(255,45,149,0.28) 15%,
+    rgba(180,30,120,0.15) 35%,
+    rgba(100,20,80,0.06) 55%,
+    transparent 75%);
+}
 @keyframes grid-scroll{0%{background-position:0 0}100%{background-position:0 80px}}
 .grid-mask{position:absolute;bottom:0;left:0;right:0;height:50%;pointer-events:none;z-index:3;background:linear-gradient(to top,transparent 0%,transparent 40%,rgba(0,0,0,0.6) 80%,#000 100%)}
+
+/* Section nav tabs */
+.section-nav{
+  display:flex;justify-content:center;gap:0;
+  border-bottom:1px solid rgba(0,240,255,0.2);
+  background:rgba(0,0,0,0.92);
+  z-index:45;
+  backdrop-filter:blur(6px);
+}
+.section-nav a{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink-dim);text-decoration:none;
+  padding:.9rem 1.4rem;
+  border-bottom:2px solid transparent;
+  transition:all .2s;white-space:nowrap;
+}
+.section-nav a:hover{color:var(--cyan);border-bottom-color:var(--cyan)}
+.section-nav a.active-tab{color:var(--sun-1);border-bottom-color:var(--sun-1);text-shadow:0 0 6px var(--sun-2)}
+@media(max-width:700px){
+  .section-nav{gap:0;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch}
+  .section-nav a{padding:.8rem 1rem;font-size:.6rem}
+}
 
 /* PAGE LAYOUT */
 main{max-width:1280px;margin:0 auto;padding:4rem 2rem 6rem;position:relative;z-index:2}
@@ -55,24 +130,10 @@ section.block{
 }
 section.block:last-child{margin-bottom:0}
 
-/* Big chapter numeral bleeding off left edge */
-.chapter-marker{
-  position:absolute;left:0;top:-.5rem;
-  font-family:'Monoton',cursive;
-  font-size:clamp(3rem,6vw,5.5rem);
-  color:transparent;
-  -webkit-text-stroke:1.5px var(--cyan-dim);
-  text-stroke:1.5px var(--cyan-dim);
-  letter-spacing:.05em;line-height:1;
-  opacity:.5;
-  pointer-events:none;
-  z-index:0;
-}
-@media(max-width:700px){.chapter-marker{position:relative;left:auto;top:auto;margin-bottom:.5rem;font-size:2.2rem;opacity:.6}}
 
-/* Section title — Monoton amber, matches logo */
+/* Section title — Orbitron amber, matches logo */
 .section-title{
-  font-family:'Monoton',cursive;
+  font-family:'Orbitron',sans-serif;
   font-size:clamp(1.4rem,2.5vw,2rem);
   letter-spacing:.08em;color:var(--sun-1);
   text-shadow:0 0 10px var(--sun-2),0 0 24px var(--sun-3);
@@ -86,7 +147,7 @@ section.block:last-child{margin-bottom:0}
 }
 @media(max-width:800px){.mission-banner{grid-template-columns:1fr}}
 .mission-words{
-  font-family:'Monoton',cursive;
+  font-family:'Orbitron',sans-serif;
   line-height:.95;letter-spacing:.04em;
 }
 .mission-words .w{display:block;font-size:clamp(2.2rem,6vw,4.2rem)}
@@ -122,7 +183,7 @@ section.block:last-child{margin-bottom:0}
 }
 .stat{text-align:center;padding:0 .5rem}
 .stat-num{
-  font-family:'Monoton',cursive;
+  font-family:'Orbitron',sans-serif;
   font-size:clamp(2rem,3.6vw,2.8rem);
   color:var(--sun-1);text-shadow:0 0 8px var(--sun-2);letter-spacing:.02em;
   line-height:1;margin-bottom:.4rem;
@@ -164,7 +225,7 @@ section.block:last-child{margin-bottom:0}
 .thesis-intro p strong{color:var(--cyan);font-weight:500;text-shadow:0 0 4px var(--cyan-dim)}
 
 .thesis-hook{
-  font-family:'Monoton',cursive;
+  font-family:'Orbitron',sans-serif;
   font-size:clamp(1.4rem,2.8vw,2.2rem);
   color:var(--magenta);text-shadow:0 0 10px var(--magenta);
   letter-spacing:.05em;line-height:1.15;
@@ -186,7 +247,7 @@ section.block:last-child{margin-bottom:0}
 .thesis-card::before{content:"";position:absolute;top:0;left:0;width:3px;height:40px;background:var(--magenta);box-shadow:0 0 8px var(--magenta)}
 .thesis-card:hover{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,240,255,0.18)}
 .thesis-card-num{
-  font-family:'Monoton',cursive;font-size:1.6rem;
+  font-family:'Orbitron',sans-serif;font-size:1.6rem;
   color:var(--magenta);text-shadow:0 0 8px var(--magenta);
   letter-spacing:.05em;margin-bottom:.4rem;line-height:1;
 }
@@ -235,7 +296,7 @@ section.block:last-child{margin-bottom:0}
   border-bottom:1px solid rgba(0,240,255,0.15);
 }
 .status-card-title{
-  font-family:'Monoton',cursive;font-size:1.05rem;letter-spacing:.06em;
+  font-family:'Orbitron',sans-serif;font-size:1.05rem;letter-spacing:.06em;
   color:var(--sun-1);text-shadow:0 0 6px var(--sun-2);
 }
 .status-dot{
@@ -273,7 +334,7 @@ section.block:last-child{margin-bottom:0}
 }
 .founder-letter p strong{color:var(--sun-1);font-weight:500;text-shadow:0 0 5px var(--sun-2)}
 .founder-pullquote{
-  font-family:'Monoton',cursive;
+  font-family:'Orbitron',sans-serif;
   font-size:clamp(1.2rem,2.2vw,1.7rem);
   color:var(--cyan);text-shadow:0 0 10px var(--cyan-dim);
   letter-spacing:.04em;line-height:1.2;
@@ -283,7 +344,7 @@ section.block:last-child{margin-bottom:0}
 }
 .signature{
   margin-top:2.5rem;
-  font-family:'Monoton',cursive;
+  font-family:'Orbitron',sans-serif;
   font-size:2rem;letter-spacing:.1em;
   color:var(--sun-1);text-shadow:0 0 12px var(--sun-2);
   text-align:right;
@@ -299,15 +360,16 @@ footer .brand{color:var(--sun-2)}
   <a href="/" class="logo">TINY·HUB</a>
   <ul class="nav-links">
     <li><a href="/about" class="active">About</a></li>
-    <li><a href="#">How It Works</a></li>
-    <li><a href="#">Suppliers</a></li>
-    <li><a href="#">Consumers</a></li>
-    <li><a href="#">Investors</a></li>
-    <li><a href="#">Live Demo →</a></li>
+    <li><a href="/how-it-works">How It Works</a></li>
+    <li><a href="/suppliers">Suppliers</a></li>
+    <li><a href="/consumers">Consumers</a></li>
+    <li><a href="/investors">Investors</a></li>
+    <li><a href="/dashboard">Live Demo →</a></li>
   </ul>
 </nav>
 
 <section class="page-hero">
+  <div class="stars"></div>
   <div class="atmosphere"></div>
   <div class="sun-wrap">
     <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
@@ -328,30 +390,30 @@ footer .brand{color:var(--sun-2)}
   </div>
   <div class="horizon"></div>
   <div class="grid-wrap"><div class="grid-floor"></div></div>
+  <div class="grid-glow"></div>
   <div class="grid-mask"></div>
 </section>
+
+<div class="section-nav" id="section-nav">
+  <a href="#" data-tab="mission" class="active-tab">Mission</a>
+  <a href="#" data-tab="problem">The Problem</a>
+  <a href="#" data-tab="thesis">Thesis</a>
+  <a href="#" data-tab="status">Where We Are Now</a>
+  <a href="#" data-tab="founder">Founder Note</a>
+</div>
 
 <main>
 
   <!-- 01 MISSION -->
-  <section class="block">
-    <div class="chapter-marker">01</div>
+  <section class="block" id="mission">
     <h2 class="section-title">01. Mission</h2>
-    <div class="mission-banner">
-      <div class="mission-words">
-        <span class="w w1">GENERATE</span>
-        <span class="w w2">SHARE</span>
-        <span class="w w3">PROFIT</span>
-      </div>
-      <div class="mission-statement-block">
+    <div class="mission-statement-block">
         <p>Providing grid upgrades for the future of energy through an affordable, sustainable, and transparent marketplace where communities generate, share, and profit from their own power.</p>
       </div>
-    </div>
   </section>
 
   <!-- 02 PROBLEM -->
-  <section class="block">
-    <div class="chapter-marker">02</div>
+  <section class="block" id="problem">
     <h2 class="section-title">02. The Problem</h2>
 
     <p class="problem-intro">The grid was built to move power one way, from centralized plants to passive customers. <strong>That model is breaking down.</strong> Data centers are driving record load growth, old generation is retiring, and severe weather is straining infrastructure that was never designed for any of it. To cover the gap, utilities are raising rates faster than their customers can absorb them.</p>
@@ -391,8 +453,7 @@ footer .brand{color:var(--sun-2)}
   </section>
 
   <!-- 03 THESIS -->
-  <section class="block">
-    <div class="chapter-marker">03</div>
+  <section class="block" id="thesis">
     <h2 class="section-title">03. Thesis</h2>
 
     <div class="thesis-intro">
@@ -442,8 +503,7 @@ footer .brand{color:var(--sun-2)}
   </section>
 
   <!-- 04 WHERE WE ARE NOW -->
-  <section class="block">
-    <div class="chapter-marker">04</div>
+  <section class="block" id="status">
     <h2 class="section-title">04. Where We Are Now</h2>
 
     <div class="status-grid">
@@ -501,8 +561,7 @@ footer .brand{color:var(--sun-2)}
   </section>
 
   <!-- 05 FOUNDER NOTE -->
-  <section class="block">
-    <div class="chapter-marker">05</div>
+  <section class="block" id="founder">
     <h2 class="section-title">05. Founder Note</h2>
 
     <div class="founder-letter">
@@ -534,4 +593,30 @@ footer .brand{color:var(--sun-2)}
   <div><span class="brand">TINY·HUB ENERGY</span> &nbsp;//&nbsp; Upgrading the grid, one neighborhood at a time.</div>
   <div>© 2026 // tinyhub.energy</div>
 </footer>
+
+<script>
+  // Tab switching — show one section at a time
+  const tabs = document.querySelectorAll('.section-nav a');
+  const sections = document.querySelectorAll('section.block[id]');
+
+  function showSection(id) {
+    sections.forEach(s => {
+      s.style.display = s.id === id ? '' : 'none';
+    });
+    tabs.forEach(t => {
+      t.classList.toggle('active-tab', t.getAttribute('data-tab') === id);
+    });
+  }
+
+  tabs.forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      showSection(a.getAttribute('data-tab'));
+      window.scrollTo({top: document.getElementById('section-nav').offsetTop - 60, behavior:'smooth'});
+    });
+  });
+
+  // Show mission by default
+  showSection('mission');
+</script>
 </body></html>
