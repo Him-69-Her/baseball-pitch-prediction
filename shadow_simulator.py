@@ -239,6 +239,8 @@ def run_tick(sellers, buyers, publisher, topic_path) -> int:
             "gross_revenue": round(gross_revenue, 4),
             "toll_cost": round(toll_cost, 4),
             "net_profit": round(net_profit, 4),
+            "grid_price": round(SUPPLY_RATE + AMEREN_TOLL, 4),
+            "settled_price": round(trade_price, 4),
             "co2_tons": round(co2_saved, 6),
             "trade_status": "SETTLED",
             "settlement": "OPTIMISTIC",
