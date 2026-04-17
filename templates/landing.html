@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TINY-HUB NETWORK // Peer-to-Peer Energy Grid</title>
+<meta name="description" content="Physics-aware, deterministic spatial matching engine for peer-to-peer electricity trading. Neighbors trading power, settled on-chain.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Monoton&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000;
+    --cyan:#00f0ff;
+    --cyan-dim:#00b8c7;
+    --magenta:#ff2d95;
+    --sun-1:#ffcc00;
+    --sun-2:#ff9500;
+    --sun-3:#ff5500;
+    --sun-4:#c72c00;
+    --ink:#e6f8ff;
+    --ink-dim:#7ba9b3;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;overflow-x:hidden}
+
+  /* ─── CRT SCANLINES overlay ─────────────────────────────── */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.18) 3px,
+      rgba(0,0,0,0) 4px
+    );
+    mix-blend-mode:multiply;
+  }
+  /* VHS noise */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:998;opacity:.06;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.9'/></svg>");
+    animation:noise 0.5s steps(2) infinite;
+  }
+  @keyframes noise{
+    0%{transform:translate(0,0)}25%{transform:translate(-1%,1%)}50%{transform:translate(1%,-1%)}75%{transform:translate(-1%,-1%)}100%{transform:translate(1%,1%)}
+  }
+
+  /* ─── NAV ───────────────────────────────────────────────── */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:1.2rem 2rem;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    border-bottom:1px solid rgba(0,240,255,0.15);
+  }
+  .logo{
+    font-family:'Monoton',cursive;font-size:1.6rem;letter-spacing:.15em;
+    color:var(--sun-1);
+    text-shadow:0 0 8px var(--sun-2),0 0 24px var(--sun-3);
+  }
+  .nav-links{display:flex;gap:2rem;list-style:none}
+  .nav-links a{
+    color:var(--cyan);text-decoration:none;font-size:.75rem;letter-spacing:.2em;
+    text-transform:uppercase;transition:all .2s;
+    text-shadow:0 0 4px var(--cyan-dim);
+  }
+  .nav-links a:hover{color:var(--magenta);text-shadow:0 0 8px var(--magenta)}
+
+  /* ─── HERO ──────────────────────────────────────────────── */
+  .hero{
+    position:relative;height:100vh;min-height:720px;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+  }
+
+  /* Perspective grid floor */
+  .grid-floor{
+    position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+    width:300vw;height:60vh;
+    background-image:
+      linear-gradient(to right, var(--cyan) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--cyan) 1px, transparent 1px);
+    background-size:80px 80px;
+    transform:perspective(300px) rotateX(60deg) translateZ(0);
+    transform-origin:center bottom;
+    animation:grid-scroll 3s linear infinite;
+    box-shadow:0 0 60px var(--cyan) inset;
+    filter:drop-shadow(0 0 6px var(--cyan));
+  }
+  @keyframes grid-scroll{
+    0%{background-position:0 0}
+    100%{background-position:0 80px}
+  }
+  /* fade grid top */
+  .grid-mask{
+    position:absolute;bottom:0;left:0;right:0;height:60vh;pointer-events:none;
+    background:linear-gradient(to top,transparent 40%, #000 100%);
+  }
+
+  /* Banded sun */
+  .sun{
+    position:absolute;top:20%;left:50%;transform:translateX(-50%);
+    width:min(520px,70vw);aspect-ratio:1/1;
+    border-radius:50%;
+    background:linear-gradient(
+      to bottom,
+      var(--sun-1) 0%, var(--sun-1) 18%,
+      transparent 18%, transparent 22%,
+      var(--sun-2) 22%, var(--sun-2) 38%,
+      transparent 38%, transparent 43%,
+      var(--sun-2) 43%, var(--sun-2) 56%,
+      transparent 56%, transparent 62%,
+      var(--sun-3) 62%, var(--sun-3) 74%,
+      transparent 74%, transparent 80%,
+      var(--sun-3) 80%, var(--sun-3) 90%,
+      transparent 90%, transparent 94%,
+      var(--sun-4) 94%, var(--sun-4) 100%
+    );
+    filter:drop-shadow(0 0 40px var(--sun-2)) drop-shadow(0 0 80px var(--sun-3));
+    animation:sun-pulse 4s ease-in-out infinite;
+  }
+  @keyframes sun-pulse{
+    0%,100%{filter:drop-shadow(0 0 40px var(--sun-2)) drop-shadow(0 0 80px var(--sun-3))}
+    50%{filter:drop-shadow(0 0 60px var(--sun-1)) drop-shadow(0 0 120px var(--sun-2))}
+  }
+
+  .hero-content{
+    position:relative;z-index:5;text-align:center;padding-bottom:8vh;
+  }
+  .wordmark{
+    font-family:'Monoton',cursive;
+    font-size:clamp(2.8rem,9vw,7rem);
+    letter-spacing:.08em;line-height:.95;
+    background:linear-gradient(to bottom,var(--sun-1) 0%,var(--sun-2) 50%,var(--sun-3) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 20px var(--sun-2));
+    animation:flicker 4s infinite;
+  }
+  @keyframes flicker{
+    0%,18%,22%,25%,53%,57%,100%{opacity:1}
+    20%,24%,55%{opacity:.82}
+  }
+  .tagline{
+    margin-top:1.2rem;font-size:clamp(.72rem,1.2vw,.95rem);letter-spacing:.35em;
+    color:var(--cyan);text-transform:uppercase;
+    text-shadow:0 0 6px var(--cyan-dim);
+  }
+  .subline{
+    margin-top:.6rem;font-size:clamp(.85rem,1.3vw,1.05rem);
+    color:var(--ink-dim);max-width:640px;margin-left:auto;margin-right:auto;
+    line-height:1.5;
+  }
+
+  .cta-row{
+    margin-top:2.4rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;
+  }
+  .btn{
+    display:inline-block;padding:1rem 1.8rem;
+    font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;
+    letter-spacing:.22em;text-transform:uppercase;text-decoration:none;
+    border:1px solid var(--cyan);color:var(--cyan);background:rgba(0,240,255,0.04);
+    transition:all .25s;position:relative;overflow:hidden;
+    text-shadow:0 0 4px var(--cyan-dim);
+  }
+  .btn:hover{
+    background:var(--cyan);color:#000;text-shadow:none;
+    box-shadow:0 0 24px var(--cyan),0 0 48px var(--cyan-dim);
+    transform:translateY(-2px);
+  }
+  .btn.primary{border-color:var(--sun-1);color:var(--sun-1);text-shadow:0 0 4px var(--sun-2)}
+  .btn.primary:hover{background:var(--sun-1);color:#000;box-shadow:0 0 24px var(--sun-2),0 0 48px var(--sun-3)}
+
+  /* ─── STATS STRIP ───────────────────────────────────────── */
+  .stats{
+    position:relative;z-index:5;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:0;border-top:1px solid rgba(0,240,255,0.2);border-bottom:1px solid rgba(0,240,255,0.2);
+    background:linear-gradient(90deg,transparent,rgba(0,240,255,0.04),transparent);
+  }
+  .stat{
+    padding:2rem 1.5rem;text-align:center;
+    border-right:1px solid rgba(0,240,255,0.1);
+  }
+  .stat:last-child{border-right:none}
+  .stat-num{
+    font-family:'Monoton',cursive;font-size:clamp(1.8rem,3.5vw,2.8rem);
+    color:var(--sun-1);text-shadow:0 0 10px var(--sun-2);letter-spacing:.05em;
+  }
+  .stat-label{
+    margin-top:.4rem;font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;
+    color:var(--cyan-dim);
+  }
+
+  /* ─── SECTIONS ──────────────────────────────────────────── */
+  section{padding:6rem 2rem;position:relative;z-index:2}
+  .container{max-width:1200px;margin:0 auto}
+
+  .section-head{margin-bottom:3rem}
+  .section-eyebrow{
+    font-size:.7rem;letter-spacing:.35em;color:var(--magenta);text-transform:uppercase;
+    text-shadow:0 0 6px var(--magenta);margin-bottom:.8rem;
+  }
+  .section-title{
+    font-family:'Monoton',cursive;font-size:clamp(1.8rem,4vw,3rem);
+    letter-spacing:.05em;color:var(--cyan);
+    text-shadow:0 0 12px var(--cyan-dim);
+  }
+
+  .how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+  .how-card{
+    border:1px solid rgba(0,240,255,0.25);padding:2rem;
+    background:linear-gradient(135deg,rgba(0,240,255,0.03),rgba(255,45,149,0.02));
+    position:relative;transition:all .3s;
+  }
+  .how-card::before{
+    content:"";position:absolute;top:-1px;left:-1px;width:20px;height:20px;
+    border-top:2px solid var(--sun-1);border-left:2px solid var(--sun-1);
+  }
+  .how-card::after{
+    content:"";position:absolute;bottom:-1px;right:-1px;width:20px;height:20px;
+    border-bottom:2px solid var(--sun-1);border-right:2px solid var(--sun-1);
+  }
+  .how-card:hover{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,240,255,0.3);transform:translateY(-4px)}
+  .how-num{
+    font-family:'Monoton',cursive;font-size:2.4rem;color:var(--sun-2);
+    text-shadow:0 0 10px var(--sun-3);margin-bottom:.8rem;
+  }
+  .how-title{font-size:1.1rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.8rem;color:var(--ink)}
+  .how-body{font-size:.88rem;line-height:1.6;color:var(--ink-dim)}
+
+  /* Thesis split section */
+  .thesis{
+    display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;
+  }
+  @media (max-width:768px){.thesis{grid-template-columns:1fr}}
+  .thesis-body p{margin-bottom:1.2rem;line-height:1.7;color:var(--ink)}
+  .thesis-body strong{color:var(--cyan);text-shadow:0 0 4px var(--cyan-dim)}
+  .thesis-visual{
+    aspect-ratio:1/1;border:1px solid var(--cyan-dim);
+    background:
+      repeating-linear-gradient(0deg,transparent,transparent 18px,rgba(0,240,255,0.1) 19px),
+      repeating-linear-gradient(90deg,transparent,transparent 18px,rgba(0,240,255,0.1) 19px),
+      radial-gradient(circle at center, rgba(255,149,0,0.4), transparent 50%);
+    position:relative;
+  }
+  .thesis-visual::after{
+    content:"PHYSICS-AWARE / DETERMINISTIC / SPATIAL";
+    position:absolute;bottom:1rem;left:1rem;right:1rem;text-align:center;
+    font-size:.65rem;letter-spacing:.3em;color:var(--sun-1);
+  }
+
+  /* Pilot callout */
+  .pilot{
+    border:1px solid var(--magenta);padding:3rem 2rem;text-align:center;
+    background:radial-gradient(ellipse at center,rgba(255,45,149,0.08),transparent);
+    position:relative;
+  }
+  .pilot-label{font-size:.7rem;letter-spacing:.35em;color:var(--magenta);text-transform:uppercase;text-shadow:0 0 6px var(--magenta)}
+  .pilot-title{font-family:'Monoton',cursive;font-size:clamp(1.6rem,3.5vw,2.6rem);color:var(--sun-1);margin:.8rem 0;text-shadow:0 0 12px var(--sun-2)}
+  .pilot-body{color:var(--ink-dim);max-width:640px;margin:0 auto 1.5rem}
+
+  /* ─── FOOTER ────────────────────────────────────────────── */
+  footer{
+    padding:3rem 2rem 2rem;border-top:1px solid rgba(0,240,255,0.15);
+    display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;
+    font-size:.7rem;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase;
+  }
+  footer .brand{color:var(--sun-2)}
+  @media (max-width:600px){footer{grid-template-columns:1fr;text-align:center}}
+
+  /* Disclaimer callout inline */
+  .disclaimer{
+    display:inline-block;padding:.3rem .7rem;border:1px dashed var(--ink-dim);
+    font-size:.62rem;letter-spacing:.2em;color:var(--ink-dim);margin-top:1rem;
+  }
+
+  /* Reveal on scroll */
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity .8s,transform .8s}
+  .reveal.in{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">TINY·HUB</div>
+  <ul class="nav-links">
+    <li><a href="#how">Protocol</a></li>
+    <li><a href="#thesis">Thesis</a></li>
+    <li><a href="#pilot">Pilot</a></li>
+    <li><a href="/dashboard">Demo →</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <div class="sun"></div>
+  <div class="grid-floor"></div>
+  <div class="grid-mask"></div>
+
+  <div class="hero-content">
+    <h1 class="wordmark">TINY HUB<br>NETWORK</h1>
+    <div class="tagline">// Peer · to · Peer · Energy · Grid //</div>
+    <p class="subline">
+      A physics-aware, deterministic matching engine for neighborhood electricity.
+      Solar producers trade directly with nearby consumers. Settled on-chain. Delivered over real wire.
+    </p>
+    <div class="cta-row">
+      <a href="/dashboard" class="btn primary">Launch Live Demo →</a>
+      <a href="#thesis" class="btn">Investor Brief</a>
+    </div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">18,336</div>
+    <div class="stat-label">Buildings Mapped*</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">2</div>
+    <div class="stat-label">Utility Districts</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">L2</div>
+    <div class="stat-label">Arbitrum Settlement</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">95%</div>
+    <div class="stat-label">Gas Reduction</div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">// Protocol</div>
+      <h2 class="section-title">How a kilowatt moves.</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-card reveal">
+        <div class="how-num">01</div>
+        <div class="how-title">Match</div>
+        <p class="how-body">PostGIS proximity matching pairs solar surplus with nearby demand. Line-loss physics scores every possible trade in real time. Closer wins. The market is spatial, not abstract.</p>
+      </div>
+      <div class="how-card reveal">
+        <div class="how-num">02</div>
+        <div class="how-title">Settle</div>
+        <p class="how-body">Trades batch-aggregate off-chain, then settle on Arbitrum L2 through an optimistic pipeline. ~95% gas savings vs per-trade on-chain. ERC-4337 account abstraction handles the UX.</p>
+      </div>
+      <div class="how-card reveal">
+        <div class="how-num">03</div>
+        <div class="how-title">Deliver</div>
+        <p class="how-body">Electrons flow over the existing ComEd / Ameren wire. Green Button meter data reconciles the ledger. FERC Order 2222 provides the federal preemption shield over state classification.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="thesis">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">// Thesis</div>
+      <h2 class="section-title">Not a solar app.<br>A matching engine.</h2>
+    </div>
+    <div class="thesis">
+      <div class="thesis-body reveal">
+        <p>
+          Tiny-Hub is a <strong>deterministic spatial matching engine</strong>. The core is three things: a PostGIS proximity graph, real-time grid physics for line-loss cost, and optimistic batch settlement on L2.
+        </p>
+        <p>
+          The same architecture extends to orbital mechanics with parameter substitutions — not rewrites. Space-based solar power downlinks. Orbital data-center load. Delay-tolerant settlement for deep-space relays. Phase 8 (Horizon) is roadmapped.
+        </p>
+        <p>
+          Today it runs across <strong>D63 (ComEd / PJM)</strong> and <strong>D91 (Ameren / MISO)</strong> in Illinois. Pilot deployment in <strong>Woodstock, IL</strong>.
+        </p>
+        <p style="margin-top:2rem">
+          <strong>The raise:</strong> $2M seed. I built the Ferrari. This funds the pit crew.
+        </p>
+      </div>
+      <div class="thesis-visual reveal" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<section id="pilot">
+  <div class="container">
+    <div class="pilot reveal">
+      <div class="pilot-label">// Pilot Deployment</div>
+      <h3 class="pilot-title">Woodstock, Illinois</h3>
+      <p class="pilot-body">
+        McHenry County. ComEd territory. PJM market. A residential pilot with live Green Button meter ingestion, L2 settlement on Arbitrum Sepolia, and a 30-day shadow-market backtest as the lead proof-of-economics.
+      </p>
+      <div class="cta-row">
+        <a href="/dashboard" class="btn primary">Open Live Dashboard →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <span class="brand">TINY·HUB NETWORK</span> &nbsp;//&nbsp; Built solo. Deployed on GCP + Arbitrum. Powered by the actual grid.
+    <div class="disclaimer">* 18,336 buildings = scraped addressable market, not live users</div>
+  </div>
+  <div>© 2026 // tinyhub.energy</div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), {threshold:0.1});
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

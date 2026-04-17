@@ -39,48 +39,30 @@ app.register_blueprint(oadr_bp)
 
 # ── Auth Routes + Decorator ─────────────────────────────────
 def login_required(f):
-    """Decorator to require authentication."""
+    """No-op: auth disabled for public demo mode."""
     @functools.wraps(f)
     def decorated(*args, **kwargs):
-        if not session.get("authenticated"):
-            if request.path.startswith("/api/"):
-                return jsonify({"error": "Authentication required"}), 401
-            return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
 
 
 @app.before_request
 def check_auth():
-    """Check auth on every request except login and static files."""
-    open_paths = ["/login", "/static", "/favicon.ico", "/api/", "/oadr/"]
-    if any(request.path.startswith(p) for p in open_paths):
-        return None
-    if not session.get("authenticated"):
-        if request.path.startswith("/api/"):
-            return jsonify({"error": "Authentication required"}), 401
-        return redirect(url_for("login"))
+    """No-op: auth disabled for public demo mode."""
+    return None
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Login page."""
-    if request.method == "POST":
-        username = request.form.get("username", "")
-        password = request.form.get("password", "")
-        if username == ADMIN_USER and password == ADMIN_PASS:
-            session["authenticated"] = True
-            session["user"] = username
-            return redirect("/")
-        return render_template("login.html", error="Invalid username or password")
-    return render_template("login.html")
+    """Auth disabled — public demo mode. Redirect to landing."""
+    return redirect("/")
 
 
 @app.route("/logout")
 def logout():
-    """Clear session and redirect to login."""
+    """Auth disabled — public demo mode."""
     session.clear()
-    return redirect(url_for("login"))
+    return redirect("/")
 socketio = init_socketio(app)
 
 # ── Config ──────────────────────────────────────────────────
@@ -237,6 +219,10 @@ def start_subscribers():
 # ── Routes ──────────────────────────────────────────────────
 @app.route("/")
 def index():
+    return render_template("landing.html")
+
+@app.route("/dashboard")
+def dashboard():
     return render_template("dashboard.html")
 
 
