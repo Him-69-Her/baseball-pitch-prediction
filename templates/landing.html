@@ -62,8 +62,8 @@
 
   /* ─── HERO ──────────────────────────────────────────────── */
   .hero{
-    position:relative;height:100vh;min-height:720px;overflow:hidden;
-    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    position:relative;height:100vh;min-height:640px;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;
   }
 
   /* Perspective grid floor */
@@ -105,8 +105,10 @@
 
   /* Banded sun — the hero */
   .sun{
-    position:absolute;bottom:48vh;left:50%;transform:translateX(-50%);
-    width:min(420px,52vw);aspect-ratio:1/1;
+    position:absolute;bottom:50vh;left:50%;transform:translateX(-50%);
+    width:min(640px,72vw);aspect-ratio:1/1;
+    /* clip off the bottom half so only the top arc shows above horizon */
+    clip-path:inset(0 0 50% 0);
     z-index:3;
     border-radius:50%;
     background:linear-gradient(
@@ -145,12 +147,12 @@
   }
   .wordmark{
     font-family:'Monoton',cursive;
-    font-size:clamp(1.8rem,5.2vw,4rem);
-    letter-spacing:.14em;line-height:1;
+    font-size:clamp(3rem,10.5vw,9.5rem);
+    letter-spacing:.08em;line-height:1;
     color:var(--sun-1);
     text-shadow:
-      0 0 12px var(--sun-2),
-      0 0 28px var(--sun-3),
+      0 0 14px var(--sun-2),
+      0 0 36px var(--sun-3),
       0 2px 0 rgba(0,0,0,0.6);
     animation:flicker 5s infinite;
     white-space:nowrap;
@@ -305,8 +307,8 @@
   <ul class="nav-links">
     <li><a href="#about">About</a></li>
     <li><a href="#how">How It Works</a></li>
-    <li><a href="#suppliers">Clean Energy Suppliers</a></li>
-    <li><a href="#consumers">Energy Consumers</a></li>
+    <li><a href="#suppliers">Suppliers</a></li>
+    <li><a href="#consumers">Consumers</a></li>
     <li><a href="#investors">Investors</a></li>
     <li><a href="/dashboard">Live Demo →</a></li>
   </ul>
@@ -323,105 +325,8 @@
   </div>
 </section>
 
-<div class="stats">
-  <div class="stat">
-    <div class="stat-num">18,336</div>
-    <div class="stat-label">Buildings Mapped*</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num">2</div>
-    <div class="stat-label">Utility Districts</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num">L2</div>
-    <div class="stat-label">Arbitrum Settlement</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num">95%</div>
-    <div class="stat-label">Gas Reduction</div>
-  </div>
-</div>
 
-<section id="how">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="section-eyebrow">// Protocol</div>
-      <h2 class="section-title">How a kilowatt moves.</h2>
-    </div>
-    <div class="how-grid">
-      <div class="how-card reveal">
-        <div class="how-num">01</div>
-        <div class="how-title">Match</div>
-        <p class="how-body">PostGIS proximity matching pairs solar surplus with nearby demand. Line-loss physics scores every possible trade in real time. Closer wins. The market is spatial, not abstract.</p>
-      </div>
-      <div class="how-card reveal">
-        <div class="how-num">02</div>
-        <div class="how-title">Settle</div>
-        <p class="how-body">Trades batch-aggregate off-chain, then settle on Arbitrum L2 through an optimistic pipeline. ~95% gas savings vs per-trade on-chain. ERC-4337 account abstraction handles the UX.</p>
-      </div>
-      <div class="how-card reveal">
-        <div class="how-num">03</div>
-        <div class="how-title">Deliver</div>
-        <p class="how-body">Electrons flow over the existing ComEd / Ameren wire. Green Button meter data reconciles the ledger. FERC Order 2222 provides the federal preemption shield over state classification.</p>
-      </div>
-    </div>
-  </div>
-</section>
 
-<section id="thesis">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="section-eyebrow">// Thesis</div>
-      <h2 class="section-title">Not a solar app.<br>A matching engine.</h2>
-    </div>
-    <div class="thesis">
-      <div class="thesis-body reveal">
-        <p>
-          Tiny-Hub is a <strong>deterministic spatial matching engine</strong>. The core is three things: a PostGIS proximity graph, real-time grid physics for line-loss cost, and optimistic batch settlement on L2.
-        </p>
-        <p>
-          The same architecture extends to orbital mechanics with parameter substitutions — not rewrites. Space-based solar power downlinks. Orbital data-center load. Delay-tolerant settlement for deep-space relays. Phase 8 (Horizon) is roadmapped.
-        </p>
-        <p>
-          Today it runs across <strong>D63 (ComEd / PJM)</strong> and <strong>D91 (Ameren / MISO)</strong> in Illinois. Pilot deployment in <strong>Woodstock, IL</strong>.
-        </p>
-        <p style="margin-top:2rem">
-          <strong>The raise:</strong> $2M seed. I built the Ferrari. This funds the pit crew.
-        </p>
-      </div>
-      <div class="thesis-visual reveal" aria-hidden="true"></div>
-    </div>
-  </div>
-</section>
-
-<section id="pilot">
-  <div class="container">
-    <div class="pilot reveal">
-      <div class="pilot-label">// Pilot Deployment</div>
-      <h3 class="pilot-title">Woodstock, Illinois</h3>
-      <p class="pilot-body">
-        McHenry County. ComEd territory. PJM market. A residential pilot with live Green Button meter ingestion, L2 settlement on Arbitrum Sepolia, and a 30-day shadow-market backtest as the lead proof-of-economics.
-      </p>
-      <div class="cta-row">
-        <a href="/dashboard" class="btn primary">Open Live Dashboard →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div>
-    <span class="brand">TINY·HUB NETWORK</span> &nbsp;//&nbsp; Built solo. Deployed on GCP + Arbitrum. Powered by the actual grid.
-    <div class="disclaimer">* 18,336 buildings = scraped addressable market, not live users</div>
-  </div>
-  <div>© 2026 // tinyhub.energy</div>
-</footer>
-
-<script>
-  // Scroll reveal
-  const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), {threshold:0.1});
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-</script>
 
 </body>
 </html>
