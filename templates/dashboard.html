@@ -408,16 +408,19 @@
         document.querySelectorAll('.action-status').forEach(function(e){e.textContent='Demo simulation active';});
         function push(){
             var t=gen();
-            var feed=document.getElementById('d91-map-feed');
+            ['d91-map-feed','d91-feed'].forEach(function(fid){ var feed=document.getElementById(fid);
             if(feed){
                 var d=document.createElement('div');d.className='trade-item';
                 d.innerHTML='<div class="trade-top"><span class="trade-icon">\u26a1</span><span class="trade-pair"><strong>'+t.seller_label+'</strong> \u2192 '+t.buyer_label+'</span><span class="trade-status settled">SETTLED</span></div><div class="trade-bottom"><span><span class="val">'+(t.mwh*1000).toFixed(1)+' kWh</span></span><span>Grid <span class="val amber">$'+t.grid_price.toFixed(4)+'</span></span><span>Settled <span class="val">$'+t.settled_price.toFixed(4)+'</span></span></div>';
-                feed.prepend(d);if(feed.children.length>50)feed.removeChild(feed.lastChild);
+                feed.prepend(d);if(feed.children.length>50)feed.removeChild(feed.lastChild);}});
             }
             var s=document.getElementById('d91-settled');if(s)s.textContent=parseInt(s.textContent||0)+1;
             var m=document.getElementById('d91-mwh');if(m)m.textContent=(parseFloat(m.textContent||0)+t.mwh).toFixed(3);
             var p=document.getElementById('d91-profit');if(p)p.textContent='$'+(parseFloat((p.textContent||'$0').replace('$',''))+t.net_profit).toFixed(2);
             var c=document.getElementById('d91-co2');if(c)c.textContent=(parseFloat(c.textContent||0)+t.co2_tons).toFixed(2)+' t';
+            var fs=document.getElementById('f-d91-settled');if(fs)fs.textContent=parseInt(fs.textContent||0)+1;
+            var fm=document.getElementById('f-d91-mwh');if(fm)fm.textContent=(parseFloat(fm.textContent||0)+t.mwh*1000).toFixed(0);
+            var fp=document.getElementById('f-d91-profit');if(fp)fp.textContent='$'+(parseFloat((fp.textContent||'$0').replace('$',''))+t.net_profit).toFixed(2);
         }
         for(var i=0;i<25;i++)push();
         setInterval(push,Math.floor(Math.random()*5000)+3000);
