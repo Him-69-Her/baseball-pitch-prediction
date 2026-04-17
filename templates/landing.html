@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TINY-HUB NETWORK // Peer-to-Peer Energy Grid</title>
+<title>TINY-HUB ENERGY // Peer-to-Peer Energy Grid</title>
 <meta name="description" content="Physics-aware, deterministic spatial matching engine for peer-to-peer electricity trading. Neighbors trading power, settled on-chain.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,12 +132,16 @@
   }
 
   .hero{
-    justify-content:flex-end;
+    justify-content:flex-start;
+    padding:0;
   }
+  /* Position the wordmark absolutely in the dark band between
+     the horizon line (bottom:50vh) and the visible grid start */
   .hero-content{
-    position:relative;z-index:6;text-align:center;
-    /* sits in the dark band just below the horizon line */
-    margin-bottom:calc(50vh - 5rem);
+    position:absolute;left:50%;transform:translateX(-50%);
+    top:calc(100vh - 50vh - 5.5rem);
+    z-index:6;text-align:center;
+    width:100%;
   }
   .wordmark{
     font-family:'Monoton',cursive;
@@ -315,7 +319,7 @@
   <div class="grid-mask"></div>
 
   <div class="hero-content">
-    <h1 class="wordmark">TINY&nbsp;HUB&nbsp;NETWORK</h1>
+    <h1 class="wordmark">TINY&nbsp;HUB&nbsp;ENERGY</h1>
   </div>
 </section>
 
