@@ -154,16 +154,25 @@ footer .brand{color:var(--sun-2)}
         <linearGradient id="sunBands" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#fff07a"/><stop offset="15%" stop-color="#ffe54a"/><stop offset="35%" stop-color="#ffcc00"/><stop offset="60%" stop-color="#ff9500"/><stop offset="82%" stop-color="#ff5500"/><stop offset="100%" stop-color="#c72c00"/>
         </linearGradient>
-        <clipPath id="domeClip"><path d="M 0,100 A 100,100 0 0 1 200,100 Z"/></clipPath>
+        <clipPath id="domeClip">
+          <!-- Dome shape with horizontal gaps cut out -->
+          <path d="M 0,100 A 100,100 0 0 1 200,100 Z"/>
+        </clipPath>
+        <clipPath id="bandClip">
+          <!-- Only the solid band areas (gaps are excluded) -->
+          <rect x="0" y="0" width="200" height="16"/>
+          <rect x="0" y="18" width="200" height="14"/>
+          <rect x="0" y="34.5" width="200" height="13.5"/>
+          <rect x="0" y="51" width="200" height="13"/>
+          <rect x="0" y="67.5" width="200" height="12.5"/>
+          <rect x="0" y="84.5" width="200" height="8.5"/>
+          <rect x="0" y="96" width="200" height="4"/>
+        </clipPath>
       </defs>
       <g clip-path="url(#domeClip)">
-        <rect x="0" y="0" width="200" height="100" fill="url(#sunBands)"/>
-        <rect x="0" y="16" width="200" height="2" fill="#000"/>
-        <rect x="0" y="32" width="200" height="2.5" fill="#000"/>
-        <rect x="0" y="48" width="200" height="3" fill="#000"/>
-        <rect x="0" y="64" width="200" height="3.5" fill="#000"/>
-        <rect x="0" y="80" width="200" height="4.5" fill="#000"/>
-        <rect x="0" y="93" width="200" height="3" fill="#000"/>
+        <g clip-path="url(#bandClip)">
+          <rect x="0" y="0" width="200" height="100" fill="url(#sunBands)"/>
+        </g>
       </g>
     </svg>
   </div>
