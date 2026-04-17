@@ -1,4 +1,8 @@
-<!DOCTYPE html>
+#!/usr/bin/env python3
+"""Rebuild /about with editorial multi-column layout + numbered sections."""
+from pathlib import Path
+
+about_html = r'''<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -383,3 +387,7 @@
 </script>
 </body>
 </html>
+'''
+
+Path("templates/about.html").write_text(about_html)
+print(f"[OK] templates/about.html rewritten ({len(about_html)} bytes)")
