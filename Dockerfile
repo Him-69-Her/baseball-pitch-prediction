@@ -20,4 +20,4 @@ COPY docker-entrypoint-cloudrun.sh .
 RUN chmod +x docker-entrypoint-cloudrun.sh
 
 ENTRYPOINT ["./docker-entrypoint-cloudrun.sh"]
-CMD ["python3", "-u", "app.py"]
+CMD exec gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker --workers 1 --threads 8 --timeout 0 --bind 0.0.0.0:${PORT:-8080} app:app
