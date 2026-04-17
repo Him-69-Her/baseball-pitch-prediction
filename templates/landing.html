@@ -103,63 +103,52 @@
     box-shadow:0 0 12px var(--cyan), 0 0 32px var(--cyan), 0 0 60px var(--cyan-dim);
   }
 
-  /* Half-sun — SVG-rendered hero */
+  /* Full-width atmospheric wash — the sky glowing at the horizon */
+  .atmosphere{
+    position:absolute;left:0;right:0;bottom:50vh;height:35vh;
+    z-index:1;pointer-events:none;
+    background:
+      radial-gradient(ellipse 50% 70% at 50% 100%,
+        rgba(255,204,0,0.4) 0%,
+        rgba(255,149,0,0.28) 20%,
+        rgba(255,85,0,0.15) 45%,
+        transparent 70%),
+      linear-gradient(to top,
+        rgba(255,149,0,0.3) 0%,
+        rgba(255,85,0,0.18) 25%,
+        rgba(199,44,0,0.1) 50%,
+        rgba(199,44,0,0.04) 75%,
+        transparent 100%);
+    filter:blur(4px);
+    animation:atmos-breathe 8s ease-in-out infinite;
+  }
+  @keyframes atmos-breathe{
+    0%,100%{opacity:.85}
+    50%{opacity:1}
+  }
+
+  /* Half-sun — SVG-rendered hero (atmosphere carries the glow) */
   .sun-wrap{
     position:absolute;bottom:50vh;left:50%;
-    width:min(820px,72vw);aspect-ratio:2.4/1;
+    width:min(520px,48vw);aspect-ratio:2/1;
     z-index:3;pointer-events:none;
     transform:translateX(-50%);
     animation:sun-breathe 5s ease-in-out infinite, sun-flicker 6s infinite;
   }
   .sun-wrap svg{width:100%;height:100%;display:block;overflow:visible;
-    filter:drop-shadow(0 0 20px rgba(255,149,0,0.6));}
-  .sun-glow{
-    position:absolute;inset:-80% -40% -20% -40%;
-    background:radial-gradient(ellipse at 50% 100%,
-      rgba(255,204,0,0.55) 0%,
-      rgba(255,149,0,0.4) 15%,
-      rgba(255,85,0,0.2) 35%,
-      transparent 65%);
-    filter:blur(16px);z-index:-1;pointer-events:none;
-    animation:sun-glow-pulse 4s ease-in-out infinite;
-  }
-  .sun-corona{
-    position:absolute;inset:-100% -50% -10% -50%;
-    background:radial-gradient(ellipse at 50% 100%,
-      rgba(255,45,149,0.18) 0%,
-      rgba(255,85,0,0.15) 30%,
-      transparent 70%);
-    filter:blur(24px);z-index:-2;pointer-events:none;
-    animation:sun-corona-pulse 7s ease-in-out infinite;
-  }
-  .sun-haze{
-    position:absolute;bottom:0;left:-20%;right:-20%;height:30%;
-    background:linear-gradient(to top,
-      rgba(255,149,0,0.4) 0%,
-      rgba(255,85,0,0.2) 50%,
-      transparent 100%);
-    filter:blur(8px);z-index:2;pointer-events:none;
-    animation:sun-haze-shimmer 3s ease-in-out infinite;
-  }
+    filter:drop-shadow(0 0 12px rgba(255,149,0,0.6));}
   @keyframes sun-breathe{
     0%,100%{transform:translateX(-50%) scale(1)}
     50%{transform:translateX(-50%) scale(1.025)}
   }
-  @keyframes sun-glow-pulse{
-    0%,100%{opacity:.75;transform:scale(1)}
-    50%{opacity:1;transform:scale(1.08)}
-  }
-  @keyframes sun-corona-pulse{
-    0%,100%{opacity:.5}
-    50%{opacity:.9}
-  }
-  @keyframes sun-haze-shimmer{
-    0%,100%{transform:scaleX(1) scaleY(1);opacity:.8}
-    50%{transform:scaleX(1.05) scaleY(1.1);opacity:1}
-  }
   @keyframes sun-flicker{
     0%,92%,100%{opacity:1}
-    93%{opacity:.85}
+    93%{opacity:.88}
+    94%{opacity:1}
+    95%{opacity:.92}
+    96%{opacity:1}
+  }
+93%{opacity:.85}
     94%{opacity:1}
     95%{opacity:.9}
     96%{opacity:1}
@@ -351,10 +340,9 @@
 </nav>
 
 <section class="hero">
+  <div class="atmosphere"></div>
   <div class="sun-wrap">
-    <div class="sun-corona"></div>
-    <div class="sun-glow"></div>
-    <svg viewBox="0 0 240 100" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
         <linearGradient id="sunBands" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#fff07a"/>
@@ -365,30 +353,23 @@
           <stop offset="100%" stop-color="#c72c00"/>
         </linearGradient>
         <clipPath id="domeClip">
-          <path d="M 0,100 A 120,100 0 0 1 240,100 Z"/>
+          <path d="M 0,100 A 100,100 0 0 1 200,100 Z"/>
         </clipPath>
         <pattern id="sunScan" width="1" height="2" patternUnits="userSpaceOnUse">
           <rect width="1" height="1" fill="rgba(0,0,0,0.2)"/>
         </pattern>
-        <radialGradient id="sunHighlight" cx="50%" cy="100%" r="50%">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.15)"/>
-          <stop offset="50%" stop-color="rgba(255,255,255,0.05)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-        </radialGradient>
       </defs>
       <g clip-path="url(#domeClip)">
-        <rect x="0" y="0" width="240" height="100" fill="url(#sunBands)"/>
-        <rect x="0" y="16" width="240" height="2" fill="#000"/>
-        <rect x="0" y="32" width="240" height="2.5" fill="#000"/>
-        <rect x="0" y="48" width="240" height="3" fill="#000"/>
-        <rect x="0" y="64" width="240" height="3.5" fill="#000"/>
-        <rect x="0" y="80" width="240" height="4.5" fill="#000"/>
-        <rect x="0" y="93" width="240" height="3" fill="#000"/>
-        <ellipse cx="120" cy="100" rx="100" ry="80" fill="url(#sunHighlight)"/>
-        <rect x="0" y="-4" width="240" height="108" fill="url(#sunScan)" opacity="0.4"/>
+        <rect x="0" y="0" width="200" height="100" fill="url(#sunBands)"/>
+        <rect x="0" y="16" width="200" height="2" fill="#000"/>
+        <rect x="0" y="32" width="200" height="2.5" fill="#000"/>
+        <rect x="0" y="48" width="200" height="3" fill="#000"/>
+        <rect x="0" y="64" width="200" height="3.5" fill="#000"/>
+        <rect x="0" y="80" width="200" height="4.5" fill="#000"/>
+        <rect x="0" y="93" width="200" height="3" fill="#000"/>
+        <rect x="0" y="-4" width="200" height="108" fill="url(#sunScan)" opacity="0.4"/>
       </g>
     </svg>
-    <div class="sun-haze"></div>
   </div>
   </div>
   <div class="horizon"></div>
