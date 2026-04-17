@@ -7,6 +7,9 @@ Serves JSON endpoints + SSE for the dashboard frontend.
 
 Run: python3 app.py
 """
+from gevent import monkey
+monkey.patch_all()
+
 
 import os
 import json
