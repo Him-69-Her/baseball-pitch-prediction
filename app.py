@@ -225,6 +225,10 @@ def index():
 def dashboard():
     return render_template("dashboard.html")
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
 
 @app.route("/d91map")
 def d91map():
