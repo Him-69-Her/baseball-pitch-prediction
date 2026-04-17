@@ -380,18 +380,31 @@ print("  ║    /api/stream    → SSE real-time stream                         
 print("  ╚═══════════════════════════════════════════════════════════════════════╝")
 print()
 
-start_subscribers()
+def _deferred_startup():
+    """Run blocking subscribers + VTN init AFTER gunicorn is serving."""
+    import time as _t
+    _t.sleep(2)
+    try:
+        start_subscribers()
+        print("  ✅ Pub/Sub subscribers started")
+    except Exception as _e:
+        print(f"  ⚠️  start_subscribers failed: {_e}")
+    try:
+        from google.cloud import pubsub_v1 as _psv1
+        _vtn_pub = _psv1.PublisherClient()
+        init_vtn(_vtn_pub, PROJECT_ID, "market-ticks")
+        print("  ✅ OpenADR VTN active")
+    except Exception as _e:
+        print(f"  ⚠️  OpenADR VTN init failed: {_e}")
 
-# ── OpenADR VTN init ─────────────────────────────────────────
 try:
-    from google.cloud import pubsub_v1 as _psv1
-    _vtn_pub = _psv1.PublisherClient()
-    init_vtn(_vtn_pub, PROJECT_ID, "market-ticks")
-    print("  ✅ OpenADR VTN active")
-    print("     POST /oadr/event/create  — issue DR event")
-    print("     GET  /oadr/status        — VTN health")
-except Exception as _e:
-    print(f"  ⚠️  OpenADR VTN init failed: {_e}")
+    import gevent as _gevent
+    _gevent.spawn(_deferred_startup)
+    print("  ⏳ Deferred startup scheduled (subscribers + VTN)")
+except ImportError:
+    import threading as _th
+    _th.Thread(target=_deferred_startup, daemon=True).start()
+    print("  ⏳ Deferred startup scheduled via thread (local dev)")
 
 register_postgis_routes(app)
 register_chain_routes(app)
