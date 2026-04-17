@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TINY-HUB ENERGY // How It Works</title>
+<meta name="description" content="How Tiny-Hub moves a kilowatt. Match sellers to buyers by proximity. Settle in 5-minute batches on Arbitrum L2. Deliver over the existing wire.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000;--cyan:#00f0ff;--cyan-dim:#00b8c7;--magenta:#ff2d95;
+  --sun-1:#ffcc00;--sun-2:#ff9500;--sun-3:#ff5500;--sun-4:#c72c00;
+  --ink:#e6f8ff;--ink-dim:#7ba9b3;--ink-body:#cdd8db;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden;scroll-behavior:smooth}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,0.15) 3px,rgba(0,0,0,0) 4px);mix-blend-mode:multiply}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:1.2rem 2rem;background:linear-gradient(to bottom,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.75) 70%,transparent);border-bottom:1px solid rgba(0,240,255,0.15);backdrop-filter:blur(6px)}
+.logo{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:.15em;color:var(--sun-1);text-decoration:none;text-shadow:0 0 8px var(--sun-2),0 0 24px var(--sun-3)}
+.nav-links{display:flex;gap:1.4rem;list-style:none;flex-wrap:wrap;justify-content:flex-end}
+.nav-links a{color:var(--cyan);text-decoration:none;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;transition:all .2s;text-shadow:0 0 4px var(--cyan-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.nav-links a:hover{color:var(--magenta);text-shadow:0 0 8px var(--magenta)}
+.nav-links a.active{color:var(--sun-1);text-shadow:0 0 8px var(--sun-2)}
+
+/* HERO */
+.page-hero{position:relative;height:42vh;min-height:300px;overflow:hidden}
+.stars{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1px 1px at 10% 15%,#fff 50%,transparent 100%),
+    radial-gradient(1px 1px at 25% 8%,rgba(255,255,255,0.8) 50%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 40% 22%,#fff 50%,transparent 100%),
+    radial-gradient(1px 1px at 55% 5%,rgba(255,255,255,0.7) 50%,transparent 100%),
+    radial-gradient(1px 1px at 70% 18%,#fff 50%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 85% 12%,rgba(255,255,255,0.9) 50%,transparent 100%),
+    radial-gradient(1px 1px at 15% 35%,rgba(255,255,255,0.6) 50%,transparent 100%),
+    radial-gradient(1px 1px at 30% 28%,#fff 50%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 32%,rgba(255,255,255,0.8) 50%,transparent 100%),
+    radial-gradient(1px 1px at 65% 25%,rgba(255,255,255,0.7) 50%,transparent 100%),
+    radial-gradient(1px 1px at 80% 30%,#fff 50%,transparent 100%),
+    radial-gradient(1px 1px at 92% 20%,rgba(255,255,255,0.6) 50%,transparent 100%),
+    radial-gradient(2px 2px at 48% 12%,rgba(255,255,255,0.9) 50%,transparent 100%),
+    radial-gradient(1px 1px at 88% 8%,#fff 50%,transparent 100%),
+    radial-gradient(1px 1px at 3% 25%,rgba(255,255,255,0.8) 50%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 60% 10%,rgba(255,255,255,0.7) 50%,transparent 100%);
+  animation:twinkle 4s ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:.8}100%{opacity:1}}
+
+.atmosphere{position:absolute;left:0;right:0;bottom:50%;height:50%;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 50% 70% at 50% 100%,rgba(255,204,0,0.35) 0%,rgba(255,149,0,0.22) 20%,rgba(255,85,0,0.12) 45%,transparent 70%),linear-gradient(to top,rgba(255,149,0,0.25) 0%,rgba(255,85,0,0.14) 25%,rgba(199,44,0,0.08) 50%,transparent 100%);filter:blur(4px);animation:atmos-breathe 8s ease-in-out infinite}
+@keyframes atmos-breathe{0%,100%{opacity:.85}50%{opacity:1}}
+.sun-wrap{position:absolute;bottom:50%;left:50%;width:min(380px,38vw);aspect-ratio:2/1;z-index:3;pointer-events:none;transform:translateX(-50%);animation:sun-breathe 5s ease-in-out infinite}
+.sun-wrap svg{width:100%;height:100%;display:block;overflow:visible;filter:drop-shadow(0 0 10px rgba(255,149,0,0.55))}
+@keyframes sun-breathe{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.02)}}
+.horizon{position:absolute;bottom:50%;left:0;right:0;height:2px;z-index:4;background:linear-gradient(to right,transparent,var(--cyan) 15%,var(--cyan) 85%,transparent);box-shadow:0 0 12px var(--cyan),0 0 32px var(--cyan),0 0 60px rgba(0,240,255,0.5)}
+.grid-wrap{position:absolute;bottom:0;left:0;right:0;height:50%;perspective:400px;perspective-origin:50% 0%;z-index:2;pointer-events:none;overflow:hidden}
+.grid-floor{position:absolute;bottom:0;left:-50%;width:200%;height:100%;background-image:linear-gradient(to right,var(--cyan) 2px,transparent 2px),linear-gradient(to bottom,var(--cyan) 2px,transparent 2px);background-size:80px 80px;transform:rotateX(70deg);transform-origin:50% 100%;animation:grid-scroll 6s linear infinite;opacity:.85}
+.grid-glow{position:absolute;bottom:0;left:0;right:0;height:50%;z-index:2;pointer-events:none;background:linear-gradient(to bottom,rgba(255,45,149,0.45) 0%,rgba(255,45,149,0.28) 15%,rgba(180,30,120,0.15) 35%,rgba(100,20,80,0.06) 55%,transparent 75%)}
+@keyframes grid-scroll{0%{background-position:0 0}100%{background-position:0 80px}}
+.grid-mask{position:absolute;bottom:0;left:0;right:0;height:50%;pointer-events:none;z-index:3;background:linear-gradient(to top,transparent 0%,transparent 40%,rgba(0,0,0,0.6) 80%,#000 100%)}
+
+/* Section nav */
+.section-nav{display:flex;justify-content:center;gap:0;border-bottom:1px solid rgba(0,240,255,0.2);background:rgba(0,0,0,0.92);z-index:45;backdrop-filter:blur(6px)}
+.section-nav a{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-dim);text-decoration:none;padding:.9rem 1.4rem;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.section-nav a:hover{color:var(--cyan);border-bottom-color:var(--cyan)}
+.section-nav a.active-tab{color:var(--sun-1);border-bottom-color:var(--sun-1);text-shadow:0 0 6px var(--sun-2)}
+@media(max-width:700px){.section-nav{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch}.section-nav a{padding:.8rem 1rem;font-size:.6rem}}
+
+/* Content */
+main{max-width:1280px;margin:0 auto;padding:4rem 2rem 6rem;position:relative;z-index:2}
+main::before{content:"";position:absolute;top:0;bottom:0;left:2rem;width:1px;background:linear-gradient(to bottom,transparent,var(--cyan) 8%,var(--cyan) 92%,transparent);opacity:.35;box-shadow:0 0 8px var(--cyan-dim);z-index:-1}
+@media(max-width:900px){main::before{display:none}}
+
+section.block{position:relative;margin-bottom:5rem;padding-left:clamp(3rem,7vw,7rem)}
+section.block:last-child{margin-bottom:0}
+
+.section-title{font-family:'Orbitron',sans-serif;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:700;letter-spacing:.08em;color:var(--sun-1);text-shadow:0 0 10px var(--sun-2),0 0 24px var(--sun-3);margin-bottom:2rem;position:relative;z-index:2;line-height:1.1}
+
+/* Step number */
+.step-num{
+  font-family:'Orbitron',sans-serif;font-size:clamp(4rem,8vw,7rem);font-weight:900;
+  color:transparent;-webkit-text-stroke:1.5px rgba(0,240,255,0.25);
+  position:absolute;right:2rem;top:-1rem;line-height:1;z-index:0;pointer-events:none;
+}
+@media(max-width:700px){.step-num{position:relative;right:auto;top:auto;font-size:3rem;margin-bottom:.5rem;-webkit-text-stroke:1px rgba(0,240,255,0.2)}}
+
+/* Prose */
+.prose p{font-size:1.05rem;line-height:1.75;color:var(--ink-body);margin-bottom:1.2rem;font-weight:300;max-width:68ch}
+.prose p strong{color:var(--ink);font-weight:500}
+.prose p em{color:var(--cyan);font-style:normal;font-weight:500}
+
+/* Detail grid */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:2rem 0}
+@media(max-width:800px){.detail-grid{grid-template-columns:1fr}}
+.detail-card{border:1px solid rgba(0,240,255,0.2);padding:1.3rem;background:linear-gradient(135deg,rgba(0,240,255,0.03),transparent);position:relative;transition:all .3s}
+.detail-card::before{content:"";position:absolute;top:0;left:0;width:3px;height:30px;background:var(--magenta);box-shadow:0 0 8px var(--magenta)}
+.detail-card:hover{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,240,255,0.18)}
+.detail-card-title{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700;letter-spacing:.08em;color:var(--sun-1);text-shadow:0 0 6px var(--sun-2);margin-bottom:.7rem}
+.detail-card-body{font-size:.9rem;line-height:1.6;color:var(--ink-body);font-weight:300}
+
+/* Highlight callout */
+.callout{
+  border-left:3px solid var(--magenta);padding:1.2rem 1.5rem;margin:2rem 0;
+  background:linear-gradient(90deg,rgba(255,45,149,0.06),transparent 70%);
+  font-family:'Orbitron',sans-serif;font-size:clamp(1.1rem,2vw,1.5rem);font-weight:600;
+  color:var(--magenta);text-shadow:0 0 8px rgba(255,45,149,0.4);
+  line-height:1.3;letter-spacing:.03em;
+}
+
+/* Flow diagram */
+.flow{display:flex;align-items:center;justify-content:center;gap:0;margin:3rem 0;flex-wrap:wrap}
+.flow-step{text-align:center;padding:1.2rem 1.8rem;border:1px solid rgba(0,240,255,0.25);background:rgba(0,240,255,0.04);min-width:160px;transition:all .3s}
+.flow-step:hover{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,240,255,0.15)}
+.flow-step-num{font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:800;color:var(--magenta);text-shadow:0 0 8px var(--magenta);line-height:1}
+.flow-step-label{font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--sun-1);margin-top:.4rem}
+.flow-arrow{font-size:1.5rem;color:var(--cyan);padding:0 .8rem;text-shadow:0 0 8px var(--cyan)}
+@media(max-width:600px){.flow{flex-direction:column}.flow-arrow{transform:rotate(90deg);padding:.5rem 0}}
+
+/* Tech spec */
+.tech-spec{display:grid;grid-template-columns:auto 1fr;gap:.4rem 1.2rem;font-size:.88rem;margin:1.5rem 0;max-width:600px}
+.tech-label{font-family:'JetBrains Mono',monospace;color:var(--cyan-dim);letter-spacing:.1em;text-transform:uppercase;font-size:.7rem;text-align:right;padding-top:.15rem}
+.tech-val{color:var(--ink-body)}
+.tech-val strong{color:var(--ink);font-weight:500}
+
+/* Footer */
+footer{padding:3rem 2rem 2rem;border-top:1px solid rgba(0,240,255,0.15);display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase}
+footer .brand{color:var(--sun-2)}
+@media(max-width:600px){footer{grid-template-columns:1fr;text-align:center}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">TINY&middot;HUB</a>
+  <ul class="nav-links">
+    <li><a href="/about">About</a></li>
+    <li><a href="/how-it-works" class="active">How It Works</a></li>
+    <li><a href="/suppliers">Suppliers</a></li>
+    <li><a href="/consumers">Consumers</a></li>
+    <li><a href="/investors">Investors</a></li>
+    <li><a href="/dashboard">Live Demo &rarr;</a></li>
+  </ul>
+</nav>
+
+<section class="page-hero">
+  <div class="stars"></div>
+  <div class="atmosphere"></div>
+  <div class="sun-wrap">
+    <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="sunBands" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fff07a"/><stop offset="15%" stop-color="#ffe54a"/><stop offset="35%" stop-color="#ffcc00"/><stop offset="60%" stop-color="#ff9500"/><stop offset="82%" stop-color="#ff5500"/><stop offset="100%" stop-color="#c72c00"/>
+        </linearGradient>
+        <clipPath id="domeClip"><path d="M 0,100 A 100,100 0 0 1 200,100 Z"/></clipPath>
+      </defs>
+      <g clip-path="url(#domeClip)">
+        <rect x="0" y="0" width="200" height="100" fill="url(#sunBands)"/>
+        <rect x="0" y="16" width="200" height="2" fill="#000"/>
+        <rect x="0" y="32" width="200" height="2.5" fill="#000"/>
+        <rect x="0" y="48" width="200" height="3" fill="#000"/>
+        <rect x="0" y="64" width="200" height="3.5" fill="#000"/>
+        <rect x="0" y="80" width="200" height="4.5" fill="#000"/>
+        <rect x="0" y="93" width="200" height="3" fill="#000"/>
+      </g>
+    </svg>
+  </div>
+  <div class="horizon"></div>
+  <div class="grid-wrap"><div class="grid-floor"></div></div>
+  <div class="grid-glow"></div>
+  <div class="grid-mask"></div>
+</section>
+
+<div class="section-nav" id="section-nav">
+  <a href="#" data-tab="overview" class="active-tab">Overview</a>
+  <a href="#" data-tab="match">01. Match</a>
+  <a href="#" data-tab="settle">02. Settle</a>
+  <a href="#" data-tab="deliver">03. Deliver</a>
+</div>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section class="block" id="overview">
+    <h2 class="section-title">How a Kilowatt Moves</h2>
+    <div class="prose">
+      <p>Tiny-Hub replaces the monopoly grid's routing logic with a three-step protocol that keeps power local, settles in real time, and delivers over the wire that's already there. No new infrastructure. No permission from the utility. Just better math.</p>
+    </div>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-step-num">01</div>
+        <div class="flow-step-label">Match</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="flow-step-num">02</div>
+        <div class="flow-step-label">Settle</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="flow-step-num">03</div>
+        <div class="flow-step-label">Deliver</div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <p>A rooftop generates surplus solar. The matching engine finds the nearest buyer. The trade settles on Arbitrum L2 in a 5-minute batch. The electrons flow over the existing ComEd or Ameren wire. The neighborhood keeps the profit.</p>
+      <p>Click the tabs above to see how each step works.</p>
+    </div>
+  </section>
+
+  <!-- 01 MATCH -->
+  <section class="block" id="match">
+    <div class="step-num">01</div>
+    <h2 class="section-title">01. Match</h2>
+    <div class="prose">
+      <p>Every 5 minutes, the matching engine scans all active sellers and buyers in the district. Sellers are ranked by surplus output (driven by real-time solar irradiance). Buyers are ranked by demand. The engine pairs them using <em>proximity-first matching</em>: the closest seller to each buyer wins.</p>
+      <p>This isn't theoretical. The engine runs against a digital twin of District 91 (Ameren / MISO territory) with over a thousand real buildings mapped with lat/lng coordinates and solar capacity data.</p>
+    </div>
+
+    <div class="callout">Distance is an economic penalty. Closer trades lose less energy to line loss and avoid macro-grid tolls entirely.</div>
+
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="detail-card-title">Spatial Database</div>
+        <div class="detail-card-body">PostGIS proximity queries match sellers to buyers inside tight zones (under 5 km). Every building has real coordinates. Every trade has a measured distance.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Real-Time Solar</div>
+        <div class="detail-card-body">Open-Meteo provides live Direct Normal Irradiance (DNI) for the district. Each seller's output is calculated from their actual panel count scaled by current sunlight conditions.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Three Matching Modes</div>
+        <div class="detail-card-body">Proximity-first (closest wins), price-priority (cheapest wins), or pro-rata (proportional allocation). The engine switches modes based on market conditions.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Fraud Detection</div>
+        <div class="detail-card-body">Physics-based verification cross-references claimed solar output against roof size and live irradiance. Spoofed production gets auto-slashed before settlement.</div>
+      </div>
+    </div>
+
+    <div class="tech-spec">
+      <span class="tech-label">Tick Rate</span><span class="tech-val"><strong>5 minutes</strong></span>
+      <span class="tech-label">Proximity</span><span class="tech-val">Under 5 km preferred, up to 50 km fallback</span>
+      <span class="tech-label">Line Loss</span><span class="tech-val">5% local distribution, scaled by distance</span>
+      <span class="tech-label">Data Source</span><span class="tech-val">Open-Meteo DNI + MISO LMP (live)</span>
+    </div>
+  </section>
+
+  <!-- 02 SETTLE -->
+  <section class="block" id="settle">
+    <div class="step-num">02</div>
+    <h2 class="section-title">02. Settle</h2>
+    <div class="prose">
+      <p>Matched trades don't settle one at a time. They batch-aggregate off-chain in 5-minute windows, then settle as a single transaction on Arbitrum L2. This is <em>optimistic settlement</em>: trades clear immediately based on live inverter telemetry, and the utility's delayed Green Button data becomes a trailing audit, not a blocker.</p>
+      <p>The result: roughly 95% gas savings compared to settling each trade individually on-chain, and a settlement speed that actually matches the physical grid.</p>
+    </div>
+
+    <div class="callout">If the physics is fast, the money has to move fast.</div>
+
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="detail-card-title">Batch Aggregation</div>
+        <div class="detail-card-body">100+ trades compress into a single on-chain transaction every 5 minutes. Gas cost per trade drops to fractions of a cent. Economically viable at any scale.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Arbitrum L2</div>
+        <div class="detail-card-body">TinyHubMarket and TinyHubToken smart contracts deployed on Arbitrum Sepolia. Sub-second finality, Ethereum security, negligible gas. ERC-20 THN token: 1 THN = 1 MWh.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Green Button True-Up</div>
+        <div class="detail-card-body">Utility meter data arrives 24-48 hours late via Green Button API. Instead of waiting, we settle optimistically and reconcile later. Drift gets auto-slashed. The utility data is verification, not the trigger.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Account Abstraction</div>
+        <div class="detail-card-body">ERC-4337 via managed Pimlico/Biconomy. Users never see a wallet, never pay gas, never know they're on a blockchain. The Web3 is invisible.</div>
+      </div>
+    </div>
+
+    <div class="tech-spec">
+      <span class="tech-label">Chain</span><span class="tech-val"><strong>Arbitrum L2</strong> (Sepolia testnet, mainnet pending)</span>
+      <span class="tech-label">Gas Savings</span><span class="tech-val">~95% vs per-trade settlement</span>
+      <span class="tech-label">Settlement</span><span class="tech-val">Optimistic, 5-minute batch windows</span>
+      <span class="tech-label">Token</span><span class="tech-val">THN (ERC-20), 1 THN = 1 MWh</span>
+    </div>
+  </section>
+
+  <!-- 03 DELIVER -->
+  <section class="block" id="deliver">
+    <div class="step-num">03</div>
+    <h2 class="section-title">03. Deliver</h2>
+    <div class="prose">
+      <p>The electrons move over the existing wire. ComEd or Ameren's distribution infrastructure carries the power from seller to buyer exactly the way it always has. We don't build new lines. We don't ask the utility for permission. We route around their pricing model while using their physical infrastructure.</p>
+      <p>The legal basis: <em>FERC Order 2222</em> establishes federal preemption for distributed energy resource aggregators. Tiny-Hub positions as a federally protected Demand Response Optimizer, which overrides state-level ICC jurisdiction on interstate grid operations. This is a structural legal moat, not just a memo.</p>
+    </div>
+
+    <div class="callout">We didn't build new wire. We built better routing for the wire that's already there.</div>
+
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="detail-card-title">Hardware Agnostic</div>
+        <div class="detail-card-body">$35 CT clamps (Shelly EM / Emporia Vue via MQTT) plug directly into the breaker box. No OEM dependency. No API rate limits. The sensor layer is physically uncensorable.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">LCOS-Aware Dispatch</div>
+        <div class="detail-card-body">Home batteries never discharge unless the local profit exceeds the $15/MWh hardware degradation cost. We don't sacrifice user equipment to prop up the utility. We optimize it to generate yield.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">FERC 2222 Shield</div>
+        <div class="detail-card-body">Federal preemption overrides state utility commission jurisdiction. Tiny-Hub operates as a protected DER aggregator. The legal framework exists. We're using it.</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-title">Grid Tolls</div>
+        <div class="detail-card-body">ComEd charges $0.02/kWh, Ameren charges $0.025/kWh for wheeling. By keeping trades local (under 5 km), most power never touches the macro-grid and the toll doesn't apply.</div>
+      </div>
+    </div>
+
+    <div class="tech-spec">
+      <span class="tech-label">Wire</span><span class="tech-val"><strong>Existing ComEd / Ameren distribution</strong></span>
+      <span class="tech-label">Legal</span><span class="tech-val">FERC Order 2222 federal preemption</span>
+      <span class="tech-label">Hardware</span><span class="tech-val">$35 CT clamps, MQTT, hardware-agnostic</span>
+      <span class="tech-label">Battery</span><span class="tech-val">LCOS-aware, $15/MWh degradation floor</span>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div><span class="brand">TINY&middot;HUB ENERGY</span> &nbsp;//&nbsp; Upgrading the grid, one neighborhood at a time.</div>
+  <div>&copy; 2026 // tinyhub.energy</div>
+</footer>
+
+<script>
+  // Tab switching
+  const tabs = document.querySelectorAll('.section-nav a');
+  const sections = document.querySelectorAll('section.block[id]');
+
+  function showSection(id) {
+    sections.forEach(s => { s.style.display = s.id === id ? '' : 'none'; });
+    tabs.forEach(t => { t.classList.toggle('active-tab', t.getAttribute('data-tab') === id); });
+  }
+
+  tabs.forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      showSection(a.getAttribute('data-tab'));
+      window.scrollTo({top: document.getElementById('section-nav').offsetTop - 60, behavior:'smooth'});
+    });
+  });
+
+  showSection('overview');
+</script>
+</body>
+</html>

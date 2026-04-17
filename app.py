@@ -586,3 +586,7 @@ if __name__ == "__main__":
         socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)
     else:
         app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+
+@app.route("/how-it-works")
+def how_it_works():
+    return render_template("how_it_works.html")
