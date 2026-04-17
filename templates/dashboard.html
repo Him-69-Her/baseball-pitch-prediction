@@ -414,7 +414,6 @@
                 var d=document.createElement('div');d.className='trade-item';
                 d.innerHTML='<div class="trade-top"><span class="trade-icon">\u26a1</span><span class="trade-pair"><strong>'+t.seller_label+'</strong> \u2192 '+t.buyer_label+'</span><span class="trade-status settled">SETTLED</span></div><div class="trade-bottom"><span><span class="val">'+(t.mwh*1000).toFixed(1)+' kWh</span></span><span>Grid <span class="val amber">$'+t.grid_price.toFixed(4)+'</span></span><span>Settled <span class="val">$'+t.settled_price.toFixed(4)+'</span></span></div>';
                 feed.prepend(d);if(feed.children.length>50)feed.removeChild(feed.lastChild);}});
-            }
             var s=document.getElementById('d91-settled');if(s)s.textContent=parseInt(s.textContent||0)+1;
             var m=document.getElementById('d91-mwh');if(m)m.textContent=(parseFloat(m.textContent||0)+t.mwh).toFixed(3);
             var p=document.getElementById('d91-profit');if(p)p.textContent='$'+(parseFloat((p.textContent||'$0').replace('$',''))+t.net_profit).toFixed(2);
