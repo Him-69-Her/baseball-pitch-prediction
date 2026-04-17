@@ -103,36 +103,32 @@
     box-shadow:0 0 12px var(--cyan), 0 0 32px var(--cyan), 0 0 60px var(--cyan-dim);
   }
 
-  /* Banded sun — the hero */
-  .sun{
-    position:absolute;bottom:50vh;left:50%;
-    width:min(560px,55vw);aspect-ratio:1/1;
-    transform:translate(-50%, 50%);
-    border-radius:50%;
-    clip-path:inset(0 0 50% 0);
-    z-index:3;
-    border-radius:50%;
-    background:linear-gradient(
-      to bottom,
-      var(--sun-1) 0%, var(--sun-1) 9%,
-      transparent 9%, transparent 11%,
-      var(--sun-2) 11%, var(--sun-2) 19%,
-      transparent 19%, transparent 22%,
-      var(--sun-2) 22%, var(--sun-2) 28%,
-      transparent 28%, transparent 31%,
-      var(--sun-3) 31%, var(--sun-3) 37%,
-      transparent 37%, transparent 40%,
-      var(--sun-3) 40%, var(--sun-3) 45%,
-      transparent 45%, transparent 47%,
-      var(--sun-4) 47%, var(--sun-4) 50%,
-      transparent 50%
-    );
-    filter:drop-shadow(0 -10px 40px var(--sun-2)) drop-shadow(0 -20px 80px var(--sun-3));
+  /* Half-sun — SVG-rendered hero */
+  .sun-wrap{
+    position:absolute;bottom:50vh;left:50%;transform:translateX(-50%);
+    width:min(560px,55vw);aspect-ratio:2/1;
+    z-index:3;pointer-events:none;
+  }
+  .sun-wrap svg{width:100%;height:100%;display:block;overflow:visible}
+  .sun-glow{
+    position:absolute;inset:-60% -30% 0 -30%;
+    background:radial-gradient(ellipse at 50% 100%,
+      rgba(255,149,0,0.55) 0%,
+      rgba(255,85,0,0.25) 25%,
+      transparent 60%);
+    filter:blur(10px);z-index:-1;pointer-events:none;
     animation:sun-pulse 4s ease-in-out infinite;
   }
+  .sun-haze{
+    position:absolute;bottom:-2px;left:-15%;right:-15%;height:40%;
+    background:linear-gradient(to top,rgba(255,149,0,0.35),transparent);
+    filter:blur(8px);z-index:2;pointer-events:none;
+  }
   @keyframes sun-pulse{
-    0%,100%{filter:drop-shadow(0 -10px 40px var(--sun-2)) drop-shadow(0 -20px 80px var(--sun-3))}
-    50%{filter:drop-shadow(0 -15px 60px var(--sun-1)) drop-shadow(0 -25px 120px var(--sun-2))}
+    0%,100%{opacity:.85;transform:scale(1)}
+    50%{opacity:1;transform:scale(1.03)}
+  }
+50%{filter:drop-shadow(0 -15px 60px var(--sun-1)) drop-shadow(0 -25px 120px var(--sun-2))}
   }
 
   .hero{
@@ -317,7 +313,36 @@
 </nav>
 
 <section class="hero">
-  <div class="sun"></div>
+  <div class="sun-wrap">
+    <div class="sun-glow"></div>
+    <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="sunBands" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ffe54a"/>
+          <stop offset="30%" stop-color="#ffcc00"/>
+          <stop offset="60%" stop-color="#ff9500"/>
+          <stop offset="85%" stop-color="#ff5500"/>
+          <stop offset="100%" stop-color="#c72c00"/>
+        </linearGradient>
+        <clipPath id="domeClip">
+          <path d="M 0,100 A 100,100 0 0 1 200,100 Z"/>
+        </clipPath>
+        <pattern id="sunScan" width="1" height="2" patternUnits="userSpaceOnUse">
+          <rect width="1" height="1" fill="rgba(0,0,0,0.18)"/>
+        </pattern>
+      </defs>
+      <g clip-path="url(#domeClip)">
+        <rect x="0" y="0" width="200" height="100" fill="url(#sunBands)"/>
+        <rect x="0" y="18" width="200" height="2.5" fill="#000"/>
+        <rect x="0" y="36" width="200" height="2.5" fill="#000"/>
+        <rect x="0" y="52" width="200" height="3" fill="#000"/>
+        <rect x="0" y="68" width="200" height="3.5" fill="#000"/>
+        <rect x="0" y="84" width="200" height="4" fill="#000"/>
+        <rect x="0" y="0" width="200" height="100" fill="url(#sunScan)" opacity="0.35"/>
+      </g>
+    </svg>
+    <div class="sun-haze"></div>
+  </div>
   <div class="horizon"></div>
   <div class="grid-wrap"><div class="grid-floor"></div></div>
   <div class="grid-mask"></div>
