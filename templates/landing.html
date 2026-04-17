@@ -105,7 +105,7 @@
 
   /* Banded sun — the hero */
   .sun{
-    position:absolute;top:10%;left:50%;transform:translateX(-50%);
+    position:absolute;bottom:48vh;left:50%;transform:translateX(-50%);
     width:min(420px,52vw);aspect-ratio:1/1;
     z-index:3;
     border-radius:50%;
@@ -135,11 +135,11 @@
     justify-content:flex-start;
     padding:0;
   }
-  /* Position the wordmark absolutely in the dark band between
-     the horizon line (bottom:50vh) and the visible grid start */
+  /* Position wordmark BELOW horizon, in dark band above grid */
   .hero-content{
-    position:absolute;left:50%;transform:translateX(-50%);
-    top:calc(100vh - 50vh - 5.5rem);
+    position:absolute;left:50%;
+    bottom:34vh;
+    transform:translateX(-50%);
     z-index:6;text-align:center;
     width:100%;
   }
