@@ -399,12 +399,12 @@ def _deferred_startup():
 
 try:
     import gevent as _gevent
-    _gevent.spawn(_deferred_startup)
-    print("  ⏳ Deferred startup scheduled (subscribers + VTN)")
+    pass  # _gevent.spawn(_deferred_startup)  # DISABLED — blocks gevent
+    print("  ⏸️  Pub/Sub subscribers DISABLED (gRPC/gevent conflict)")
 except ImportError:
     import threading as _th
-    _th.Thread(target=_deferred_startup, daemon=True).start()
-    print("  ⏳ Deferred startup scheduled via thread (local dev)")
+    pass  # _th.Thread(target=_deferred_startup)  # DISABLED
+    print("  ⏸️  Pub/Sub subscribers DISABLED (local dev)")
 
 register_postgis_routes(app)
 register_chain_routes(app)
