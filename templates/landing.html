@@ -106,9 +106,10 @@
   /* Banded sun — the hero */
   .sun{
     position:absolute;bottom:50vh;left:50%;transform:translateX(-50%);
-    width:min(640px,72vw);aspect-ratio:1/1;
-    /* clip off the bottom half so only the top arc shows above horizon */
-    clip-path:inset(0 0 50% 0);
+    width:min(560px,55vw);height:min(280px,27.5vw);
+    /* half-dome: flat bottom sits on horizon, curved top rises */
+    border-radius:999px 999px 0 0;
+    overflow:hidden;
     z-index:3;
     border-radius:50%;
     background:linear-gradient(
@@ -125,12 +126,12 @@
       transparent 90%, transparent 94%,
       var(--sun-4) 94%, var(--sun-4) 100%
     );
-    filter:drop-shadow(0 0 40px var(--sun-2)) drop-shadow(0 0 80px var(--sun-3));
+    box-shadow:0 0 40px var(--sun-2), 0 0 90px var(--sun-3), 0 -20px 60px var(--sun-2);
     animation:sun-pulse 4s ease-in-out infinite;
   }
   @keyframes sun-pulse{
-    0%,100%{filter:drop-shadow(0 0 40px var(--sun-2)) drop-shadow(0 0 80px var(--sun-3))}
-    50%{filter:drop-shadow(0 0 60px var(--sun-1)) drop-shadow(0 0 120px var(--sun-2))}
+    0%,100%{box-shadow:0 0 40px var(--sun-2), 0 0 90px var(--sun-3), 0 -20px 60px var(--sun-2)}
+    50%{box-shadow:0 0 60px var(--sun-1), 0 0 130px var(--sun-2), 0 -30px 80px var(--sun-1)}
   }
 
   .hero{
