@@ -21,7 +21,7 @@ from collections import defaultdict
 from google.cloud import pubsub_v1
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 TOPIC_ID = "district91-energy"
 BUILDINGS_FILE = "district91_buildings.json"
 NAMES_FILE = "district91_names.json"

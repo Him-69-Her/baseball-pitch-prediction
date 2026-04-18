@@ -72,15 +72,115 @@ def logout():
     session.clear()
     return redirect("/")
 
+# ── Go Live: D63 Simulator ───────────────────────────────────
+_sim_thread = None
+_sim_running = False
+
+def _run_d63_sim():
+    """Background thread: runs D63 marketplace trades, broadcasts to SSE."""
+    global _sim_running
+    import random as _rand
+    import time as _time
+    try:
+        from d63_marketplace_live import run_trade, SELLERS, BUYERS, get_grid_price, solar_output, COMED_TOLL, CO2_TONS_PER_MWH
+        print("  ⚡ GO LIVE — D63 simulator started")
+        _trade_count = 0
+        _rejected = 0
+        _total_mwh = 0.0
+        _total_profit = 0.0
+        while _sim_running:
+            try:
+                # Run the real matching engine trade
+                grid_price = get_grid_price()
+                seller = _rand.choice(SELLERS)
+                mwh = solar_output(
+                    seller["capacity_mwh"],
+                    seller.get("lat", 42.31),
+                    seller.get("lng", -88.44),
+                    seller.get("is_battery", False),
+                )
+                if mwh <= 0:
+                    _time.sleep(1)
+                    continue
+                buyer = _rand.choice(BUYERS)
+                ask_price = round(grid_price * _rand.uniform(0.55, 0.85), 4)
+                bid_price = round(min(buyer["max_bid"], grid_price * _rand.uniform(0.7, 1.1)), 4)
+                settled = round((ask_price + bid_price) / 2, 4)
+                profit = round((settled - COMED_TOLL) * mwh, 4)
+                if bid_price >= ask_price:
+                    status = "SETTLED"
+                    _trade_count += 1
+                    _total_profit += profit
+                    _total_mwh += mwh
+                else:
+                    status = "REJECTED"
+                    _rejected += 1
+                    settled = 0.0
+                    profit = 0.0
+                trade = {
+                    "station_id": seller["id"],
+                    "district": "McHenry_D63",
+                    "seller_type": seller["type"],
+                    "seller_label": seller["label"],
+                    "buyer_type": buyer["type"],
+                    "buyer_label": buyer["label"],
+                    "mwh": mwh,
+                    "ask_price": ask_price,
+                    "bid_price": bid_price,
+                    "settled_price": settled,
+                    "net_profit": profit,
+                    "grid_price": grid_price,
+                    "trade_status": status,
+                    "co2_tons": round(mwh * CO2_TONS_PER_MWH, 4) if status == "SETTLED" else 0,
+                    "time": _time.strftime("%H:%M:%S"),
+                    "_district": "D63",
+                }
+                # Update stats directly
+                with stats_lock:
+                    stats["d63"]["trades"] += 1
+                    if status == "SETTLED":
+                        stats["d63"]["settled"] += 1
+                        stats["d63"]["mwh"] += mwh
+                        stats["d63"]["profit"] += profit
+                        stats["d63"]["co2"] += trade["co2_tons"]
+                    else:
+                        stats["d63"]["rejected"] += 1
+                # Broadcast directly to SSE — no Pub/Sub roundtrip needed
+                broadcast_sse(trade)
+                _time.sleep(_rand.uniform(2, 5))
+            except Exception as _e:
+                print(f"  [GoLive] trade error: {_e}")
+                _time.sleep(3)
+    except ImportError as _e:
+        print(f"  [GoLive] Cannot import d63_marketplace_live: {_e}")
+    except Exception as _e:
+        print(f"  [GoLive] Startup error: {_e}")
+    print("  ⚡ GO LIVE — D63 simulator stopped")
+
 @app.route("/api/go-live", methods=["POST"])
 def api_go_live():
-    """Authenticate for live mode."""
+    """Authenticate and start live D63 simulator."""
+    global _sim_thread, _sim_running
     data = request.get_json() or {}
     pw = data.get("password", "")
-    if pw == ADMIN_PASS:
-        session["live"] = True
-        return jsonify({"status": "ok", "message": "Live mode activated"})
-    return jsonify({"status": "error", "message": "Invalid password"}), 401
+    if pw != ADMIN_PASS:
+        return jsonify({"status": "error", "message": "Invalid password"}), 401
+    session["live"] = True
+    if not _sim_running:
+        _sim_running = True
+        _sim_thread = threading.Thread(target=_run_d63_sim, daemon=True)
+        _sim_thread.start()
+        return jsonify({"status": "ok", "message": "Live mode activated — D63 simulator started"})
+    return jsonify({"status": "ok", "message": "Already live"})
+
+@app.route("/api/go-live/stop", methods=["POST"])
+def api_stop_live():
+    """Stop the live simulator."""
+    global _sim_running
+    if not session.get("live"):
+        return jsonify({"status": "error", "message": "Not authenticated"}), 401
+    _sim_running = False
+    return jsonify({"status": "ok", "message": "Simulator stopped"})
 socketio = init_socketio(app)
 
 # ── Config ──────────────────────────────────────────────────

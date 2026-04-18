@@ -77,7 +77,7 @@ except ImportError:
     HAS_PUBSUB = False
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = os.environ.get("GCP_PROJECT", "tiny-hub-network")
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 D63_TOPIC = "energy-pulse"
 D91_TOPIC = "district91-energy"
 SETTLER_D63_SUB = "energy-pulse-batch-settler-sub"

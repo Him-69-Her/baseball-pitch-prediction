@@ -42,7 +42,7 @@ except ImportError:
 app = Flask(__name__)
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = os.environ.get("GCP_PROJECT", "tiny-hub-network")
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 PORT = int(os.environ.get("INVERTER_API_PORT", 5001))
 
 TELEMETRY_TOPIC = "inverter-telemetry"

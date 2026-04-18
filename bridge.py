@@ -21,7 +21,7 @@ from google.cloud import pubsub_v1
 from web3 import Web3
 
 # ─── GCP Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 SUBSCRIPTION_ID = "energy-pulse-sub"
 # ─── Blockchain Config ───────────────────────────────────────────
 RPC_URL = os.environ.get("RPC_URL", "http://127.0.0.1:8545")  # Local Hardhat node

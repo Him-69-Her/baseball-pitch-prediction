@@ -38,7 +38,7 @@ print(f"  ║  TINY-HUB SETTLER {'(Arbitrum L2)' if IS_L2 else '(Local Hardhat)'
 print(f"  ╚══════════════════════════════════════════════════╝")
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 
 # Pub/Sub subscriptions
 SETTLER_D63_SUB = "energy-pulse-settler-sub"
@@ -75,7 +75,7 @@ if IS_L2:
     try:
         from google.cloud import secretmanager
         sm = secretmanager.SecretManagerServiceClient()
-        secret_name = "projects/tiny-hub-network/secrets/SETTLER_PRIVATE_KEY/versions/latest"
+        secret_name = "projects/tinyhub-platform-dev/secrets/SETTLER_PRIVATE_KEY/versions/latest"
         SETTLER_KEY = sm.access_secret_version(request={"name": secret_name}).payload.data.decode("UTF-8").strip()
         print("  Key:       Loaded from Secret Manager")
     except Exception:

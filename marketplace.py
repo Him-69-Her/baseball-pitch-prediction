@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 from google.cloud import pubsub_v1
 
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 TOPIC_ID = "energy-pulse"
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)

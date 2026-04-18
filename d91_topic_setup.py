@@ -13,7 +13,7 @@ import json
 from google.cloud import pubsub_v1
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 TOPIC_ID = "district91-energy"
 SUBSCRIPTION_ID = "district91-energy-sub"
 # ── Create Topic ────────────────────────────────────────────

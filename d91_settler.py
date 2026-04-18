@@ -29,7 +29,7 @@ from web3 import Web3
 from google.cloud import pubsub_v1
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 # Pub/Sub
 D63_TOPIC = "energy-pulse"
 D91_TOPIC = "district91-energy"

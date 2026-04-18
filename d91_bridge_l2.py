@@ -32,7 +32,7 @@ print(f"  ║  TINY-HUB BRIDGE  {'(Arbitrum L2)' if IS_L2 else '(Local Hardhat)'
 print(f"  ╚══════════════════════════════════════════════════╝")
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 D63_SUB = "energy-pulse-sub"
 D91_SUB = "district91-energy-bridge-sub"
 
@@ -70,7 +70,7 @@ if IS_L2:
     try:
         from google.cloud import secretmanager
         sm = secretmanager.SecretManagerServiceClient()
-        secret_name = "projects/tiny-hub-network/secrets/BRIDGE_PRIVATE_KEY/versions/latest"
+        secret_name = "projects/tinyhub-platform-dev/secrets/BRIDGE_PRIVATE_KEY/versions/latest"
         BRIDGE_KEY = sm.access_secret_version(request={"name": secret_name}).payload.data.decode("UTF-8").strip()
         print("  Key:       Secret Manager")
     except Exception:

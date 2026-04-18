@@ -38,7 +38,7 @@ except ImportError:
     PUBSUB_AVAILABLE = False
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = os.environ.get("GCP_PROJECT", "tiny-hub-network")
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 TELEMETRY_TOPIC = "inverter-telemetry"
 D63_TOPIC = "energy-pulse"
 D91_TOPIC = "district91-energy"

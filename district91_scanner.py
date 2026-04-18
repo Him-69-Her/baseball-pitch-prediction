@@ -17,7 +17,7 @@ import requests
 try:
     from google.cloud import secretmanager
     client = secretmanager.SecretManagerServiceClient()
-    name = "projects/tiny-hub-network/secrets/Maps_API_Key/versions/latest"
+    name = "projects/tinyhub-platform-dev/secrets/Maps_API_Key/versions/latest"
     API_KEY = client.access_secret_version(request={"name": name}).payload.data.decode("UTF-8")
     HAS_SOLAR_API = True
     print("  [Solar API] Key loaded")

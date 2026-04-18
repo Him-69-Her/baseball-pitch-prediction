@@ -12,3 +12,4 @@ __pycache__/
 .env
 deployment-l2.json
 deployment_l2.json
+cloud-sql-proxy

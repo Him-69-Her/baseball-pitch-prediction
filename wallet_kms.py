@@ -15,7 +15,7 @@ Flow:
 Deploy:
   gcloud functions deploy create-wallet \\
       --gen2 --runtime python311 --trigger-event-filters="type=google.firebase.authentication.user.v1.created" \\
-      --region us-central1 --project tiny-hub-network
+      --region us-central1 --project tinyhub-platform-dev
 
 Also includes:
   - sign-transaction: Cloud Function to sign txs with user's KMS key
@@ -35,7 +35,7 @@ from google.protobuf import duration_pb2
 logger = logging.getLogger(__name__)
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = os.environ.get("GCP_PROJECT", "tiny-hub-network")
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 LOCATION = os.environ.get("KMS_LOCATION", "us-central1")
 KEY_RING_ID = os.environ.get("KMS_KEY_RING", "tinyhub-user-wallets")
 CHAIN_ID = int(os.environ.get("CHAIN_ID", "421614"))  # Arbitrum Sepolia

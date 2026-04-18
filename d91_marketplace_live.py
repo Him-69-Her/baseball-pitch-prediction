@@ -28,7 +28,7 @@ from weather_feed import get_weather, cloud_factor, print_weather_status
 from matching_engine import MatchingEngine, battery_output
 
 # ── Config ──────────────────────────────────────────────────
-PROJECT_ID = "tiny-hub-network"
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "tinyhub-data-dev")
 TOPIC_ID = "district91-energy"
 TICK_TOPIC = "market-ticks"
 TICK_SUB   = "market-ticks-d91-sub"
