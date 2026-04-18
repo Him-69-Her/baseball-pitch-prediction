@@ -35,10 +35,15 @@ import secrets
 ADMIN_USER = _os.environ.get("TINYHUB_ADMIN_USER", "admin")
 ADMIN_PASS = _os.environ.get("TINYHUB_ADMIN_PASS", "tinyhub2026")
 SECRET_KEY = _os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
+MAPS_API_KEY = _os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 app.register_blueprint(oadr_bp)
+
+@app.context_processor
+def inject_maps_key():
+    return {"MAPS_API_KEY": MAPS_API_KEY}
 
 # ── Auth Routes + Decorator ─────────────────────────────────
 def login_required(f):
