@@ -4,971 +4,505 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TINY-HUB ENERGY // McHenry County Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Orbitron:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
-
-  :root {
-    --gold: #F5C518;
-    --gold-dim: #C9A000;
-    --gold-glow: rgba(245, 197, 24, 0.3);
-    --cyan: #00F0FF;
-    --cyan-dim: #007A82;
-    --cyan-glow: rgba(0, 240, 255, 0.15);
-    --magenta: #FF006E;
-    --green: #00FF88;
-    --green-dim: #00994D;
-    --red: #FF3B3B;
-    --orange: #FF8C00;
-    --black: #06060A;
-    --dark: #0C0C14;
-    --mid: #12121E;
-    --surface: #1A1A2E;
-    --surface-light: #22223A;
-    --border: #2A2A44;
-    --white: #F0F0E8;
-    --gray: #6B6B8D;
-    --text-dim: #9999AA;
+  :root{
+    --bg:#000;
+    --cyan:#00f0ff;
+    --cyan-dim:#00b8c7;
+    --magenta:#ff2d95;
+    --sun-1:#ffcc00;
+    --sun-2:#ff9500;
+    --sun-3:#ff5500;
+    --sun-4:#c72c00;
+    --ink:#e6f8ff;
+    --ink-dim:#7ba9b3;
+    --ink-body:#cdd8db;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;overflow-x:hidden;scroll-behavior:smooth}
 
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'IBM Plex Mono', monospace;
-    background: var(--black);
-    color: var(--white);
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
+  /* CRT Scanlines */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,0.18) 3px,rgba(0,0,0,0) 4px);
+    mix-blend-mode:multiply;
   }
 
-  /* ═══════════════════════════════════════════
-     NAVIGATION
-     ═══════════════════════════════════════════ */
-  .topnav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: rgba(6, 6, 10, 0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    height: 56px;
+  /* NAV */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:1.2rem 2rem;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    border-bottom:1px solid rgba(0,240,255,0.15);
+  }
+  .logo{
+    font-family:'Orbitron',sans-serif;font-size:1.6rem;letter-spacing:.15em;
+    color:var(--sun-1);
+    text-shadow:0 0 8px var(--sun-2),0 0 24px var(--sun-3);
+    text-decoration:none;
+  }
+  .nav-links{display:flex;gap:1.4rem;list-style:none;flex-wrap:wrap;justify-content:flex-end}
+  .nav-links a{
+    color:var(--cyan);text-decoration:none;font-size:.82rem;letter-spacing:.16em;
+    text-transform:uppercase;transition:all .2s;
+    text-shadow:0 0 4px var(--cyan-dim);white-space:nowrap;font-weight:700;
+  }
+  .nav-links a:hover{color:var(--magenta);text-shadow:0 0 8px var(--magenta)}
+
+  /* HERO (shorter sub-page) */
+  .hero{
+    background:linear-gradient(to bottom,#000 0%,#020a18 30%,#0a1628 55%,#0d1a2d 80%,#000 100%);
+    position:relative;height:55vh;min-height:400px;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   }
 
-  .topnav-brand {
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 900;
-    font-size: 16px;
-    color: var(--gold);
-    text-decoration: none;
-    letter-spacing: 3px;
-    text-shadow: 0 0 20px var(--gold-glow);
-  }
-
-  .topnav-links {
-    display: flex;
-    gap: 8px;
-  }
-
-  .topnav-links a {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: var(--gray);
-    text-decoration: none;
-    padding: 8px 14px;
-    border-radius: 4px;
-    transition: all 0.3s;
-    text-transform: uppercase;
-  }
-
-  .topnav-links a:hover,
-  .topnav-links a.active {
-    color: var(--cyan);
-    background: rgba(0, 240, 255, 0.06);
-  }
-
-  /* ═══════════════════════════════════════════
-     HERO / HEADER
-     ═══════════════════════════════════════════ */
-  .hero {
-    position: relative;
-    min-height: 50vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 100px 32px 60px;
-    overflow: hidden;
-  }
-
-  .hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
+  .stars{
+    position:absolute;inset:0;z-index:0;pointer-events:none;
     background:
-      radial-gradient(ellipse 80% 60% at 50% 80%, rgba(0, 240, 255, 0.06) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 40% at 50% 20%, rgba(245, 197, 24, 0.04) 0%, transparent 60%);
-    pointer-events: none;
+      radial-gradient(1px 1px at 10% 15%, #fff 50%, transparent 100%),
+      radial-gradient(1px 1px at 25% 8%, rgba(255,255,255,0.8) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 22%, #fff 50%, transparent 100%),
+      radial-gradient(1px 1px at 55% 5%, rgba(255,255,255,0.7) 50%, transparent 100%),
+      radial-gradient(1px 1px at 70% 18%, #fff 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 85% 12%, rgba(255,255,255,0.9) 50%, transparent 100%),
+      radial-gradient(1px 1px at 15% 35%, rgba(255,255,255,0.6) 50%, transparent 100%),
+      radial-gradient(1px 1px at 30% 28%, #fff 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 50% 32%, rgba(255,255,255,0.8) 50%, transparent 100%),
+      radial-gradient(1px 1px at 65% 25%, rgba(255,255,255,0.7) 50%, transparent 100%),
+      radial-gradient(1px 1px at 80% 30%, #fff 50%, transparent 100%),
+      radial-gradient(1px 1px at 92% 20%, rgba(255,255,255,0.6) 50%, transparent 100%);
+    animation:twinkle 4s ease-in-out infinite alternate;
   }
+  @keyframes twinkle{0%{opacity:.8}100%{opacity:1}}
 
-  .hero-grid {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 200px;
+  .atmosphere{
+    position:absolute;left:0;right:0;bottom:50%;height:35vh;
+    z-index:1;pointer-events:none;
     background:
-      linear-gradient(to bottom, var(--black), transparent 20%),
-      repeating-linear-gradient(90deg, var(--cyan-dim) 0px, transparent 1px, transparent 60px),
-      repeating-linear-gradient(0deg, var(--cyan-dim) 0px, transparent 1px, transparent 60px);
-    opacity: 0.12;
-    transform: perspective(500px) rotateX(55deg);
-    transform-origin: bottom;
-    pointer-events: none;
+      radial-gradient(ellipse 50% 70% at 50% 100%,rgba(255,204,0,0.4) 0%,rgba(255,149,0,0.28) 20%,rgba(255,85,0,0.15) 45%,transparent 70%),
+      linear-gradient(to top,rgba(255,149,0,0.3) 0%,rgba(255,85,0,0.18) 25%,rgba(199,44,0,0.1) 50%,transparent 100%);
+    filter:blur(4px);
+  }
+
+  .sun-wrap{
+    position:absolute;bottom:50%;left:50%;
+    width:min(420px,42vw);aspect-ratio:2/1;
+    z-index:3;pointer-events:none;
+    transform:translateX(-50%);
+    animation:sun-breathe 5s ease-in-out infinite;
+  }
+  .sun-wrap svg{width:100%;height:100%;display:block;overflow:visible;
+    filter:drop-shadow(0 0 12px rgba(255,149,0,0.6));}
+  @keyframes sun-breathe{
+    0%,100%{transform:translateX(-50%) scale(1)}
+    50%{transform:translateX(-50%) scale(1.025)}
+  }
+
+  .horizon{
+    position:absolute;bottom:50%;left:0;right:0;height:2px;z-index:4;
+    background:linear-gradient(to right, transparent, var(--cyan) 15%, var(--cyan) 85%, transparent);
+    box-shadow:0 0 12px var(--cyan), 0 0 32px var(--cyan), 0 0 60px var(--cyan-dim);
   }
 
-  .hero-district {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 6px;
-    color: var(--cyan);
-    margin-bottom: 16px;
-    text-transform: uppercase;
-    opacity: 0;
-    animation: fadeUp 0.8s ease 0.2s forwards;
+  .grid-wrap{
+    position:absolute;bottom:0;left:0;right:0;height:50%;
+    perspective:400px;perspective-origin:50% 0%;
+    z-index:2;pointer-events:none;overflow:hidden;
+  }
+  .grid-floor{
+    position:absolute;bottom:0;left:-50%;width:200%;height:100%;
+    background-image:
+      linear-gradient(to right, var(--cyan) 2px, transparent 2px),
+      linear-gradient(to bottom, var(--cyan) 2px, transparent 2px);
+    background-size:80px 80px;
+    transform:rotateX(70deg);transform-origin:50% 100%;
+    animation:grid-scroll 6s linear infinite;
+    filter:drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 14px var(--cyan-dim));
+    opacity:.95;
   }
-
-  .hero h1 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: clamp(28px, 5vw, 52px);
-    font-weight: 900;
-    color: var(--gold);
-    letter-spacing: 4px;
-    line-height: 1.2;
-    text-shadow: 0 0 40px var(--gold-glow), 0 0 80px rgba(245, 197, 24, 0.1);
-    margin-bottom: 16px;
-    opacity: 0;
-    animation: fadeUp 0.8s ease 0.4s forwards;
-  }
-
-  .hero-sub {
-    font-size: 14px;
-    color: var(--text-dim);
-    max-width: 640px;
-    line-height: 1.7;
-    opacity: 0;
-    animation: fadeUp 0.8s ease 0.6s forwards;
-  }
-
-  .hero-stats {
-    display: flex;
-    gap: 40px;
-    margin-top: 40px;
-    opacity: 0;
-    animation: fadeUp 0.8s ease 0.8s forwards;
-  }
-
-  .hero-stat {
-    text-align: center;
-  }
-
-  .hero-stat-value {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--cyan);
-    text-shadow: 0 0 20px var(--cyan-glow);
-  }
-
-  .hero-stat-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--gray);
-    margin-top: 4px;
-    text-transform: uppercase;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ═══════════════════════════════════════════
-     SECTION HEADERS
-     ═══════════════════════════════════════════ */
-  .section {
-    padding: 80px 32px;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  .section-label {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 5px;
-    color: var(--cyan);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .section-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--gold);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-  }
-
-  .section-desc {
-    color: var(--text-dim);
-    font-size: 13px;
-    max-width: 600px;
-    line-height: 1.6;
-    margin-bottom: 32px;
-  }
-
-  /* ═══════════════════════════════════════════
-     MAP SECTION
-     ═══════════════════════════════════════════ */
-  .map-container {
-    position: relative;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--dark);
-  }
-
-  .map-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .map-toolbar-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .map-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--green);
-  }
-
-  .map-status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  .map-filter-btns {
-    display: flex;
-    gap: 6px;
-  }
-
-  .map-filter-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    padding: 5px 12px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    background: var(--dark);
-    color: var(--gray);
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-  }
-
-  .map-filter-btn:hover { border-color: var(--cyan); color: var(--cyan); }
-  .map-filter-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 240, 255, 0.08); }
-
-  #map {
-    height: 520px;
-    background: var(--dark);
-  }
-
-  .map-legend {
-    display: flex;
-    gap: 20px;
-    padding: 12px 16px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-  }
-
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 2px solid;
-  }
-
-  .legend-dot.seller-mega { border-color: #FF006E; background: rgba(255, 0, 110, 0.3); }
-  .legend-dot.seller-large { border-color: #FF8C00; background: rgba(255, 140, 0, 0.3); }
-  .legend-dot.seller-med { border-color: #F5C518; background: rgba(245, 197, 24, 0.3); }
-  .legend-dot.seller-sm { border-color: #00FF88; background: rgba(0, 255, 136, 0.3); }
-  .legend-dot.buyer { border-color: #00F0FF; background: rgba(0, 240, 255, 0.3); }
-  .legend-dot.battery { border-color: #9B59B6; background: rgba(155, 89, 182, 0.3); }
-
-  /* ═══════════════════════════════════════════
-     DASHBOARD SECTION
-     ═══════════════════════════════════════════ */
-  .dash-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  .dash-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .dash-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-  }
-
-  .dash-card.card-cyan::before { background: linear-gradient(90deg, var(--cyan), transparent); }
-  .dash-card.card-gold::before { background: linear-gradient(90deg, var(--gold), transparent); }
-  .dash-card.card-green::before { background: linear-gradient(90deg, var(--green), transparent); }
-  .dash-card.card-magenta::before { background: linear-gradient(90deg, var(--magenta), transparent); }
-
-  .dash-card-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--gray);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .dash-card-value {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 26px;
-    font-weight: 700;
-  }
-
-  .dash-card.card-cyan .dash-card-value { color: var(--cyan); }
-  .dash-card.card-gold .dash-card-value { color: var(--gold); }
-  .dash-card.card-green .dash-card-value { color: var(--green); }
-  .dash-card.card-magenta .dash-card-value { color: var(--magenta); }
-
-  .dash-card-sub {
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-top: 4px;
-  }
-
-  /* Wider panels */
-  .dash-panels {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .panel-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: var(--gold);
-    text-transform: uppercase;
-  }
-
-  .panel-badge {
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
-
-  .panel-badge.live {
-    background: rgba(0, 255, 136, 0.1);
-    color: var(--green);
-    border: 1px solid var(--green-dim);
-  }
-
-  .panel-body {
-    padding: 16px;
-  }
-
-  /* Trade feed */
-  .trade-feed {
-    max-height: 280px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .trade-entry {
-    display: grid;
-    grid-template-columns: 70px 1fr 80px 60px;
-    gap: 8px;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(42, 42, 68, 0.5);
-    font-size: 11px;
-    animation: tradeFadeIn 0.4s ease;
-  }
-
-  @keyframes tradeFadeIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  .trade-time { color: var(--gray); font-size: 10px; }
-  .trade-pair { color: var(--white); }
-  .trade-amount { color: var(--cyan); text-align: right; font-family: 'Orbitron', sans-serif; font-size: 10px; }
-  .trade-price { color: var(--green); text-align: right; font-family: 'Orbitron', sans-serif; font-size: 10px; }
-
-  /* Price chart placeholder */
-  .chart-area {
-    height: 260px;
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    padding: 16px 0;
-  }
-
-  .chart-bar {
-    flex: 1;
-    background: linear-gradient(to top, var(--cyan), rgba(0, 240, 255, 0.2));
-    border-radius: 2px 2px 0 0;
-    min-height: 8px;
-    transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
-  }
-
-  .chart-bar:hover {
-    background: linear-gradient(to top, var(--gold), rgba(245, 197, 24, 0.3));
-  }
-
-  .chart-labels {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
-  }
-
-  .chart-label {
-    font-size: 9px;
-    color: var(--gray);
-    letter-spacing: 1px;
-  }
-
-  /* ═══════════════════════════════════════════
-     BILL HACKER SECTION
-     ═══════════════════════════════════════════ */
-  .bill-hacker {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
-  .bh-stage-label {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 4px;
-    color: var(--magenta);
-    text-transform: uppercase;
-    margin-bottom: 24px;
-  }
-
-  .bh-dropzone {
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 60px 32px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    background: var(--surface);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .bh-dropzone:hover {
-    border-color: var(--gold);
-    background: rgba(245, 197, 24, 0.03);
-  }
-
-  .bh-dropzone.active {
-    border-color: var(--cyan);
-    background: rgba(0, 240, 255, 0.03);
-  }
-
-  .bh-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.8;
-  }
-
-  .bh-dropzone h3 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--gold);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-  }
-
-  .bh-dropzone p {
-    color: var(--gray);
-    font-size: 12px;
-  }
-
-  .bh-processing {
-    display: none;
-    text-align: center;
-    padding: 40px;
-  }
-
-  .bh-processing.show { display: block; }
-
-  .bh-spinner {
-    width: 48px;
-    height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--cyan);
-    border-radius: 50%;
-    margin: 0 auto 16px;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .bh-step {
-    font-size: 12px;
-    color: var(--cyan);
-    margin-bottom: 4px;
-    letter-spacing: 1px;
-  }
-
-  .bh-substep {
-    font-size: 11px;
-    color: var(--gray);
-  }
-
-  /* Bill Hacker Results */
-  .bh-results {
-    display: none;
-    margin-top: 32px;
-  }
-
-  .bh-results.show { display: block; }
-
-  .bh-result-header {
-    text-align: center;
-    margin-bottom: 32px;
-  }
-
-  .bh-result-header h3 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--green);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-  }
-
-  .bh-result-header p {
-    color: var(--text-dim);
-    font-size: 12px;
-  }
-
-  .bh-result-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  .bh-result-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-  }
-
-  .bh-result-card-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--gray);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .bh-result-card-value {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--gold);
-    margin-bottom: 4px;
-  }
-
-  .bh-result-card-sub {
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-
-  .bh-comparison {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 24px;
-  }
-
-  .bh-comparison-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: var(--gold);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-
-  .bh-bar-row {
-    margin-bottom: 16px;
-  }
-
-  .bh-bar-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    margin-bottom: 6px;
-  }
-
-  .bh-bar-label span:first-child { color: var(--text-dim); }
-  .bh-bar-label span:last-child { color: var(--white); font-weight: 600; }
-
-  .bh-bar-track {
-    height: 8px;
-    background: var(--dark);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .bh-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .bh-bar-fill.comed { background: linear-gradient(90deg, var(--red), var(--orange)); }
-  .bh-bar-fill.tinyhub { background: linear-gradient(90deg, var(--green), var(--cyan)); }
-
-  .bh-cta {
-    text-align: center;
-    margin-top: 32px;
-  }
-
-  .bh-cta-btn {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    padding: 14px 40px;
-    border: 2px solid var(--gold);
-    background: transparent;
-    color: var(--gold);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-transform: uppercase;
-  }
-
-  .bh-cta-btn:hover {
-    background: var(--gold);
-    color: var(--black);
-    box-shadow: 0 0 30px var(--gold-glow);
-  }
-
-  .bh-disclaimer {
-    text-align: center;
-    font-size: 10px;
-    color: var(--gray);
-    margin-top: 12px;
-    font-style: italic;
-  }
-
-  /* ═══════════════════════════════════════════
-     BLOCKCHAIN STATUS BAR
-     ═══════════════════════════════════════════ */
-  .chain-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 32px;
-    padding: 16px 32px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    margin: 0;
-  }
-
-  .chain-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-
-  .chain-item strong {
-    color: var(--white);
-    font-weight: 600;
-  }
-
-  .chain-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-  }
-
-  .chain-dot.offline {
-    background: var(--red);
-    box-shadow: 0 0 8px var(--red);
-  }
-
-  /* ═══════════════════════════════════════════
-     TEAM SECTION (Google Audit)
-     ═══════════════════════════════════════════ */
-  .team-section {
-    text-align: center;
-    padding: 80px 32px;
-    max-width: 700px;
-    margin: 0 auto;
-  }
-
-  .team-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 40px;
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    text-align: left;
-  }
-
-  .team-avatar {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 3px solid var(--gold);
-    background: var(--dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 32px;
-    font-weight: 900;
-    color: var(--gold);
-    flex-shrink: 0;
-  }
-
-  .team-info h3 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--gold);
-    letter-spacing: 2px;
-    margin-bottom: 4px;
-  }
-
-  .team-info .role {
-    font-size: 12px;
-    color: var(--cyan);
-    letter-spacing: 1px;
-    margin-bottom: 12px;
-  }
-
-  .team-info p {
-    font-size: 12px;
-    color: var(--text-dim);
-    line-height: 1.6;
-    margin-bottom: 12px;
-  }
-
-  .team-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--cyan);
-    text-decoration: none;
-    letter-spacing: 1px;
-    transition: color 0.2s;
-  }
-
-  .team-link:hover { color: var(--gold); }
-
-  /* ═══════════════════════════════════════════
-     FOOTER
-     ═══════════════════════════════════════════ */
-  .footer {
-    text-align: center;
-    padding: 40px 32px;
-    border-top: 1px solid var(--border);
-    color: var(--gray);
-    font-size: 10px;
-    letter-spacing: 2px;
-  }
-
-  .footer a {
-    color: var(--gold);
-    text-decoration: none;
+  @keyframes grid-scroll{0%{background-position:0 0}100%{background-position:0 80px}}
+
+  .grid-glow{
+    position:absolute;bottom:0;left:0;right:0;height:50%;z-index:2;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(255,45,149,0.45) 0%,rgba(255,45,149,0.28) 15%,rgba(180,30,120,0.15) 35%,transparent 75%);
   }
-
-  /* ═══════════════════════════════════════════
-     RESPONSIVE
-     ═══════════════════════════════════════════ */
-  @media (max-width: 900px) {
-    .dash-grid { grid-template-columns: repeat(2, 1fr); }
-    .dash-panels { grid-template-columns: 1fr; }
-    .bh-result-grid { grid-template-columns: 1fr; }
-    .hero-stats { flex-wrap: wrap; justify-content: center; }
-    .team-card { flex-direction: column; text-align: center; }
+  .grid-mask{
+    position:absolute;bottom:0;left:0;right:0;height:50%;pointer-events:none;z-index:3;
+    background:linear-gradient(to top, transparent 0%, transparent 30%, rgba(0,0,0,0.55) 70%, #000 100%);
   }
 
-  @media (max-width: 600px) {
-    .topnav-links { display: none; }
-    .dash-grid { grid-template-columns: 1fr; }
-    .map-filter-btns { flex-wrap: wrap; }
-    .chain-bar { flex-wrap: wrap; gap: 12px; }
+  /* SECTION HEADERS */
+  .section{padding:4rem 2rem;position:relative;z-index:2}
+  .container{max-width:1200px;margin:0 auto}
+
+  .section-eyebrow{
+    font-size:.7rem;letter-spacing:.35em;color:var(--cyan);text-transform:uppercase;
+    text-shadow:0 0 6px var(--cyan-dim);margin-bottom:.6rem;
+  }
+  .section-title{
+    font-family:'Orbitron',sans-serif;font-size:clamp(1.4rem,3vw,2rem);
+    letter-spacing:.05em;color:var(--sun-1);
+    text-shadow:0 0 12px var(--sun-2);margin-bottom:.5rem;
+  }
+  .section-desc{
+    color:var(--ink-dim);font-size:.85rem;max-width:560px;line-height:1.6;margin-bottom:2rem;
+  }
+
+  /* HERO CONTENT (page title in hero area) */
+  .hero-content{
+    position:absolute;left:50%;bottom:30%;
+    transform:translateX(-50%);z-index:6;text-align:center;width:100%;
+  }
+  .hero-title{
+    font-family:'Orbitron',sans-serif;
+    font-size:clamp(1.6rem,4.5vw,3.2rem);
+    letter-spacing:.12em;color:var(--sun-1);
+    text-shadow:0 0 12px var(--sun-2),0 0 28px var(--sun-3);
+    margin-bottom:.5rem;
+  }
+  .hero-sub{
+    font-size:.78rem;letter-spacing:.3em;color:var(--cyan);text-transform:uppercase;
+    text-shadow:0 0 6px var(--cyan-dim);
+  }
+
+  /* STATS STRIP */
+  .stats{
+    position:relative;z-index:5;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:0;border-top:1px solid rgba(0,240,255,0.2);border-bottom:1px solid rgba(0,240,255,0.2);
+    background:linear-gradient(90deg,transparent,rgba(0,240,255,0.04),transparent);
+  }
+  .stat{
+    padding:1.5rem 1rem;text-align:center;
+    border-right:1px solid rgba(0,240,255,0.1);
+  }
+  .stat:last-child{border-right:none}
+  .stat-num{
+    font-family:'Orbitron',sans-serif;font-size:clamp(1.2rem,2.5vw,1.8rem);
+    color:var(--sun-1);text-shadow:0 0 10px var(--sun-2);letter-spacing:.05em;
+  }
+  .stat-label{
+    margin-top:.3rem;font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;
+    color:var(--cyan-dim);
+  }
+
+  /* MAP */
+  .map-container{
+    border:1px solid rgba(0,240,255,0.2);overflow:hidden;
+    position:relative;
+  }
+  .map-container::before{
+    content:"";position:absolute;top:-1px;left:-1px;width:16px;height:16px;
+    border-top:2px solid var(--sun-1);border-left:2px solid var(--sun-1);z-index:10;
+  }
+  .map-container::after{
+    content:"";position:absolute;bottom:-1px;right:-1px;width:16px;height:16px;
+    border-bottom:2px solid var(--sun-1);border-right:2px solid var(--sun-1);z-index:10;
+  }
+
+  .map-toolbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:.8rem 1rem;background:rgba(0,240,255,0.03);
+    border-bottom:1px solid rgba(0,240,255,0.15);
+  }
+  .map-status{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:#00ff88}
+  .map-status-dot{
+    width:6px;height:6px;border-radius:50%;background:#00ff88;
+    box-shadow:0 0 8px #00ff88;animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .map-filter-btns{display:flex;gap:.4rem}
+  .map-filter-btn{
+    font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;
+    letter-spacing:.1em;padding:.35rem .8rem;
+    border:1px solid rgba(0,240,255,0.2);background:transparent;
+    color:var(--ink-dim);cursor:pointer;transition:all .2s;text-transform:uppercase;
+  }
+  .map-filter-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+  .map-filter-btn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,0.06)}
+
+  #map{height:480px;background:var(--bg)}
+
+  .map-legend{
+    display:flex;gap:1.2rem;padding:.7rem 1rem;
+    border-top:1px solid rgba(0,240,255,0.15);flex-wrap:wrap;
+    background:rgba(0,240,255,0.02);
+  }
+  .legend-item{display:flex;align-items:center;gap:.4rem;font-size:.62rem;color:var(--ink-dim);letter-spacing:.08em}
+  .legend-dot{width:8px;height:8px;border-radius:50%;border:2px solid}
+  .legend-dot.seller-mega{border-color:var(--magenta);background:rgba(255,45,149,0.3)}
+  .legend-dot.seller-large{border-color:var(--sun-2);background:rgba(255,149,0,0.3)}
+  .legend-dot.seller-med{border-color:var(--sun-1);background:rgba(255,204,0,0.3)}
+  .legend-dot.seller-sm{border-color:#00ff88;background:rgba(0,255,136,0.3)}
+  .legend-dot.buyer{border-color:var(--cyan);background:rgba(0,240,255,0.3)}
+  .legend-dot.battery{border-color:#9b59b6;background:rgba(155,89,182,0.3)}
+
+  /* DASHBOARD CARDS */
+  .dash-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;
+  }
+  .dash-card{
+    border:1px solid rgba(0,240,255,0.2);padding:1.2rem;
+    background:linear-gradient(135deg,rgba(0,240,255,0.03),rgba(255,45,149,0.02));
+    position:relative;
+  }
+  .dash-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  }
+  .dash-card.c-cyan::before{background:linear-gradient(90deg,var(--cyan),transparent)}
+  .dash-card.c-gold::before{background:linear-gradient(90deg,var(--sun-1),transparent)}
+  .dash-card.c-green::before{background:linear-gradient(90deg,#00ff88,transparent)}
+  .dash-card.c-mag::before{background:linear-gradient(90deg,var(--magenta),transparent)}
+
+  .dash-label{font-size:.6rem;letter-spacing:.2em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:.4rem}
+  .dash-value{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:700}
+  .dash-card.c-cyan .dash-value{color:var(--cyan)}
+  .dash-card.c-gold .dash-value{color:var(--sun-1)}
+  .dash-card.c-green .dash-value{color:#00ff88}
+  .dash-card.c-mag .dash-value{color:var(--magenta)}
+  .dash-sub{font-size:.62rem;color:var(--ink-dim);margin-top:.2rem}
+
+  /* PANELS */
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+  .panel{border:1px solid rgba(0,240,255,0.2);overflow:hidden;background:rgba(0,240,255,0.02)}
+  .panel-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:.8rem 1rem;border-bottom:1px solid rgba(0,240,255,0.15);
+  }
+  .panel-title{font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.15em;color:var(--sun-1);text-transform:uppercase}
+  .panel-badge{font-size:.6rem;padding:.2rem .5rem;font-weight:700;letter-spacing:.1em;color:#00ff88;border:1px solid rgba(0,255,136,0.3);background:rgba(0,255,136,0.06)}
+  .panel-body{padding:1rem}
+
+  .trade-feed{max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,240,255,0.2) transparent}
+  .trade-entry{
+    display:grid;grid-template-columns:65px 1fr 70px 55px;gap:.5rem;align-items:center;
+    padding:.5rem 0;border-bottom:1px solid rgba(0,240,255,0.08);font-size:.7rem;
+    animation:tradeFadeIn .4s ease;
+  }
+  @keyframes tradeFadeIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+  .trade-time{color:var(--ink-dim);font-size:.6rem}
+  .trade-pair{color:var(--ink)}
+  .trade-amount{color:var(--cyan);text-align:right;font-family:'Orbitron',sans-serif;font-size:.6rem}
+  .trade-price{color:#00ff88;text-align:right;font-family:'Orbitron',sans-serif;font-size:.6rem}
+
+  .chart-area{height:240px;display:flex;align-items:flex-end;gap:2px;padding:1rem 0}
+  .chart-bar{
+    flex:1;background:linear-gradient(to top,var(--cyan),rgba(0,240,255,0.15));
+    border-radius:2px 2px 0 0;min-height:6px;
+    transition:height .6s cubic-bezier(.34,1.56,.64,1);
+  }
+  .chart-bar:hover{background:linear-gradient(to top,var(--sun-1),rgba(255,204,0,0.2))}
+  .chart-labels{display:flex;justify-content:space-between;padding-top:.5rem;border-top:1px solid rgba(0,240,255,0.15)}
+  .chart-label{font-size:.55rem;color:var(--ink-dim);letter-spacing:.1em}
+
+  /* BILL HACKER */
+  .bill-hacker{max-width:720px;margin:0 auto}
+  .bh-stage{
+    font-size:.65rem;font-weight:700;letter-spacing:.3em;color:var(--magenta);
+    text-transform:uppercase;text-shadow:0 0 6px var(--magenta);margin-bottom:1.5rem;
+  }
+
+  .bh-dropzone{
+    border:2px dashed rgba(0,240,255,0.3);padding:3.5rem 2rem;text-align:center;
+    cursor:pointer;transition:all .3s;background:rgba(0,240,255,0.02);
+  }
+  .bh-dropzone:hover{border-color:var(--sun-1);background:rgba(255,204,0,0.02)}
+  .bh-dropzone.active{border-color:var(--cyan);background:rgba(0,240,255,0.04)}
+  .bh-icon{font-size:3rem;margin-bottom:1rem;opacity:.8}
+  .bh-dropzone h3{
+    font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;
+    letter-spacing:.12em;color:var(--sun-1);text-shadow:0 0 8px var(--sun-2);margin-bottom:.4rem;
+  }
+  .bh-dropzone p{color:var(--ink-dim);font-size:.78rem}
+
+  .bh-processing{display:none;text-align:center;padding:2.5rem}
+  .bh-processing.show{display:block}
+  .bh-spinner{
+    width:40px;height:40px;border:3px solid rgba(0,240,255,0.2);border-top-color:var(--cyan);
+    border-radius:50%;margin:0 auto 1rem;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bh-step{font-size:.78rem;color:var(--cyan);margin-bottom:.3rem;letter-spacing:.08em}
+  .bh-substep{font-size:.7rem;color:var(--ink-dim)}
+
+  .bh-results{display:none;margin-top:2rem}
+  .bh-results.show{display:block}
+  .bh-result-header{text-align:center;margin-bottom:2rem}
+  .bh-result-header h3{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:#00ff88;letter-spacing:.12em;text-shadow:0 0 8px rgba(0,255,136,0.4);margin-bottom:.4rem}
+  .bh-result-header p{color:var(--ink-dim);font-size:.75rem}
+
+  .bh-result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+  .bh-result-card{
+    border:1px solid rgba(0,240,255,0.2);padding:1.2rem;text-align:center;
+    background:rgba(0,240,255,0.02);
+  }
+  .bh-result-label{font-size:.6rem;letter-spacing:.2em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:.4rem}
+  .bh-result-value{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:700;color:var(--sun-1);margin-bottom:.2rem}
+  .bh-result-sub{font-size:.65rem;color:var(--ink-dim)}
+
+  .bh-comparison{border:1px solid rgba(0,240,255,0.2);padding:1.5rem;margin-bottom:1.5rem;background:rgba(0,240,255,0.02)}
+  .bh-comp-title{font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.15em;color:var(--sun-1);text-transform:uppercase;margin-bottom:1rem}
+  .bh-bar-row{margin-bottom:1rem}
+  .bh-bar-label{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:.4rem}
+  .bh-bar-label span:first-child{color:var(--ink-dim)}
+  .bh-bar-label span:last-child{color:var(--ink);font-weight:700}
+  .bh-bar-track{height:6px;background:rgba(0,240,255,0.08);overflow:hidden}
+  .bh-bar-fill{height:100%;transition:width 1.5s cubic-bezier(.34,1.56,.64,1)}
+  .bh-bar-fill.comed{background:linear-gradient(90deg,var(--sun-3),var(--sun-2))}
+  .bh-bar-fill.tinyhub{background:linear-gradient(90deg,#00ff88,var(--cyan))}
+
+  .bh-cta{text-align:center;margin-top:2rem}
+  .bh-cta-btn{
+    display:inline-block;padding:.8rem 2rem;
+    font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;text-decoration:none;
+    border:1px solid var(--sun-2);color:var(--sun-1);background:rgba(255,149,0,0.04);
+    transition:all .25s;cursor:pointer;
+    text-shadow:0 0 4px var(--sun-2);
+  }
+  .bh-cta-btn:hover{background:var(--sun-1);color:#000;text-shadow:none;box-shadow:0 0 24px var(--sun-2)}
+  .bh-disclaimer{text-align:center;font-size:.6rem;color:var(--ink-dim);margin-top:.8rem;font-style:italic}
+
+  /* TEAM */
+  .team-card{
+    border:1px solid rgba(0,240,255,0.2);padding:2.5rem;
+    display:flex;align-items:center;gap:2rem;
+    max-width:600px;margin:0 auto;
+    background:linear-gradient(135deg,rgba(0,240,255,0.03),rgba(255,45,149,0.02));
+    position:relative;
+  }
+  .team-card::before{
+    content:"";position:absolute;top:-1px;left:-1px;width:16px;height:16px;
+    border-top:2px solid var(--sun-1);border-left:2px solid var(--sun-1);
+  }
+  .team-card::after{
+    content:"";position:absolute;bottom:-1px;right:-1px;width:16px;height:16px;
+    border-bottom:2px solid var(--sun-1);border-right:2px solid var(--sun-1);
+  }
+  .team-avatar{
+    width:80px;height:80px;border-radius:50%;border:2px solid var(--sun-1);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;
+    color:var(--sun-1);text-shadow:0 0 8px var(--sun-2);flex-shrink:0;
+  }
+  .team-info h3{font-family:'Orbitron',sans-serif;font-size:.9rem;font-weight:700;color:var(--sun-1);letter-spacing:.1em;margin-bottom:.2rem}
+  .team-info .role{font-size:.72rem;color:var(--cyan);letter-spacing:.1em;margin-bottom:.8rem}
+  .team-info p{font-size:.75rem;color:var(--ink-dim);line-height:1.6;margin-bottom:.8rem}
+  .team-link{
+    display:inline-flex;align-items:center;gap:.4rem;
+    font-size:.72rem;color:var(--cyan);text-decoration:none;letter-spacing:.08em;transition:color .2s;
+  }
+  .team-link:hover{color:var(--magenta)}
+
+  /* CHAIN BAR */
+  .chain-bar{
+    display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;
+    padding:1rem 2rem;
+    border-top:1px solid rgba(0,240,255,0.2);border-bottom:1px solid rgba(0,240,255,0.2);
+    background:linear-gradient(90deg,transparent,rgba(0,240,255,0.04),transparent);
+    font-size:.68rem;color:var(--ink-dim);
+  }
+  .chain-item{display:flex;align-items:center;gap:.4rem}
+  .chain-item strong{color:var(--ink);font-weight:700}
+  .chain-dot{width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px #00ff88}
+
+  /* FOOTER */
+  footer{
+    padding:3rem 2rem 2rem;border-top:1px solid rgba(0,240,255,0.15);
+    display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;
+    font-size:.7rem;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase;
+  }
+  footer .brand{color:var(--sun-2)}
+
+  /* LEAFLET OVERRIDES */
+  .leaflet-container{background:var(--bg)!important}
+  .leaflet-control-zoom a{background:rgba(0,240,255,0.06)!important;color:var(--ink)!important;border-color:rgba(0,240,255,0.2)!important}
+  .leaflet-popup-content-wrapper{background:#0a0a14!important;color:var(--ink)!important;border:1px solid rgba(0,240,255,0.2)!important;border-radius:0!important;font-family:'JetBrains Mono',monospace!important;font-size:.7rem!important}
+  .leaflet-popup-tip{background:#0a0a14!important}
+
+  /* RESPONSIVE */
+  @media (max-width:900px){
+    .dash-grid{grid-template-columns:repeat(2,1fr)}
+    .panels{grid-template-columns:1fr}
+    .bh-result-grid{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:600px){
+    .nav-links{display:none}
+    .dash-grid{grid-template-columns:1fr}
+    .team-card{flex-direction:column;text-align:center}
   }
-
-  /* Leaflet overrides */
-  .leaflet-container { background: var(--dark) !important; }
-  .leaflet-control-zoom a {
-    background: var(--surface) !important;
-    color: var(--white) !important;
-    border-color: var(--border) !important;
-  }
-  .leaflet-popup-content-wrapper {
-    background: var(--surface) !important;
-    color: var(--white) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 11px !important;
-  }
-  .leaflet-popup-tip { background: var(--surface) !important; }
 </style>
 </head>
 <body>
 
-<!-- ═══ NAVIGATION ═══ -->
-<nav class="topnav">
-  <a href="https://tinyhub.energy" class="topnav-brand">TINYHUB</a>
-  <div class="topnav-links">
-    <a href="#map" class="active">MAP</a>
-    <a href="#dashboard">DASHBOARD</a>
-    <a href="#bill-hacker">BILL HACKER</a>
-    <a href="#team">TEAM</a>
-  </div>
+<nav>
+  <a href="/" class="logo">TINYHUB</a>
+  <ul class="nav-links">
+    <li><a href="/about">About</a></li>
+    <li><a href="/how-it-works">How It Works</a></li>
+    <li><a href="/#suppliers">Suppliers</a></li>
+    <li><a href="/#consumers">Consumers</a></li>
+    <li><a href="/#investors">Investors</a></li>
+    <li><a href="/dashboard">Live Demo →</a></li>
+  </ul>
 </nav>
 
-<!-- ═══ HERO ═══ -->
 <section class="hero">
-  <div class="hero-grid"></div>
-  <div class="hero-district">McHenry County · ComEd · PJM Interconnection</div>
-  <h1>McHENRY COUNTY</h1>
-  <p class="hero-sub">
-    Peer-to-peer energy trading across McHenry County. Solar producers sell surplus directly to neighbors — 
-    blockchain-settled, physics-verified, grid-aware. No middleman.
-  </p>
-  <div class="hero-stats">
-    <div class="hero-stat">
-      <div class="hero-stat-value" id="stat-buildings">4,812</div>
-      <div class="hero-stat-label">Buildings Mapped</div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-value" id="stat-sellers">2,847</div>
-      <div class="hero-stat-label">Potential Sellers</div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-value" id="stat-buyers">3,215</div>
-      <div class="hero-stat-label">Potential Buyers</div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-value" id="stat-mwh">186K</div>
-      <div class="hero-stat-label">MWh/YR Potential</div>
-    </div>
+  <div class="stars"></div>
+  <div class="atmosphere"></div>
+  <div class="sun-wrap">
+    <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="sunBands" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fff07a"/>
+          <stop offset="15%" stop-color="#ffe54a"/>
+          <stop offset="35%" stop-color="#ffcc00"/>
+          <stop offset="60%" stop-color="#ff9500"/>
+          <stop offset="82%" stop-color="#ff5500"/>
+          <stop offset="100%" stop-color="#c72c00"/>
+        </linearGradient>
+        <clipPath id="domeClip">
+          <path d="M 0,100 A 100,100 0 0 1 200,100 Z"/>
+        </clipPath>
+      </defs>
+      <g clip-path="url(#domeClip)">
+        <rect x="0" y="0" width="200" height="100" fill="url(#sunBands)"/>
+        <rect x="0" y="16" width="200" height="2" fill="#000"/>
+        <rect x="0" y="32" width="200" height="2.5" fill="#000"/>
+        <rect x="0" y="48" width="200" height="3" fill="#000"/>
+        <rect x="0" y="64" width="200" height="3.5" fill="#000"/>
+        <rect x="0" y="80" width="200" height="4.5" fill="#000"/>
+        <rect x="0" y="93" width="200" height="3" fill="#000"/>
+      </g>
+    </svg>
+  </div>
+  <div class="horizon"></div>
+  <div class="grid-wrap"><div class="grid-floor"></div></div>
+  <div class="grid-glow"></div>
+  <div class="grid-mask"></div>
+  <div class="hero-content">
+    <h1 class="hero-title">McHENRY COUNTY</h1>
+    <div class="hero-sub">ComEd · PJM Interconnection · Live Simulation</div>
   </div>
 </section>
 
-<!-- ═══ BLOCKCHAIN STATUS ═══ -->
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-num" id="stat-buildings">4,812</div><div class="stat-label">Buildings Mapped</div></div>
+  <div class="stat"><div class="stat-num" id="stat-sellers">2,847</div><div class="stat-label">Potential Sellers</div></div>
+  <div class="stat"><div class="stat-num" id="stat-buyers">3,215</div><div class="stat-label">Potential Buyers</div></div>
+  <div class="stat"><div class="stat-num" id="stat-mwh">186K</div><div class="stat-label">MWh/YR Potential</div></div>
+</div>
+
+<!-- CHAIN BAR -->
 <div class="chain-bar">
   <div class="chain-item"><div class="chain-dot"></div> <span>Arbitrum Sepolia</span></div>
   <div class="chain-item">Contract: <strong>0x1956...8311</strong></div>
@@ -977,481 +511,265 @@
   <div class="chain-item">Gas Savings: <strong>~95%</strong></div>
 </div>
 
-<!-- ═══ MAP SECTION ═══ -->
-<section class="section" id="map">
-  <div class="section-label">Interactive Grid Map</div>
-  <div class="section-title">McHenry County Energy Topology</div>
-  <div class="section-desc">
-    Every building mapped, sized by solar capacity. Proximity tiers determine matching priority — 
-    local trades (&lt;5km) get best rates, cross-district trades incur 3% bridge loss.
-  </div>
-
-  <div class="map-container">
-    <div class="map-toolbar">
-      <div class="map-toolbar-left">
-        <div class="map-status">
-          <div class="map-status-dot"></div>
-          <span>MCHENRY LIVE</span>
+<!-- MAP -->
+<div class="section" id="map-section">
+  <div class="container">
+    <div class="section-eyebrow">Interactive Grid Map</div>
+    <div class="section-title">McHenry County Energy Topology</div>
+    <div class="section-desc">Every building mapped, sized by solar capacity. Proximity tiers determine matching priority — local trades (&lt;5km) get best rates.</div>
+    <div class="map-container">
+      <div class="map-toolbar">
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <div class="map-status"><div class="map-status-dot"></div><span>MCHENRY LIVE</span></div>
+          <span style="color:var(--ink-dim);font-size:.7rem" id="building-count">4,812 buildings loaded</span>
         </div>
-        <span style="color: var(--gray); font-size: 10px;">|</span>
-        <span style="color: var(--text-dim); font-size: 11px;" id="building-count">4,812 buildings loaded</span>
+        <div class="map-filter-btns">
+          <button class="map-filter-btn active" onclick="filterMap('all',this)">ALL</button>
+          <button class="map-filter-btn" onclick="filterMap('sellers',this)">SELLERS</button>
+          <button class="map-filter-btn" onclick="filterMap('buyers',this)">BUYERS</button>
+          <button class="map-filter-btn" onclick="filterMap('battery',this)">STORAGE</button>
+        </div>
       </div>
-      <div class="map-filter-btns">
-        <button class="map-filter-btn active" onclick="filterMap('all')">ALL</button>
-        <button class="map-filter-btn" onclick="filterMap('sellers')">SELLERS</button>
-        <button class="map-filter-btn" onclick="filterMap('buyers')">BUYERS</button>
-        <button class="map-filter-btn" onclick="filterMap('battery')">STORAGE</button>
+      <div id="map"></div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot seller-mega"></div> Mega (100K+ sqft)</div>
+        <div class="legend-item"><div class="legend-dot seller-large"></div> Large (50-100K)</div>
+        <div class="legend-item"><div class="legend-dot seller-med"></div> Medium (20-50K)</div>
+        <div class="legend-item"><div class="legend-dot seller-sm"></div> Small / Residential</div>
+        <div class="legend-item"><div class="legend-dot buyer"></div> Buyer Node</div>
+        <div class="legend-item"><div class="legend-dot battery"></div> Battery Storage</div>
       </div>
-    </div>
-    <div id="map"></div>
-    <div class="map-legend">
-      <div class="legend-item"><div class="legend-dot seller-mega"></div> Mega Producer (100K+ sqft)</div>
-      <div class="legend-item"><div class="legend-dot seller-large"></div> Large (50-100K)</div>
-      <div class="legend-item"><div class="legend-dot seller-med"></div> Medium (20-50K)</div>
-      <div class="legend-item"><div class="legend-dot seller-sm"></div> Small / Residential</div>
-      <div class="legend-item"><div class="legend-dot buyer"></div> Buyer Node</div>
-      <div class="legend-item"><div class="legend-dot battery"></div> Battery Storage</div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══ DASHBOARD SECTION ═══ -->
-<section class="section" id="dashboard">
-  <div class="section-label">Real-Time Market Data</div>
-  <div class="section-title">McHenry County Trading Dashboard</div>
-  <div class="section-desc">
-    Shadow market simulation — matching engine running on real MISO LMP pricing and Open-Meteo solar irradiance.
-  </div>
+<!-- DASHBOARD -->
+<div class="section" id="dashboard">
+  <div class="container">
+    <div class="section-eyebrow">Real-Time Market Data</div>
+    <div class="section-title">McHenry County Trading Dashboard</div>
+    <div class="section-desc">Shadow market simulation — matching engine on real MISO LMP pricing and Open-Meteo solar irradiance.</div>
 
-  <div class="dash-grid">
-    <div class="dash-card card-cyan">
-      <div class="dash-card-label">Trades Settled</div>
-      <div class="dash-card-value" id="dash-trades">0</div>
-      <div class="dash-card-sub">Last 24h</div>
+    <div class="dash-grid">
+      <div class="dash-card c-cyan"><div class="dash-label">Trades Settled</div><div class="dash-value" id="dash-trades">0</div><div class="dash-sub">Last 24h</div></div>
+      <div class="dash-card c-gold"><div class="dash-label">Energy Traded</div><div class="dash-value" id="dash-energy">0.000</div><div class="dash-sub">MWh</div></div>
+      <div class="dash-card c-green"><div class="dash-label">Community Profit</div><div class="dash-value" id="dash-profit">$0</div><div class="dash-sub">Retained locally</div></div>
+      <div class="dash-card c-mag"><div class="dash-label">CO₂ Offset</div><div class="dash-value" id="dash-co2">0.0t</div><div class="dash-sub">vs. grid baseline</div></div>
     </div>
-    <div class="dash-card card-gold">
-      <div class="dash-card-label">Energy Traded</div>
-      <div class="dash-card-value" id="dash-energy">0.000</div>
-      <div class="dash-card-sub">MWh</div>
-    </div>
-    <div class="dash-card card-green">
-      <div class="dash-card-label">Community Profit</div>
-      <div class="dash-card-value" id="dash-profit">$0</div>
-      <div class="dash-card-sub">Retained locally</div>
-    </div>
-    <div class="dash-card card-magenta">
-      <div class="dash-card-label">CO₂ Offset</div>
-      <div class="dash-card-value" id="dash-co2">0.0t</div>
-      <div class="dash-card-sub">vs. grid baseline</div>
-    </div>
-  </div>
 
-  <div class="dash-panels">
-    <!-- TRADE FEED -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">Live Trade Feed</span>
-        <span class="panel-badge live">● SIMULATING</span>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Live Trade Feed</span><span class="panel-badge">● SIMULATING</span></div>
+        <div class="panel-body"><div class="trade-feed" id="trade-feed"></div></div>
       </div>
-      <div class="panel-body">
-        <div class="trade-feed" id="trade-feed"></div>
-      </div>
-    </div>
-
-    <!-- PRICE CHART -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">LMP Price · 24H</span>
-        <span class="panel-badge live">● MISO FEED</span>
-      </div>
-      <div class="panel-body">
-        <div class="chart-area" id="price-chart"></div>
-        <div class="chart-labels">
-          <span class="chart-label">00:00</span>
-          <span class="chart-label">06:00</span>
-          <span class="chart-label">12:00</span>
-          <span class="chart-label">18:00</span>
-          <span class="chart-label">NOW</span>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">LMP Price · 24H</span><span class="panel-badge">● MISO FEED</span></div>
+        <div class="panel-body">
+          <div class="chart-area" id="price-chart"></div>
+          <div class="chart-labels">
+            <span class="chart-label">00:00</span><span class="chart-label">06:00</span>
+            <span class="chart-label">12:00</span><span class="chart-label">18:00</span><span class="chart-label">NOW</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══ BILL HACKER SECTION ═══ -->
-<section class="section" id="bill-hacker">
-  <div class="section-label">AI-Powered Onboarding</div>
-  <div class="section-title">Bill Hacker</div>
-  <div class="section-desc">
-    Upload a ComEd bill. AI extracts your supply rate, models your roof, and shows exactly what you'd save 
-    trading peer-to-peer on Tiny-Hub — in 3 seconds.
-  </div>
-
-  <div class="bill-hacker">
-    <div class="bh-stage-label">Stage 1 — The Magic Trick</div>
-
-    <div class="bh-dropzone" id="bh-dropzone">
-      <div class="bh-icon">⚡</div>
-      <h3>DROP YOUR COMED BILL</h3>
-      <p>PDF or image — AI reads it in 3 seconds</p>
-    </div>
-
-    <div class="bh-processing" id="bh-processing">
-      <div class="bh-spinner"></div>
-      <div class="bh-step" id="bh-step">Scanning bill...</div>
-      <div class="bh-substep" id="bh-substep">Extracting supply rate and usage</div>
-    </div>
-
-    <div class="bh-results" id="bh-results">
-      <div class="bh-result-header">
-        <h3>YOUR ESTIMATED SAVINGS</h3>
-        <p>Based on AI analysis of your ComEd bill — Woodstock, IL</p>
+<!-- BILL HACKER -->
+<div class="section" id="bill-hacker">
+  <div class="container">
+    <div class="section-eyebrow">AI-Powered Onboarding</div>
+    <div class="section-title">Bill Hacker</div>
+    <div class="section-desc">Upload a ComEd bill. AI extracts your supply rate, models your roof, and shows exactly what you'd save trading peer-to-peer — in 3 seconds.</div>
+    <div class="bill-hacker">
+      <div class="bh-stage">Stage 1 — The Magic Trick</div>
+      <div class="bh-dropzone" id="bh-dropzone">
+        <div class="bh-icon">⚡</div>
+        <h3>DROP YOUR COMED BILL</h3>
+        <p>PDF or image — AI reads it in 3 seconds</p>
       </div>
-
-      <div class="bh-result-grid">
-        <div class="bh-result-card">
-          <div class="bh-result-card-label">Current Supply Rate</div>
-          <div class="bh-result-card-value">$0.0824</div>
-          <div class="bh-result-card-sub">/kWh · ComEd default</div>
-        </div>
-        <div class="bh-result-card">
-          <div class="bh-result-card-label">Tiny-Hub P2P Rate</div>
-          <div class="bh-result-card-value" style="color: var(--green);">$0.0680</div>
-          <div class="bh-result-card-sub">/kWh · neighbor solar</div>
-        </div>
-        <div class="bh-result-card">
-          <div class="bh-result-card-label">Annual Savings</div>
-          <div class="bh-result-card-value" style="color: var(--cyan);">$412</div>
-          <div class="bh-result-card-sub">Year 1 estimate</div>
-        </div>
+      <div class="bh-processing" id="bh-processing">
+        <div class="bh-spinner"></div>
+        <div class="bh-step" id="bh-step">Scanning bill...</div>
+        <div class="bh-substep" id="bh-substep">Extracting supply rate and usage</div>
       </div>
-
-      <div class="bh-comparison">
-        <div class="bh-comparison-title">Monthly Cost Comparison</div>
-        <div class="bh-bar-row">
-          <div class="bh-bar-label"><span>ComEd (Current)</span><span>$142.50/mo</span></div>
-          <div class="bh-bar-track"><div class="bh-bar-fill comed" style="width: 0%;" id="bar-comed"></div></div>
+      <div class="bh-results" id="bh-results">
+        <div class="bh-result-header">
+          <h3>YOUR ESTIMATED SAVINGS</h3>
+          <p>Based on AI analysis of your ComEd bill — Woodstock, IL</p>
         </div>
-        <div class="bh-bar-row">
-          <div class="bh-bar-label"><span>Tiny-Hub P2P</span><span>$108.20/mo</span></div>
-          <div class="bh-bar-track"><div class="bh-bar-fill tinyhub" style="width: 0%;" id="bar-tinyhub"></div></div>
+        <div class="bh-result-grid">
+          <div class="bh-result-card"><div class="bh-result-label">Current Supply Rate</div><div class="bh-result-value">$0.0824</div><div class="bh-result-sub">/kWh · ComEd default</div></div>
+          <div class="bh-result-card"><div class="bh-result-label">Tiny-Hub P2P Rate</div><div class="bh-result-value" style="color:#00ff88">$0.0680</div><div class="bh-result-sub">/kWh · neighbor solar</div></div>
+          <div class="bh-result-card"><div class="bh-result-label">Annual Savings</div><div class="bh-result-value" style="color:var(--cyan)">$412</div><div class="bh-result-sub">Year 1 estimate</div></div>
         </div>
-      </div>
-
-      <div class="bh-cta">
-        <button class="bh-cta-btn" onclick="alert('Stage 2: OAuth via UtilityAPI → Deterministic close → GoodLeap underwriting. Coming post-seed.')">
-          GET EXACT RATE →
-        </button>
-        <div class="bh-disclaimer">
-          Stage 1 estimate only — not a binding quote. Stage 2 uses verified utility data for deterministic pricing.
+        <div class="bh-comparison">
+          <div class="bh-comp-title">Monthly Cost Comparison</div>
+          <div class="bh-bar-row">
+            <div class="bh-bar-label"><span>ComEd (Current)</span><span>$142.50/mo</span></div>
+            <div class="bh-bar-track"><div class="bh-bar-fill comed" style="width:0%" id="bar-comed"></div></div>
+          </div>
+          <div class="bh-bar-row">
+            <div class="bh-bar-label"><span>Tiny-Hub P2P</span><span>$108.20/mo</span></div>
+            <div class="bh-bar-track"><div class="bh-bar-fill tinyhub" style="width:0%" id="bar-tinyhub"></div></div>
+          </div>
+        </div>
+        <div class="bh-cta">
+          <button class="bh-cta-btn" onclick="alert('Stage 2: OAuth via UtilityAPI → Deterministic close → GoodLeap underwriting. Coming post-seed.')">GET EXACT RATE →</button>
+          <div class="bh-disclaimer">Stage 1 estimate only — not a binding quote. Stage 2 uses verified utility data for deterministic pricing.</div>
         </div>
       </div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══ TEAM SECTION (Google Audit Requirement) ═══ -->
-<section class="section" id="team">
-  <div class="section-label">Founded in Woodstock, IL</div>
-  <div class="section-title">Team</div>
-  <div class="section-desc" style="margin-left: auto; margin-right: auto; text-align: center;">
-    Solo-architected DePIN infrastructure — the output of a venture-backed five-person team, built for $0.
-  </div>
-
-  <div class="team-card" style="max-width: 600px; margin: 0 auto;">
-    <div class="team-avatar">CB</div>
-    <div class="team-info">
-      <h3>COLE BOKOWY</h3>
-      <div class="role">Founder & Solo Architect</div>
-      <p>
-        Built the entire Tiny-Hub stack: deterministic matching engine, PostGIS spatial database, 
-        Arbitrum batch settlements, AI ingestion pipelines, and enterprise GCP org. 
-        Raising $2M seed to fund the pit crew.
-      </p>
-      <a href="https://www.linkedin.com/in/colebokowy" target="_blank" class="team-link">
-        → LinkedIn Profile
-      </a>
+<!-- TEAM -->
+<div class="section" id="team">
+  <div class="container">
+    <div class="section-eyebrow">Founded in Woodstock, IL</div>
+    <div class="section-title">Team</div>
+    <div class="section-desc" style="margin:0 auto 2rem;text-align:center">Solo-architected DePIN infrastructure — the output of a venture-backed five-person team, built for $0.</div>
+    <div class="team-card">
+      <div class="team-avatar">CB</div>
+      <div class="team-info">
+        <h3>COLE BOKOWY</h3>
+        <div class="role">Founder & Solo Architect</div>
+        <p>Built the entire Tiny-Hub stack: deterministic matching engine, PostGIS spatial database, Arbitrum batch settlements, AI ingestion pipelines, and enterprise GCP org. Raising $2M seed to fund the pit crew.</p>
+        <a href="https://www.linkedin.com/in/colebokowy" target="_blank" class="team-link">→ LinkedIn Profile</a>
+      </div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══ FOOTER ═══ -->
-<footer class="footer">
-  TINY-HUB NETWORK · <a href="https://tinyhub.energy">tinyhub.energy</a> · Woodstock, IL<br>
-  <span style="margin-top: 6px; display: inline-block;">
-    Digital Twin metrics represent Simulated Addressable Market — not live users.
-  </span>
+<footer>
+  <div><span class="brand">TINY-HUB NETWORK</span> · tinyhub.energy · Woodstock, IL</div>
+  <div>Digital Twin metrics are Simulated Addressable Market</div>
 </footer>
 
-<!-- ═══ SCRIPTS ═══ -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ══════════════════════════════════
-// McHenry County Demo Engine
-// ══════════════════════════════════
+// MAP
+const map = L.map('map',{center:[42.3228,-88.3500],zoom:11,zoomControl:true,attributionControl:false});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
 
-// --- MAP ---
-const mchenryCenter = [42.3228, -88.3500];
-const map = L.map('map', {
-  center: mchenryCenter,
-  zoom: 11,
-  zoomControl: true,
-  attributionControl: false
-});
-
-// Dark tile layer
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19
-}).addTo(map);
-
-// Generate McHenry County buildings
-const towns = [
-  { name: 'Woodstock', lat: 42.3147, lng: -88.4487, buildings: 820, weight: 'mixed' },
-  { name: 'Crystal Lake', lat: 42.2411, lng: -88.3162, buildings: 1100, weight: 'residential' },
-  { name: 'McHenry', lat: 42.3334, lng: -88.2668, buildings: 680, weight: 'mixed' },
-  { name: 'Algonquin', lat: 42.1656, lng: -88.2943, buildings: 540, weight: 'residential' },
-  { name: 'Huntley', lat: 42.1681, lng: -88.4282, buildings: 420, weight: 'residential' },
-  { name: 'Marengo', lat: 42.2486, lng: -88.6082, buildings: 280, weight: 'rural' },
-  { name: 'Harvard', lat: 42.4220, lng: -88.6134, buildings: 260, weight: 'rural' },
-  { name: 'Cary', lat: 42.2120, lng: -88.2385, buildings: 380, weight: 'residential' },
-  { name: 'Lake in the Hills', lat: 42.1811, lng: -88.3309, buildings: 332, weight: 'residential' },
+const towns=[
+  {name:'Woodstock',lat:42.3147,lng:-88.4487,buildings:820,weight:'mixed'},
+  {name:'Crystal Lake',lat:42.2411,lng:-88.3162,buildings:1100,weight:'residential'},
+  {name:'McHenry',lat:42.3334,lng:-88.2668,buildings:680,weight:'mixed'},
+  {name:'Algonquin',lat:42.1656,lng:-88.2943,buildings:540,weight:'residential'},
+  {name:'Huntley',lat:42.1681,lng:-88.4282,buildings:420,weight:'residential'},
+  {name:'Marengo',lat:42.2486,lng:-88.6082,buildings:280,weight:'rural'},
+  {name:'Harvard',lat:42.4220,lng:-88.6134,buildings:260,weight:'rural'},
+  {name:'Cary',lat:42.2120,lng:-88.2385,buildings:380,weight:'residential'},
+  {name:'Lake in the Hills',lat:42.1811,lng:-88.3309,buildings:332,weight:'residential'},
 ];
 
-const nodeTypes = {
-  'mega':    { color: '#FF006E', radius: 8, label: 'Mega Producer' },
-  'large':   { color: '#FF8C00', radius: 6, label: 'Large Producer' },
-  'medium':  { color: '#F5C518', radius: 5, label: 'Medium Producer' },
-  'small':   { color: '#00FF88', radius: 4, label: 'Small Producer' },
-  'buyer':   { color: '#00F0FF', radius: 3, label: 'Buyer' },
-  'battery': { color: '#9B59B6', radius: 6, label: 'Battery Storage' },
+const nt={
+  mega:{color:'#ff2d95',radius:8,label:'Mega Producer'},
+  large:{color:'#ff9500',radius:6,label:'Large Producer'},
+  medium:{color:'#ffcc00',radius:5,label:'Medium Producer'},
+  small:{color:'#00ff88',radius:4,label:'Small Producer'},
+  buyer:{color:'#00f0ff',radius:3,label:'Buyer'},
+  battery:{color:'#9b59b6',radius:6,label:'Battery Storage'},
 };
 
-let allMarkers = [];
-let markerLayer = L.layerGroup().addTo(map);
+let allMarkers=[];
+let markerLayer=L.layerGroup().addTo(map);
 
-function classifyBuilding(town) {
-  const r = Math.random();
-  if (town.weight === 'rural') {
-    if (r < 0.02) return 'mega';
-    if (r < 0.08) return 'large';
-    if (r < 0.25) return 'medium';
-    if (r < 0.55) return 'small';
-    if (r < 0.58) return 'battery';
-    return 'buyer';
-  } else if (town.weight === 'mixed') {
-    if (r < 0.01) return 'mega';
-    if (r < 0.04) return 'large';
-    if (r < 0.15) return 'medium';
-    if (r < 0.45) return 'small';
-    if (r < 0.47) return 'battery';
-    return 'buyer';
-  } else {
-    if (r < 0.005) return 'mega';
-    if (r < 0.02) return 'large';
-    if (r < 0.08) return 'medium';
-    if (r < 0.35) return 'small';
-    if (r < 0.36) return 'battery';
-    return 'buyer';
-  }
+function classify(w){
+  const r=Math.random();
+  if(w==='rural'){if(r<.02)return'mega';if(r<.08)return'large';if(r<.25)return'medium';if(r<.55)return'small';if(r<.58)return'battery';return'buyer'}
+  if(w==='mixed'){if(r<.01)return'mega';if(r<.04)return'large';if(r<.15)return'medium';if(r<.45)return'small';if(r<.47)return'battery';return'buyer'}
+  if(r<.005)return'mega';if(r<.02)return'large';if(r<.08)return'medium';if(r<.35)return'small';if(r<.36)return'battery';return'buyer';
 }
 
-towns.forEach(town => {
-  for (let i = 0; i < town.buildings; i++) {
-    const type = classifyBuilding(town);
-    const nt = nodeTypes[type];
-    const lat = town.lat + (Math.random() - 0.5) * 0.06;
-    const lng = town.lng + (Math.random() - 0.5) * 0.08;
-    const sqft = type === 'mega' ? Math.floor(100000 + Math.random() * 200000) :
-                 type === 'large' ? Math.floor(50000 + Math.random() * 50000) :
-                 type === 'medium' ? Math.floor(20000 + Math.random() * 30000) :
-                 type === 'small' ? Math.floor(1200 + Math.random() * 8000) :
-                 type === 'battery' ? Math.floor(5000 + Math.random() * 15000) :
-                 Math.floor(1000 + Math.random() * 4000);
-
-    const marker = L.circleMarker([lat, lng], {
-      radius: nt.radius,
-      color: nt.color,
-      fillColor: nt.color,
-      fillOpacity: 0.35,
-      weight: 1.5,
-      opacity: 0.8,
-    });
-
-    const kw = type === 'buyer' ? 0 : (sqft * 0.015).toFixed(1);
-    marker.bindPopup(`
-      <div style="padding:4px;">
-        <div style="color:${nt.color};font-weight:700;margin-bottom:4px;">${nt.label}</div>
-        <div>${town.name}, IL</div>
-        <div>${sqft.toLocaleString()} sqft</div>
-        ${type !== 'buyer' ? `<div>Est. capacity: ${kw} kW</div>` : ''}
-        <div style="color:#666;margin-top:4px;font-size:10px;">Proximity tier: &lt;5km local</div>
-      </div>
-    `);
-
-    marker._nodeType = type;
-    marker._isSeller = !['buyer'].includes(type);
-    allMarkers.push(marker);
-    markerLayer.addLayer(marker);
+towns.forEach(t=>{
+  for(let i=0;i<t.buildings;i++){
+    const type=classify(t.weight);const n=nt[type];
+    const lat=t.lat+(Math.random()-.5)*.06;const lng=t.lng+(Math.random()-.5)*.08;
+    const sqft=type==='mega'?Math.floor(100000+Math.random()*200000):type==='large'?Math.floor(50000+Math.random()*50000):type==='medium'?Math.floor(20000+Math.random()*30000):type==='small'?Math.floor(1200+Math.random()*8000):type==='battery'?Math.floor(5000+Math.random()*15000):Math.floor(1000+Math.random()*4000);
+    const kw=type==='buyer'?0:(sqft*0.015).toFixed(1);
+    const m=L.circleMarker([lat,lng],{radius:n.radius,color:n.color,fillColor:n.color,fillOpacity:.35,weight:1.5,opacity:.8});
+    m.bindPopup(`<div style="padding:3px"><div style="color:${n.color};font-weight:700;margin-bottom:3px">${n.label}</div><div>${t.name}, IL</div><div>${sqft.toLocaleString()} sqft</div>${type!=='buyer'?`<div>Est. capacity: ${kw} kW</div>`:''}<div style="color:#7ba9b3;margin-top:3px;font-size:.6rem">Proximity tier: &lt;5km local</div></div>`);
+    m._nodeType=type;m._isSeller=type!=='buyer';
+    allMarkers.push(m);markerLayer.addLayer(m);
   }
 });
 
-function filterMap(filter) {
-  document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  
+function filterMap(f,el){
+  document.querySelectorAll('.map-filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
   markerLayer.clearLayers();
-  allMarkers.forEach(m => {
-    if (filter === 'all') markerLayer.addLayer(m);
-    else if (filter === 'sellers' && m._isSeller && m._nodeType !== 'battery') markerLayer.addLayer(m);
-    else if (filter === 'buyers' && m._nodeType === 'buyer') markerLayer.addLayer(m);
-    else if (filter === 'battery' && m._nodeType === 'battery') markerLayer.addLayer(m);
+  allMarkers.forEach(m=>{
+    if(f==='all')markerLayer.addLayer(m);
+    else if(f==='sellers'&&m._isSeller&&m._nodeType!=='battery')markerLayer.addLayer(m);
+    else if(f==='buyers'&&m._nodeType==='buyer')markerLayer.addLayer(m);
+    else if(f==='battery'&&m._nodeType==='battery')markerLayer.addLayer(m);
   });
 }
 
-// --- SIMULATED TRADE ENGINE ---
-let tradeCount = 0;
-let totalEnergy = 0;
-let totalProfit = 0;
-let totalCO2 = 0;
+// TRADE SIM
+let tradeCount=0,totalEnergy=0,totalProfit=0,totalCO2=0;
+const townNames=towns.map(t=>t.name);
 
-const sellerTowns = towns.map(t => t.name);
-const buyerTowns = towns.map(t => t.name);
-
-function generateTrade() {
-  const seller = sellerTowns[Math.floor(Math.random() * sellerTowns.length)];
-  let buyer = buyerTowns[Math.floor(Math.random() * buyerTowns.length)];
-  while (buyer === seller && Math.random() > 0.3) {
-    buyer = buyerTowns[Math.floor(Math.random() * buyerTowns.length)];
-  }
-
-  const kwh = (Math.random() * 45 + 2).toFixed(1);
-  const rate = (0.058 + Math.random() * 0.025).toFixed(4);
-  const profit = (kwh * (0.0824 - rate)).toFixed(2);
-
-  tradeCount++;
-  totalEnergy += parseFloat(kwh) / 1000;
-  totalProfit += parseFloat(profit);
-  totalCO2 += parseFloat(kwh) * 0.000386;
-
-  // Update dashboard
-  document.getElementById('dash-trades').textContent = tradeCount;
-  document.getElementById('dash-energy').textContent = totalEnergy.toFixed(3);
-  document.getElementById('dash-profit').textContent = '$' + totalProfit.toFixed(2);
-  document.getElementById('dash-co2').textContent = totalCO2.toFixed(2) + 't';
-
-  // Add trade to feed
-  const feed = document.getElementById('trade-feed');
-  const now = new Date();
-  const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-  const entry = document.createElement('div');
-  entry.className = 'trade-entry';
-  entry.innerHTML = `
-    <span class="trade-time">${time}</span>
-    <span class="trade-pair">${seller.substring(0, 8)} → ${buyer.substring(0, 8)}</span>
-    <span class="trade-amount">${kwh} kWh</span>
-    <span class="trade-price">$${rate}</span>
-  `;
-  feed.insertBefore(entry, feed.firstChild);
-
-  // Keep feed manageable
-  while (feed.children.length > 50) feed.removeChild(feed.lastChild);
+function genTrade(){
+  const seller=townNames[Math.floor(Math.random()*townNames.length)];
+  let buyer=townNames[Math.floor(Math.random()*townNames.length)];
+  while(buyer===seller&&Math.random()>.3)buyer=townNames[Math.floor(Math.random()*townNames.length)];
+  const kwh=(Math.random()*45+2).toFixed(1);
+  const rate=(0.058+Math.random()*0.025).toFixed(4);
+  const profit=(kwh*(0.0824-rate)).toFixed(2);
+  tradeCount++;totalEnergy+=parseFloat(kwh)/1000;totalProfit+=parseFloat(profit);totalCO2+=parseFloat(kwh)*0.000386;
+  document.getElementById('dash-trades').textContent=tradeCount;
+  document.getElementById('dash-energy').textContent=totalEnergy.toFixed(3);
+  document.getElementById('dash-profit').textContent='$'+totalProfit.toFixed(2);
+  document.getElementById('dash-co2').textContent=totalCO2.toFixed(2)+'t';
+  const feed=document.getElementById('trade-feed');
+  const now=new Date();
+  const time=now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const entry=document.createElement('div');entry.className='trade-entry';
+  entry.innerHTML=`<span class="trade-time">${time}</span><span class="trade-pair">${seller.substring(0,8)} → ${buyer.substring(0,8)}</span><span class="trade-amount">${kwh} kWh</span><span class="trade-price">$${rate}</span>`;
+  feed.insertBefore(entry,feed.firstChild);
+  while(feed.children.length>50)feed.removeChild(feed.lastChild);
 }
+setInterval(genTrade,2200);
 
-// Start simulation
-setInterval(generateTrade, 2200);
-
-// --- PRICE CHART ---
-function buildChart() {
-  const chart = document.getElementById('price-chart');
-  const hours = 24;
-  const bars = [];
-
-  for (let i = 0; i < hours; i++) {
-    // Simulate LMP price curve — low at night, peak afternoon
-    let base;
-    if (i < 6) base = 20 + Math.random() * 10;
-    else if (i < 10) base = 30 + Math.random() * 20;
-    else if (i < 15) base = 35 + Math.random() * 25;
-    else if (i < 19) base = 50 + Math.random() * 40;
-    else base = 30 + Math.random() * 15;
-
-    const bar = document.createElement('div');
-    bar.className = 'chart-bar';
-    bar.style.height = '0%';
-    bar.title = `${String(i).padStart(2, '0')}:00 — $${base.toFixed(2)}/MWh`;
-    chart.appendChild(bar);
-    bars.push({ el: bar, height: base });
+// PRICE CHART
+(function(){
+  const chart=document.getElementById('price-chart');const bars=[];
+  for(let i=0;i<24;i++){
+    let base;if(i<6)base=20+Math.random()*10;else if(i<10)base=30+Math.random()*20;else if(i<15)base=35+Math.random()*25;else if(i<19)base=50+Math.random()*40;else base=30+Math.random()*15;
+    const bar=document.createElement('div');bar.className='chart-bar';bar.style.height='0%';
+    bar.title=`${String(i).padStart(2,'0')}:00 — $${base.toFixed(2)}/MWh`;
+    chart.appendChild(bar);bars.push({el:bar,height:base});
   }
+  const maxH=Math.max(...bars.map(b=>b.height));
+  setTimeout(()=>{bars.forEach(b=>{b.el.style.height=(b.height/maxH*90+10)+'%'})},500);
+})();
 
-  const maxH = Math.max(...bars.map(b => b.height));
-  setTimeout(() => {
-    bars.forEach(b => {
-      b.el.style.height = (b.height / maxH * 90 + 10) + '%';
-    });
-  }, 500);
-}
-buildChart();
-
-// --- BILL HACKER INTERACTION ---
-const dropzone = document.getElementById('bh-dropzone');
-const processing = document.getElementById('bh-processing');
-const results = document.getElementById('bh-results');
-
-dropzone.addEventListener('click', () => {
-  // Simulate bill upload
-  dropzone.style.display = 'none';
-  processing.classList.add('show');
-
-  const steps = [
-    { step: 'Scanning bill...', sub: 'Extracting supply rate and usage data', delay: 800 },
-    { step: 'Analyzing roof...', sub: 'Cross-referencing with Open-Meteo DNI data', delay: 1200 },
-    { step: 'Running matching engine...', sub: 'Finding optimal P2P sellers within 5km', delay: 1000 },
-    { step: 'Calculating savings...', sub: 'Comparing ComEd supply rate vs P2P rate', delay: 800 },
+// BILL HACKER
+const dropzone=document.getElementById('bh-dropzone');
+const processing=document.getElementById('bh-processing');
+const results=document.getElementById('bh-results');
+dropzone.addEventListener('click',()=>{
+  dropzone.style.display='none';processing.classList.add('show');
+  const steps=[
+    {step:'Scanning bill...',sub:'Extracting supply rate and usage data',delay:800},
+    {step:'Analyzing roof...',sub:'Cross-referencing with Open-Meteo DNI data',delay:1200},
+    {step:'Running matching engine...',sub:'Finding optimal P2P sellers within 5km',delay:1000},
+    {step:'Calculating savings...',sub:'Comparing ComEd supply rate vs P2P rate',delay:800},
   ];
-
-  let i = 0;
-  function nextStep() {
-    if (i < steps.length) {
-      document.getElementById('bh-step').textContent = steps[i].step;
-      document.getElementById('bh-substep').textContent = steps[i].sub;
-      setTimeout(() => { i++; nextStep(); }, steps[i].delay);
-    } else {
-      processing.classList.remove('show');
-      processing.style.display = 'none';
-      results.classList.add('show');
-
-      // Animate comparison bars
-      setTimeout(() => {
-        document.getElementById('bar-comed').style.width = '100%';
-        document.getElementById('bar-tinyhub').style.width = '76%';
-      }, 300);
-    }
+  let i=0;
+  function next(){
+    if(i<steps.length){document.getElementById('bh-step').textContent=steps[i].step;document.getElementById('bh-substep').textContent=steps[i].sub;setTimeout(()=>{i++;next()},steps[i].delay)}
+    else{processing.classList.remove('show');processing.style.display='none';results.classList.add('show');setTimeout(()=>{document.getElementById('bar-comed').style.width='100%';document.getElementById('bar-tinyhub').style.width='76%'},300)}
   }
-  nextStep();
+  next();
 });
-
-// Drag hover effect
-dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('active'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('active'));
-dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.click(); });
-
-// --- NAV ACTIVE STATE ---
-const sections = document.querySelectorAll('.section, .hero');
-const navLinks = document.querySelectorAll('.topnav-links a');
-
-window.addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 200) {
-      current = s.getAttribute('id') || '';
-    }
-  });
-  navLinks.forEach(link => {
-    link.classList.remove('active');
-    if (link.getAttribute('href') === '#' + current) link.classList.add('active');
-  });
-});
+dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('active')});
+dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('active'));
+dropzone.addEventListener('drop',e=>{e.preventDefault();dropzone.click()});
 </script>
 </body>
 </html>
