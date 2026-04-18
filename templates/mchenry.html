@@ -439,6 +439,52 @@
     .dash-grid{grid-template-columns:1fr}
     .team-card{flex-direction:column;text-align:center}
   }
+  /* GO LIVE BUTTON */
+  .go-live-btn{
+    font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;
+    padding:.5rem 1.2rem;border:1px solid var(--magenta);color:var(--magenta);
+    background:rgba(255,45,149,0.06);cursor:pointer;transition:all .25s;
+    text-shadow:0 0 4px rgba(255,45,149,0.4);
+  }
+  .go-live-btn:hover{background:var(--magenta);color:#000;text-shadow:none;box-shadow:0 0 20px rgba(255,45,149,0.4)}
+  .go-live-btn.active{border-color:#00ff88;color:#00ff88;background:rgba(0,255,136,0.06);text-shadow:0 0 4px rgba(0,255,136,0.4);pointer-events:none}
+
+  /* MODAL */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;z-index:100;
+    background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);
+    align-items:center;justify-content:center;
+  }
+  .modal-overlay.show{display:flex}
+  .modal{
+    background:#0a0a14;border:1px solid rgba(0,240,255,0.3);
+    padding:2.5rem;max-width:400px;width:90%;position:relative;
+  }
+  .modal::before{content:"";position:absolute;top:-1px;left:-1px;width:16px;height:16px;border-top:2px solid var(--sun-1);border-left:2px solid var(--sun-1)}
+  .modal::after{content:"";position:absolute;bottom:-1px;right:-1px;width:16px;height:16px;border-bottom:2px solid var(--sun-1);border-right:2px solid var(--sun-1)}
+  .modal h3{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:var(--magenta);letter-spacing:.12em;margin-bottom:.5rem;text-shadow:0 0 8px rgba(255,45,149,0.4)}
+  .modal p{font-size:.75rem;color:var(--ink-dim);margin-bottom:1.5rem;line-height:1.5}
+  .modal-input{
+    width:100%;padding:.7rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.8rem;
+    background:rgba(0,240,255,0.04);border:1px solid rgba(0,240,255,0.2);color:var(--ink);
+    margin-bottom:1rem;outline:none;
+  }
+  .modal-input:focus{border-color:var(--cyan)}
+  .modal-input::placeholder{color:var(--ink-dim)}
+  .modal-submit{
+    width:100%;padding:.7rem;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;border:1px solid var(--magenta);
+    color:var(--magenta);background:rgba(255,45,149,0.06);cursor:pointer;transition:all .25s;
+  }
+  .modal-submit:hover{background:var(--magenta);color:#000}
+  .modal-error{color:#ff3b3b;font-size:.7rem;margin-top:.8rem;display:none}
+  .modal-close{
+    position:absolute;top:1rem;right:1rem;font-size:1.2rem;color:var(--ink-dim);
+    cursor:pointer;background:none;border:none;transition:color .2s;
+  }
+  .modal-close:hover{color:var(--ink)}
+
 </style>
 </head>
 <body>
@@ -545,9 +591,14 @@
 <!-- DASHBOARD -->
 <div class="section" id="dashboard">
   <div class="container">
-    <div class="section-eyebrow">Real-Time Market Data</div>
-    <div class="section-title">McHenry County Trading Dashboard</div>
-    <div class="section-desc">Shadow market simulation — matching engine on real MISO LMP pricing and Open-Meteo solar irradiance.</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
+      <div>
+        <div class="section-eyebrow">Real-Time Market Data</div>
+        <div class="section-title">McHenry County Trading Dashboard</div>
+        <div class="section-desc" style="margin-bottom:0">Shadow market simulation — matching engine on real MISO LMP pricing and Open-Meteo solar irradiance.</div>
+      </div>
+      <button class="go-live-btn" id="go-live-btn" onclick="showGoLiveModal()">⚡ GO LIVE</button>
+    </div>
 
     <div class="dash-grid">
       <div class="dash-card c-cyan"><div class="dash-label">Trades Settled</div><div class="dash-value" id="dash-trades">0</div><div class="dash-sub">Last 24h</div></div>
@@ -558,7 +609,7 @@
 
     <div class="panels">
       <div class="panel">
-        <div class="panel-header"><span class="panel-title">Live Trade Feed</span><span class="panel-badge">● SIMULATING</span></div>
+        <div class="panel-header"><span class="panel-title">Live Trade Feed</span><span class="panel-badge" id="trade-badge">● SIMULATING</span></div>
         <div class="panel-body"><div class="trade-feed" id="trade-feed"></div></div>
       </div>
       <div class="panel">
@@ -645,6 +696,90 @@
   <div><span class="brand">TINY-HUB NETWORK</span> · tinyhub.energy · Woodstock, IL</div>
   <div>Digital Twin metrics are Simulated Addressable Market</div>
 </footer>
+
+<!-- GO LIVE MODAL -->
+<div class="modal-overlay" id="go-live-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="hideGoLiveModal()">✕</button>
+    <h3>GO LIVE</h3>
+    <p>Switch from simulation to the real Tiny-Hub matching engine. This connects to live Pub/Sub streams, real LMP pricing, and on-chain settlement.</p>
+    <input type="password" class="modal-input" id="go-live-pw" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')submitGoLive()">
+    <button class="modal-submit" onclick="submitGoLive()">AUTHENTICATE →</button>
+    <div class="modal-error" id="go-live-error">Invalid password. Try again.</div>
+  </div>
+</div>
+
+<script>
+function showGoLiveModal(){document.getElementById('go-live-modal').classList.add('show');document.getElementById('go-live-pw').focus()}
+function hideGoLiveModal(){document.getElementById('go-live-modal').classList.remove('show');document.getElementById('go-live-error').style.display='none';document.getElementById('go-live-pw').value=''}
+
+function submitGoLive(){
+  const pw=document.getElementById('go-live-pw').value;
+  fetch('/api/go-live',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})
+    .then(r=>{if(!r.ok)throw new Error('auth');return r.json()})
+    .then(d=>{
+      hideGoLiveModal();
+      activateLiveMode();
+    })
+    .catch(()=>{
+      document.getElementById('go-live-error').style.display='block';
+      document.getElementById('go-live-pw').value='';
+      document.getElementById('go-live-pw').focus();
+    });
+}
+
+let simInterval=null;
+function activateLiveMode(){
+  // Kill JS simulation
+  if(window.simInterval)clearInterval(window.simInterval);
+
+  // Update UI
+  document.getElementById('go-live-btn').textContent='● LIVE';
+  document.getElementById('go-live-btn').classList.add('active');
+  document.getElementById('trade-badge').textContent='● LIVE';
+  document.getElementById('trade-badge').style.color='#00ff88';
+  document.getElementById('trade-badge').style.borderColor='rgba(0,255,136,0.3)';
+  document.getElementById('trade-badge').style.background='rgba(0,255,136,0.06)';
+
+  // Clear sim data
+  document.getElementById('trade-feed').innerHTML='';
+  document.getElementById('dash-trades').textContent='0';
+  document.getElementById('dash-energy').textContent='0.000';
+  document.getElementById('dash-profit').textContent='$0';
+  document.getElementById('dash-co2').textContent='0.0t';
+
+  // Connect to SSE stream
+  const evtSource=new EventSource('/api/stream');
+  evtSource.onmessage=function(e){
+    try{
+      const trade=JSON.parse(e.data);
+      if(trade.type==='connected')return;
+      const feed=document.getElementById('trade-feed');
+      const entry=document.createElement('div');
+      entry.className='trade-entry';
+      const time=trade.time||new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const seller=(trade.seller_label||trade.seller||'').substring(0,18);
+      const buyer=(trade.buyer_label||trade.buyer||'').substring(0,18);
+      const kwh=trade.mwh?(trade.mwh*1000).toFixed(1):trade.kwh||'—';
+      const price=trade.price?'$'+parseFloat(trade.price).toFixed(4):trade.rate||'—';
+      entry.innerHTML=`<span class="trade-time">${time}</span><span class="trade-pair">${seller} → ${buyer}</span><span class="trade-amount">${kwh}kWh</span><span class="trade-price">${price}</span>`;
+      feed.insertBefore(entry,feed.firstChild);
+      while(feed.children.length>50)feed.removeChild(feed.lastChild);
+    }catch(err){}
+  };
+
+  // Poll /api/stats every 5 seconds
+  setInterval(()=>{
+    fetch('/api/stats').then(r=>r.json()).then(s=>{
+      const d63=s.d63||{};
+      document.getElementById('dash-trades').textContent=d63.settled||0;
+      document.getElementById('dash-energy').textContent=(d63.mwh||0).toFixed(3);
+      document.getElementById('dash-profit').textContent='$'+(d63.profit||0).toFixed(2);
+      document.getElementById('dash-co2').textContent=(d63.co2||0).toFixed(2)+'t';
+    }).catch(()=>{});
+  },5000);
+}
+</script>
 
 <script>
 function initMap(){
@@ -752,7 +887,7 @@ fetch('/static/mchenry_sellers.json')
 
     // Start trade simulation now that sellers are loaded
     console.log('Sellers loaded:',total,'— starting trade simulation');
-    setInterval(genTrade,1800);
+    window.simInterval=setInterval(genTrade,1800);
   })
   .catch(e=>{
     document.getElementById('building-count').textContent='Error loading building data';

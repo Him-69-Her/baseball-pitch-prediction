@@ -71,6 +71,16 @@ def logout():
     """Auth disabled — public demo mode."""
     session.clear()
     return redirect("/")
+
+@app.route("/api/go-live", methods=["POST"])
+def api_go_live():
+    """Authenticate for live mode."""
+    data = request.get_json() or {}
+    pw = data.get("password", "")
+    if pw == ADMIN_PASS:
+        session["live"] = True
+        return jsonify({"status": "ok", "message": "Live mode activated"})
+    return jsonify({"status": "error", "message": "Invalid password"}), 401
 socketio = init_socketio(app)
 
 # ── Config ──────────────────────────────────────────────────
