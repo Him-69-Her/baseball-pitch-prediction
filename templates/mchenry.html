@@ -749,6 +749,10 @@ fetch('/static/mchenry_sellers.json')
       total.toLocaleString()+' real buildings · '+counts.mega+' mega · '+counts.large+' large · '+counts.medium+' medium · '+counts.small+' small';
     document.getElementById('stat-buildings').textContent=total.toLocaleString();
     document.getElementById('stat-sellers').textContent=total.toLocaleString();
+
+    // Start trade simulation now that sellers are loaded
+    console.log('Sellers loaded:',total,'— starting trade simulation');
+    setInterval(genTrade,1800);
   })
   .catch(e=>{
     document.getElementById('building-count').textContent='Error loading building data';
@@ -810,12 +814,15 @@ function genTrade(){
   const dist=distKm(seller.lat,seller.lng,buyer.lat,buyer.lng);
   const prox=getProximityTier(dist);
   const hour=new Date().getHours();
-  let solarFactor=0;
+
+  // Solar curve — peak midday, taper at edges, minimum baseline for demo
+  let solarFactor=0.15; // baseline — stored energy / grid arbitrage
   if(hour>=6&&hour<=19)solarFactor=Math.sin((hour-6)/13*Math.PI)*0.85+Math.random()*0.15;
-  if(solarFactor<0.05)return;
+  // Evening/night: reduced but non-zero (battery discharge + stored solar)
+  if(hour>=20||hour<6)solarFactor=0.08+Math.random()*0.12;
 
   let kwh=parseFloat((seller.kw*solarFactor*0.08*(0.8+Math.random()*0.4)).toFixed(1));
-  if(kwh<0.5)return;
+  if(kwh<0.3)return;
 
   const deliveredKwh=parseFloat((kwh*(1-prox.lineLoss)).toFixed(1));
   const lmp=getCurrentLMP()/1000;
@@ -842,7 +849,7 @@ function genTrade(){
   feed.insertBefore(entry,feed.firstChild);
   while(feed.children.length>50)feed.removeChild(feed.lastChild);
 }
-setInterval(genTrade,1800);
+// Trade sim starts after sellers load (see fetch callback above)
 
 // PRICE CHART
 (function(){
