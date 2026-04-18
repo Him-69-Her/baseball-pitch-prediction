@@ -228,7 +228,7 @@
   .map-filter-btn:hover{border-color:var(--cyan);color:var(--cyan)}
   .map-filter-btn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,0.06)}
 
-  #map{height:480px;background:var(--bg)}
+  #map{height:480px;background:#f2f2f2}
 
   .map-legend{
     display:flex;gap:1.2rem;padding:.7rem 1rem;
@@ -422,8 +422,8 @@
   footer .brand{color:var(--sun-2)}
 
   /* LEAFLET OVERRIDES */
-  .leaflet-container{background:var(--bg)!important}
-  .leaflet-control-zoom a{background:rgba(0,240,255,0.06)!important;color:var(--ink)!important;border-color:rgba(0,240,255,0.2)!important}
+  .leaflet-container{background:#f2f2f2!important}
+  .leaflet-control-zoom a{background:rgba(0,0,0,0.7)!important;color:#fff!important;border-color:rgba(0,0,0,0.3)!important}
   .leaflet-popup-content-wrapper{background:#0a0a14!important;color:var(--ink)!important;border:1px solid rgba(0,240,255,0.2)!important;border-radius:0!important;font-family:'JetBrains Mono',monospace!important;font-size:.7rem!important}
   .leaflet-popup-tip{background:#0a0a14!important}
 
@@ -649,100 +649,249 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// MAP
-const map = L.map('map',{center:[42.3228,-88.3500],zoom:11,zoomControl:true,attributionControl:false});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+// ══════════════════════════════════════════════════════════
+// McHenry County Demo Engine — Physics-Aware Matching
+// ══════════════════════════════════════════════════════════
 
+// --- MAP (white tiles + canvas renderer for 110K markers) ---
+const canvasRenderer = L.canvas({padding:0.5});
+const map = L.map('map',{center:[42.29,-88.38],zoom:10,zoomControl:true,attributionControl:false,preferCanvas:true});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+
+// --- SELLER TOWNS (solar producers, batteries) ---
 const towns=[
-  {name:'Woodstock',lat:42.3147,lng:-88.4487,buildings:820,weight:'mixed'},
-  {name:'Crystal Lake',lat:42.2411,lng:-88.3162,buildings:1100,weight:'residential'},
-  {name:'McHenry',lat:42.3334,lng:-88.2668,buildings:680,weight:'mixed'},
-  {name:'Algonquin',lat:42.1656,lng:-88.2943,buildings:540,weight:'residential'},
-  {name:'Huntley',lat:42.1681,lng:-88.4282,buildings:420,weight:'residential'},
-  {name:'Marengo',lat:42.2486,lng:-88.6082,buildings:280,weight:'rural'},
-  {name:'Harvard',lat:42.4220,lng:-88.6134,buildings:260,weight:'rural'},
-  {name:'Cary',lat:42.2120,lng:-88.2385,buildings:380,weight:'residential'},
-  {name:'Lake in the Hills',lat:42.1811,lng:-88.3309,buildings:332,weight:'residential'},
+  {name:'Woodstock',lat:42.3147,lng:-88.4487,sellers:380,weight:'mixed'},
+  {name:'Crystal Lake',lat:42.2411,lng:-88.3162,sellers:520,weight:'residential'},
+  {name:'McHenry',lat:42.3334,lng:-88.2668,sellers:310,weight:'mixed'},
+  {name:'Algonquin',lat:42.1656,lng:-88.2943,sellers:260,weight:'residential'},
+  {name:'Huntley',lat:42.1681,lng:-88.4282,sellers:200,weight:'residential'},
+  {name:'Marengo',lat:42.2486,lng:-88.6082,sellers:140,weight:'rural'},
+  {name:'Harvard',lat:42.4220,lng:-88.6134,sellers:120,weight:'rural'},
+  {name:'Cary',lat:42.2120,lng:-88.2385,sellers:180,weight:'residential'},
+  {name:'Lake in the Hills',lat:42.1811,lng:-88.3309,sellers:160,weight:'residential'},
+  {name:'Johnsburg',lat:42.3800,lng:-88.2400,sellers:90,weight:'mixed'},
+  {name:'Richmond',lat:42.4750,lng:-88.3050,sellers:50,weight:'rural'},
+  {name:'Spring Grove',lat:42.4430,lng:-88.2360,sellers:40,weight:'rural'},
+  {name:'Fox River Grove',lat:42.2000,lng:-88.2150,sellers:35,weight:'residential'},
+  {name:'Wonder Lake',lat:42.3830,lng:-88.3480,sellers:30,weight:'rural'},
+  {name:'Hebron',lat:42.4720,lng:-88.4320,sellers:20,weight:'rural'},
+  {name:'Union',lat:42.2330,lng:-88.5420,sellers:15,weight:'rural'},
 ];
 
-const nt={
-  mega:{color:'#ff2d95',radius:8,label:'Mega Producer'},
-  large:{color:'#ff9500',radius:6,label:'Large Producer'},
-  medium:{color:'#ffcc00',radius:5,label:'Medium Producer'},
-  small:{color:'#00ff88',radius:4,label:'Small Producer'},
-  buyer:{color:'#00f0ff',radius:3,label:'Buyer'},
-  battery:{color:'#9b59b6',radius:6,label:'Battery Storage'},
+const nodeTypes={
+  mega:{color:'#cc0055',radius:7,label:'Mega Producer'},
+  large:{color:'#cc7700',radius:5,label:'Large Producer'},
+  medium:{color:'#bb9900',radius:4,label:'Medium Producer'},
+  small:{color:'#009944',radius:3,label:'Small Producer'},
+  buyer:{color:'#0088cc',radius:2,label:'Buyer'},
+  battery:{color:'#7733aa',radius:5,label:'Battery Storage'},
 };
 
 let allMarkers=[];
+let buyerMarkers=[];
+let sellerMarkers=[];
 let markerLayer=L.layerGroup().addTo(map);
+let buyerLayer=L.layerGroup().addTo(map);
+let sellerCount=0, buyerCount=0, batteryCount=0;
 
+// Seller classification
 function classify(w){
   const r=Math.random();
-  if(w==='rural'){if(r<.02)return'mega';if(r<.08)return'large';if(r<.25)return'medium';if(r<.55)return'small';if(r<.58)return'battery';return'buyer'}
-  if(w==='mixed'){if(r<.01)return'mega';if(r<.04)return'large';if(r<.15)return'medium';if(r<.45)return'small';if(r<.47)return'battery';return'buyer'}
-  if(r<.005)return'mega';if(r<.02)return'large';if(r<.08)return'medium';if(r<.35)return'small';if(r<.36)return'battery';return'buyer';
+  if(w==='rural'){if(r<.03)return'mega';if(r<.10)return'large';if(r<.30)return'medium';if(r<.90)return'small';return'battery'}
+  if(w==='mixed'){if(r<.02)return'mega';if(r<.07)return'large';if(r<.25)return'medium';if(r<.92)return'small';return'battery'}
+  if(r<.01)return'mega';if(r<.04)return'large';if(r<.18)return'medium';if(r<.94)return'small';return'battery';
 }
 
+// Generate sellers
 towns.forEach(t=>{
-  for(let i=0;i<t.buildings;i++){
-    const type=classify(t.weight);const n=nt[type];
-    const lat=t.lat+(Math.random()-.5)*.06;const lng=t.lng+(Math.random()-.5)*.08;
-    const sqft=type==='mega'?Math.floor(100000+Math.random()*200000):type==='large'?Math.floor(50000+Math.random()*50000):type==='medium'?Math.floor(20000+Math.random()*30000):type==='small'?Math.floor(1200+Math.random()*8000):type==='battery'?Math.floor(5000+Math.random()*15000):Math.floor(1000+Math.random()*4000);
-    const kw=type==='buyer'?0:(sqft*0.015).toFixed(1);
-    const m=L.circleMarker([lat,lng],{radius:n.radius,color:n.color,fillColor:n.color,fillOpacity:.35,weight:1.5,opacity:.8});
-    m.bindPopup(`<div style="padding:3px"><div style="color:${n.color};font-weight:700;margin-bottom:3px">${n.label}</div><div>${t.name}, IL</div><div>${sqft.toLocaleString()} sqft</div>${type!=='buyer'?`<div>Est. capacity: ${kw} kW</div>`:''}<div style="color:#7ba9b3;margin-top:3px;font-size:.6rem">Proximity tier: &lt;5km local</div></div>`);
-    m._nodeType=type;m._isSeller=type!=='buyer';
-    allMarkers.push(m);markerLayer.addLayer(m);
+  for(let i=0;i<t.sellers;i++){
+    const type=classify(t.weight);const n=nodeTypes[type];
+    const lat=t.lat+(Math.random()-.5)*.05;const lng=t.lng+(Math.random()-.5)*.06;
+    const sqft=type==='mega'?Math.floor(100000+Math.random()*200000):type==='large'?Math.floor(50000+Math.random()*50000):type==='medium'?Math.floor(20000+Math.random()*30000):type==='small'?Math.floor(1200+Math.random()*8000):Math.floor(5000+Math.random()*15000);
+    const kw=(sqft*0.015).toFixed(1);
+    const m=L.circleMarker([lat,lng],{renderer:canvasRenderer,radius:n.radius,color:n.color,fillColor:n.color,fillOpacity:.6,weight:1.5,opacity:.9});
+    m.bindPopup(`<div style="padding:3px"><div style="color:${n.color};font-weight:700;margin-bottom:3px">${n.label}</div><div>${t.name}, IL</div><div>${sqft.toLocaleString()} sqft</div><div>Est. capacity: ${kw} kW</div><div style="color:#7ba9b3;margin-top:3px;font-size:.6rem">Proximity tier: &lt;5km local</div></div>`);
+    m._nodeType=type;m._isSeller=true;m._town=t.name;m._lat=lat;m._lng=lng;m._kw=parseFloat(kw);
+    if(type==='battery')batteryCount++;else sellerCount++;
+    allMarkers.push(m);sellerMarkers.push(m);
+    markerLayer.addLayer(m);
   }
 });
+
+// Load 110K residential buyers from static JSON
+document.getElementById('building-count').textContent='Loading buyers...';
+fetch('/static/mchenry_buyers.json')
+  .then(r=>r.json())
+  .then(data=>{
+    buyerCount=data.length;
+    data.forEach(coords=>{
+      const m=L.circleMarker([coords[0],coords[1]],{
+        renderer:canvasRenderer,radius:1.5,color:'#0088cc',fillColor:'#0088cc',
+        fillOpacity:.25,weight:0,opacity:.5
+      });
+      m._nodeType='buyer';m._isSeller=false;
+      buyerMarkers.push(m);allMarkers.push(m);
+      buyerLayer.addLayer(m);
+    });
+    document.getElementById('building-count').textContent=
+      `${sellerCount.toLocaleString()} sellers · ${buyerCount.toLocaleString()} buyers · ${batteryCount} batteries`;
+    document.getElementById('stat-buildings').textContent=(sellerCount+buyerCount+batteryCount).toLocaleString();
+    document.getElementById('stat-sellers').textContent=sellerCount.toLocaleString();
+    document.getElementById('stat-buyers').textContent=buyerCount.toLocaleString();
+  })
+  .catch(()=>{
+    document.getElementById('building-count').textContent=`${sellerCount.toLocaleString()} sellers loaded (buyer data unavailable)`;
+  });
 
 function filterMap(f,el){
   document.querySelectorAll('.map-filter-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  markerLayer.clearLayers();
-  allMarkers.forEach(m=>{
-    if(f==='all')markerLayer.addLayer(m);
-    else if(f==='sellers'&&m._isSeller&&m._nodeType!=='battery')markerLayer.addLayer(m);
-    else if(f==='buyers'&&m._nodeType==='buyer')markerLayer.addLayer(m);
-    else if(f==='battery'&&m._nodeType==='battery')markerLayer.addLayer(m);
-  });
+  if(f==='all'){
+    if(!map.hasLayer(markerLayer))map.addLayer(markerLayer);
+    if(!map.hasLayer(buyerLayer))map.addLayer(buyerLayer);
+  } else if(f==='sellers'){
+    if(!map.hasLayer(markerLayer))map.addLayer(markerLayer);
+    if(map.hasLayer(buyerLayer))map.removeLayer(buyerLayer);
+    // Hide batteries from seller view
+    markerLayer.eachLayer(m=>{m.setStyle({opacity:m._nodeType==='battery'?0:m.options.opacity})});
+  } else if(f==='buyers'){
+    if(map.hasLayer(markerLayer))map.removeLayer(markerLayer);
+    if(!map.hasLayer(buyerLayer))map.addLayer(buyerLayer);
+  } else if(f==='battery'){
+    if(map.hasLayer(buyerLayer))map.removeLayer(buyerLayer);
+    if(!map.hasLayer(markerLayer))map.addLayer(markerLayer);
+    markerLayer.eachLayer(m=>{m.setStyle({opacity:m._nodeType==='battery'?0.9:0})});
+  }
+  // Reset seller opacity when switching back to ALL
+  if(f==='all'){
+    markerLayer.eachLayer(m=>{m.setStyle({opacity:0.9})});
+  }
 }
 
-// TRADE SIM
+// ══════════════════════════════════════════════════════════
+// PHYSICS-AWARE TRADE SIMULATION
+// ══════════════════════════════════════════════════════════
+
+// LMP price curve — simulated 24h MISO curve ($/MWh)
+const lmpCurve=[];
+for(let h=0;h<24;h++){
+  if(h<5)lmpCurve.push(18+Math.random()*8);
+  else if(h<8)lmpCurve.push(28+Math.random()*15);
+  else if(h<11)lmpCurve.push(35+Math.random()*20);
+  else if(h<14)lmpCurve.push(30+Math.random()*15); // solar dip
+  else if(h<17)lmpCurve.push(45+Math.random()*30);
+  else if(h<20)lmpCurve.push(55+Math.random()*40); // evening ramp
+  else lmpCurve.push(30+Math.random()*12);
+}
+
+function getCurrentLMP(){
+  const h=new Date().getHours();
+  // Add real-time noise ±5%
+  return lmpCurve[h]*(0.95+Math.random()*0.1);
+}
+
+// Distance between two points (Haversine, km)
+function distKm(lat1,lng1,lat2,lng2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Proximity tier + line loss
+function getProximityTier(distanceKm){
+  if(distanceKm<5)return{tier:'local',lineLoss:0.05,toll:0.020,label:'<5km'};
+  if(distanceKm<15)return{tier:'district',lineLoss:0.05,toll:0.020,label:'<15km'};
+  return{tier:'cross',lineLoss:0.08,toll:0.035,label:'50km+'};
+}
+
+// ComEd supply rate baseline
+const comedSupplyRate=0.0824; // $/kWh
+const targetP2PRate=0.070; // $/kWh target
+const LCOS_PENALTY=0.015; // $/kWh battery degradation cost
+const CO2_FACTOR=0.000386; // tons CO2 per kWh offset
+
 let tradeCount=0,totalEnergy=0,totalProfit=0,totalCO2=0;
-const townNames=towns.map(t=>t.name);
+const activeSellers=sellerMarkers.filter(m=>m._isSeller);
 
 function genTrade(){
-  const seller=townNames[Math.floor(Math.random()*townNames.length)];
-  let buyer=townNames[Math.floor(Math.random()*townNames.length)];
-  while(buyer===seller&&Math.random()>.3)buyer=townNames[Math.floor(Math.random()*townNames.length)];
-  const kwh=(Math.random()*45+2).toFixed(1);
-  const rate=(0.058+Math.random()*0.025).toFixed(4);
-  const profit=(kwh*(0.0824-rate)).toFixed(2);
-  tradeCount++;totalEnergy+=parseFloat(kwh)/1000;totalProfit+=parseFloat(profit);totalCO2+=parseFloat(kwh)*0.000386;
+  if(activeSellers.length<2)return;
+
+  // Pick a random seller
+  const seller=activeSellers[Math.floor(Math.random()*activeSellers.length)];
+  const sellerTown=seller._town;
+
+  // Find a buyer — proximity-first matching
+  // Pick a random town, weighted by distance (closer = more likely)
+  const buyerTown=towns[Math.floor(Math.random()*towns.length)];
+  const dist=distKm(seller._lat,seller._lng,buyerTown.lat,buyerTown.lng);
+  const prox=getProximityTier(dist);
+
+  // Solar output based on capacity + time of day (rough solar curve)
+  const hour=new Date().getHours();
+  let solarFactor=0;
+  if(hour>=6&&hour<=19){
+    solarFactor=Math.sin((hour-6)/13*Math.PI)*0.85+Math.random()*0.15;
+  }
+
+  // Battery sellers can discharge anytime (evening peak arbitrage)
+  const isBattery=seller._nodeType==='battery';
+  if(!isBattery&&solarFactor<0.05)return; // No solar at night, skip non-battery
+
+  // kWh generated this interval
+  let kwh;
+  if(isBattery){
+    kwh=parseFloat((10+Math.random()*30).toFixed(1));
+  } else {
+    kwh=parseFloat((seller._kw*solarFactor*0.08*(0.8+Math.random()*0.4)).toFixed(1));
+  }
+  if(kwh<0.5)return;
+
+  // Apply line loss
+  const deliveredKwh=parseFloat((kwh*(1-prox.lineLoss)).toFixed(1));
+
+  // P2P rate: target rate + proximity toll
+  const lmp=getCurrentLMP()/1000; // Convert $/MWh to $/kWh
+  let p2pRate=Math.max(targetP2PRate, lmp*0.9); // Floor at target, track LMP
+  if(isBattery)p2pRate+=LCOS_PENALTY; // Battery degradation cost
+
+  // Curtailment: if LMP drops below $5/MWh, don't trade
+  if(lmp<0.005)return;
+
+  // Profit = what buyer saves vs ComEd supply rate
+  const buyerSavings=parseFloat(((comedSupplyRate-p2pRate-prox.toll)*deliveredKwh).toFixed(2));
+  if(buyerSavings<=0)return; // Not economic, skip
+
+  // Battery LCOS check: don't discharge if profit < toll + degradation
+  if(isBattery&&(p2pRate-prox.toll-LCOS_PENALTY)<lmp)return;
+
+  tradeCount++;
+  totalEnergy+=deliveredKwh/1000;
+  totalProfit+=buyerSavings;
+  totalCO2+=deliveredKwh*CO2_FACTOR;
+
   document.getElementById('dash-trades').textContent=tradeCount;
   document.getElementById('dash-energy').textContent=totalEnergy.toFixed(3);
   document.getElementById('dash-profit').textContent='$'+totalProfit.toFixed(2);
   document.getElementById('dash-co2').textContent=totalCO2.toFixed(2)+'t';
+
   const feed=document.getElementById('trade-feed');
   const now=new Date();
   const time=now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
   const entry=document.createElement('div');entry.className='trade-entry';
-  entry.innerHTML=`<span class="trade-time">${time}</span><span class="trade-pair">${seller.substring(0,8)} → ${buyer.substring(0,8)}</span><span class="trade-amount">${kwh} kWh</span><span class="trade-price">$${rate}</span>`;
+  const tierTag=prox.tier==='local'?'':'('+prox.label+')';
+  entry.innerHTML=`<span class="trade-time">${time}</span><span class="trade-pair">${sellerTown.substring(0,9)} → ${buyerTown.name.substring(0,9)} ${tierTag}</span><span class="trade-amount">${deliveredKwh}kWh</span><span class="trade-price">$${p2pRate.toFixed(4)}</span>`;
   feed.insertBefore(entry,feed.firstChild);
   while(feed.children.length>50)feed.removeChild(feed.lastChild);
 }
-setInterval(genTrade,2200);
+setInterval(genTrade,1800);
 
-// PRICE CHART
+// PRICE CHART (uses the generated LMP curve)
 (function(){
   const chart=document.getElementById('price-chart');const bars=[];
   for(let i=0;i<24;i++){
-    let base;if(i<6)base=20+Math.random()*10;else if(i<10)base=30+Math.random()*20;else if(i<15)base=35+Math.random()*25;else if(i<19)base=50+Math.random()*40;else base=30+Math.random()*15;
     const bar=document.createElement('div');bar.className='chart-bar';bar.style.height='0%';
-    bar.title=`${String(i).padStart(2,'0')}:00 — $${base.toFixed(2)}/MWh`;
-    chart.appendChild(bar);bars.push({el:bar,height:base});
+    bar.title=`${String(i).padStart(2,'0')}:00 — $${lmpCurve[i].toFixed(2)}/MWh`;
+    chart.appendChild(bar);bars.push({el:bar,height:lmpCurve[i]});
   }
   const maxH=Math.max(...bars.map(b=>b.height));
   setTimeout(()=>{bars.forEach(b=>{b.el.style.height=(b.height/maxH*90+10)+'%'})},500);
