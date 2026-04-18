@@ -525,19 +525,18 @@
         </div>
         <div class="map-filter-btns">
           <button class="map-filter-btn active" onclick="filterMap('all',this)">ALL</button>
-          <button class="map-filter-btn" onclick="filterMap('sellers',this)">SELLERS</button>
-          <button class="map-filter-btn" onclick="filterMap('buyers',this)">BUYERS</button>
-          <button class="map-filter-btn" onclick="filterMap('battery',this)">STORAGE</button>
+          <button class="map-filter-btn" onclick="filterMap('mega',this)">MEGA</button>
+          <button class="map-filter-btn" onclick="filterMap('large',this)">LARGE</button>
+          <button class="map-filter-btn" onclick="filterMap('medium',this)">MEDIUM</button>
+          <button class="map-filter-btn" onclick="filterMap('small',this)">SMALL</button>
         </div>
       </div>
       <div id="map"></div>
       <div class="map-legend">
-        <div class="legend-item"><div class="legend-dot seller-mega"></div> Mega (100K+ sqft)</div>
-        <div class="legend-item"><div class="legend-dot seller-large"></div> Large (50-100K)</div>
-        <div class="legend-item"><div class="legend-dot seller-med"></div> Medium (20-50K)</div>
-        <div class="legend-item"><div class="legend-dot seller-sm"></div> Small / Residential</div>
-        <div class="legend-item"><div class="legend-dot buyer"></div> Buyer Node</div>
-        <div class="legend-item"><div class="legend-dot battery"></div> Battery Storage</div>
+      <div class="legend-item"><div class="legend-dot seller-mega"></div> Mega Producer (farms, solar, industrial)</div>
+        <div class="legend-item"><div class="legend-dot seller-large"></div> Large (schools, hospitals)</div>
+        <div class="legend-item"><div class="legend-dot seller-med"></div> Medium (churches, gov, gyms)</div>
+        <div class="legend-item"><div class="legend-dot seller-sm"></div> Small (stores, restaurants)</div>
       </div>
     </div>
   </div>
@@ -650,7 +649,7 @@
 <script>
 function initMap(){
 // ══════════════════════════════════════════════════════════
-// McHenry County Demo — Google Maps + Solar API
+// McHenry County Demo — Real Buildings via Google Places API
 // ══════════════════════════════════════════════════════════
 
 const mchenry={lat:42.29,lng:-88.38};
@@ -672,153 +671,103 @@ const map=new google.maps.Map(document.getElementById('map'),{
 const infoWindow=new google.maps.InfoWindow();
 const MAPS_KEY='{{ MAPS_API_KEY }}';
 
-// --- SELLER NODES (solar producers + batteries) ---
-const towns=[
-  {name:'Woodstock',lat:42.3147,lng:-88.4487,sellers:380,weight:'mixed'},
-  {name:'Crystal Lake',lat:42.2411,lng:-88.3162,sellers:520,weight:'residential'},
-  {name:'McHenry',lat:42.3334,lng:-88.2668,sellers:310,weight:'mixed'},
-  {name:'Algonquin',lat:42.1656,lng:-88.2943,sellers:260,weight:'residential'},
-  {name:'Huntley',lat:42.1681,lng:-88.4282,sellers:200,weight:'residential'},
-  {name:'Marengo',lat:42.2486,lng:-88.6082,sellers:140,weight:'rural'},
-  {name:'Harvard',lat:42.4220,lng:-88.6134,sellers:120,weight:'rural'},
-  {name:'Cary',lat:42.2120,lng:-88.2385,sellers:180,weight:'residential'},
-  {name:'Lake in the Hills',lat:42.1811,lng:-88.3309,sellers:160,weight:'residential'},
-  {name:'Johnsburg',lat:42.3800,lng:-88.2400,sellers:90,weight:'mixed'},
-  {name:'Richmond',lat:42.4750,lng:-88.3050,sellers:50,weight:'rural'},
-  {name:'Spring Grove',lat:42.4430,lng:-88.2360,sellers:40,weight:'rural'},
-  {name:'Fox River Grove',lat:42.2000,lng:-88.2150,sellers:35,weight:'residential'},
-  {name:'Wonder Lake',lat:42.3830,lng:-88.3480,sellers:30,weight:'rural'},
-  {name:'Hebron',lat:42.4720,lng:-88.4320,sellers:20,weight:'rural'},
-  {name:'Union',lat:42.2330,lng:-88.5420,sellers:15,weight:'rural'},
-];
-
-const nodeColors={
-  mega:'#cc0055',large:'#cc7700',medium:'#bb9900',
-  small:'#009944',buyer:'#0088cc',battery:'#7733aa'
-};
-const nodeLabels={
-  mega:'Mega Producer',large:'Large Producer',medium:'Medium Producer',
-  small:'Small Producer',buyer:'Buyer',battery:'Battery Storage'
-};
-const nodeSizes={mega:10,large:7,medium:6,small:4,buyer:3,battery:7};
-
-function classify(w){
-  const r=Math.random();
-  if(w==='rural'){if(r<.03)return'mega';if(r<.10)return'large';if(r<.30)return'medium';if(r<.90)return'small';return'battery'}
-  if(w==='mixed'){if(r<.02)return'mega';if(r<.07)return'large';if(r<.25)return'medium';if(r<.92)return'small';return'battery'}
-  if(r<.01)return'mega';if(r<.04)return'large';if(r<.18)return'medium';if(r<.94)return'small';return'battery';
-}
-
-let sellerMarkers=[];
-let buyerMarkers=[];
-let allSellerData=[];
-let sellerCount=0,buyerCount=0,batteryCount=0;
+const nodeColors={mega:'#cc0055',large:'#cc7700',medium:'#bb9900',small:'#009944'};
+const nodeLabels={mega:'Mega Producer',large:'Large Producer',medium:'Medium Producer',small:'Small Producer'};
+const nodeSizes={mega:10,large:7,medium:6,small:4};
 
 function makeSVGIcon(color,size){
   return{
-    url:'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size*2}" height="${size*2}"><circle cx="${size}" cy="${size}" r="${size-1}" fill="${color}" fill-opacity="0.6" stroke="${color}" stroke-width="1.5"/></svg>`),
+    url:'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size*2}" height="${size*2}"><circle cx="${size}" cy="${size}" r="${size-1}" fill="${color}" fill-opacity="0.7" stroke="${color}" stroke-width="1.5"/></svg>`),
     scaledSize:new google.maps.Size(size*2,size*2),
     anchor:new google.maps.Point(size,size)
   };
 }
 
-towns.forEach(t=>{
-  for(let i=0;i<t.sellers;i++){
-    const type=classify(t.weight);
-    const lat=t.lat+(Math.random()-.5)*.05;
-    const lng=t.lng+(Math.random()-.5)*.06;
-    const sqft=type==='mega'?Math.floor(100000+Math.random()*200000):type==='large'?Math.floor(50000+Math.random()*50000):type==='medium'?Math.floor(20000+Math.random()*30000):type==='small'?Math.floor(1200+Math.random()*8000):Math.floor(5000+Math.random()*15000);
-    const kw=(sqft*0.015).toFixed(1);
+let allSellerData=[];
+let allMarkers=[];
+let counts={mega:0,large:0,medium:0,small:0};
 
-    const marker=new google.maps.Marker({
-      position:{lat,lng},map,
-      icon:makeSVGIcon(nodeColors[type],nodeSizes[type]),
-      title:nodeLabels[type]+' — '+t.name
-    });
-
-    const data={type,town:t.name,lat,lng,kw:parseFloat(kw),sqft,marker};
-    allSellerData.push(data);
-    sellerMarkers.push(marker);
-    if(type==='battery')batteryCount++;else sellerCount++;
-
-    marker.addListener('click',()=>{
-      let content=`<div style="padding:4px;font-family:'JetBrains Mono',monospace;font-size:11px">
-        <div style="color:${nodeColors[type]};font-weight:700;margin-bottom:4px">${nodeLabels[type]}</div>
-        <div>${t.name}, IL</div>
-        <div>${sqft.toLocaleString()} sqft</div>
-        <div>Est. capacity: ${kw} kW</div>
-        <div style="color:#7ba9b3;margin-top:4px;font-size:10px">Proximity tier: &lt;5km local</div>
-        <div id="solar-info" style="margin-top:6px;color:#ffcc00;font-size:10px">Loading solar data...</div>
-      </div>`;
-      infoWindow.setContent(content);
-      infoWindow.open(map,marker);
-
-      // Fetch Solar API data
-      fetch('https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude='+lat+'&location.longitude='+lng+'&key='+MAPS_KEY)
-        .then(r=>r.json())
-        .then(solar=>{
-          const el=document.getElementById('solar-info');
-          if(solar.solarPotential){
-            const sp=solar.solarPotential;
-            const panels=sp.maxArrayPanelsCount||'N/A';
-            const area=sp.maxArrayAreaMeters2?(sp.maxArrayAreaMeters2).toFixed(0):'N/A';
-            const kwh=sp.maxSunshineHoursPerYear?(sp.maxSunshineHoursPerYear).toFixed(0):'N/A';
-            if(el)el.innerHTML='☀ Solar: '+panels+' panels · '+area+'m² · '+kwh+' sun hrs/yr';
-          } else {
-            if(el)el.innerHTML='☀ Solar data not available for this location';
-          }
-        })
-        .catch(()=>{
-          const el=document.getElementById('solar-info');
-          if(el)el.innerHTML='☀ Solar API unavailable';
-        });
-    });
-  }
-});
-
-// --- LOAD 110K BUYERS ---
-document.getElementById('building-count').textContent='Loading buyers...';
-fetch('/static/mchenry_buyers.json')
+// Load real buildings from Places API scrape
+document.getElementById('building-count').textContent='Loading real buildings...';
+fetch('/static/mchenry_sellers.json')
   .then(r=>r.json())
-  .then(data=>{
-    buyerCount=data.length;
-    data.forEach(coords=>{
+  .then(buildings=>{
+    buildings.forEach(b=>{
+      const type=b.node_type;
+      const color=nodeColors[type];
+      const size=nodeSizes[type];
+      const label=nodeLabels[type];
+      counts[type]++;
+
       const marker=new google.maps.Marker({
-        position:{lat:coords[0],lng:coords[1]},map,
-        icon:makeSVGIcon('#0088cc',2),
-        clickable:false
+        position:{lat:b.lat,lng:b.lng},map,
+        icon:makeSVGIcon(color,size),
+        title:b.name+' — '+label
       });
-      buyerMarkers.push(marker);
+
+      const data={type,name:b.name,address:b.address,lat:b.lat,lng:b.lng,marker,
+        kw: type==='mega'?parseFloat((150+Math.random()*350).toFixed(1)):
+            type==='large'?parseFloat((40+Math.random()*80).toFixed(1)):
+            type==='medium'?parseFloat((15+Math.random()*30).toFixed(1)):
+            parseFloat((3+Math.random()*12).toFixed(1))
+      };
+      allSellerData.push(data);
+      allMarkers.push(marker);
+
+      marker.addListener('click',()=>{
+        let content=`<div style="padding:4px;font-family:'JetBrains Mono',monospace;font-size:11px">
+          <div style="color:${color};font-weight:700;margin-bottom:4px">${label}</div>
+          <div style="font-weight:700">${b.name}</div>
+          <div style="color:#7ba9b3;margin-bottom:4px">${b.address}</div>
+          <div>Est. capacity: ${data.kw} kW</div>
+          <div id="solar-info" style="margin-top:6px;color:#ffcc00;font-size:10px">Loading solar data...</div>
+        </div>`;
+        infoWindow.setContent(content);
+        infoWindow.open(map,marker);
+
+        // Solar API lookup
+        fetch('https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude='+b.lat+'&location.longitude='+b.lng+'&key='+MAPS_KEY)
+          .then(r=>r.json())
+          .then(solar=>{
+            const el=document.getElementById('solar-info');
+            if(solar.solarPotential){
+              const sp=solar.solarPotential;
+              const panels=sp.maxArrayPanelsCount||'N/A';
+              const area=sp.maxArrayAreaMeters2?(sp.maxArrayAreaMeters2).toFixed(0):'N/A';
+              const kwh=sp.maxSunshineHoursPerYear?(sp.maxSunshineHoursPerYear).toFixed(0):'N/A';
+              if(el)el.innerHTML='☀ Solar: '+panels+' panels · '+area+'m² · '+kwh+' sun hrs/yr';
+            } else {
+              if(el)el.innerHTML='☀ Solar data not available';
+            }
+          })
+          .catch(()=>{const el=document.getElementById('solar-info');if(el)el.innerHTML='☀ Solar API unavailable'});
+      });
     });
+
+    const total=buildings.length;
     document.getElementById('building-count').textContent=
-      sellerCount.toLocaleString()+' sellers · '+buyerCount.toLocaleString()+' buyers · '+batteryCount+' batteries';
-    document.getElementById('stat-buildings').textContent=(sellerCount+buyerCount+batteryCount).toLocaleString();
-    document.getElementById('stat-sellers').textContent=sellerCount.toLocaleString();
-    document.getElementById('stat-buyers').textContent=buyerCount.toLocaleString();
+      total.toLocaleString()+' real buildings · '+counts.mega+' mega · '+counts.large+' large · '+counts.medium+' medium · '+counts.small+' small';
+    document.getElementById('stat-buildings').textContent=total.toLocaleString();
+    document.getElementById('stat-sellers').textContent=total.toLocaleString();
   })
-  .catch(()=>{
-    document.getElementById('building-count').textContent=sellerCount.toLocaleString()+' sellers loaded (buyer data pending)';
+  .catch(e=>{
+    document.getElementById('building-count').textContent='Error loading building data';
+    console.error('Failed to load sellers:',e);
   });
 
 // --- FILTER ---
 window.filterMap=function(f,el){
   document.querySelectorAll('.map-filter-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  const showSellers=(f==='all'||f==='sellers');
-  const showBuyers=(f==='all'||f==='buyers');
-  const showBattery=(f==='all'||f==='battery');
-
   allSellerData.forEach(d=>{
     if(f==='all')d.marker.setVisible(true);
-    else if(f==='sellers')d.marker.setVisible(d.type!=='battery');
-    else if(f==='battery')d.marker.setVisible(d.type==='battery');
-    else d.marker.setVisible(false);
+    else if(f==='sellers')d.marker.setVisible(true);
+    else d.marker.setVisible(d.type===f);
   });
-  buyerMarkers.forEach(m=>m.setVisible(showBuyers));
 };
 
 // ══════════════════════════════════════════════════════════
-// PHYSICS-AWARE TRADE SIMULATION
+// PHYSICS-AWARE TRADE SIMULATION (real building names)
 // ══════════════════════════════════════════════════════════
 
 const lmpCurve=[];
@@ -848,33 +797,33 @@ function getProximityTier(d){
 
 const comedSupplyRate=0.0824;
 const targetP2PRate=0.070;
-const LCOS_PENALTY=0.015;
 const CO2_FACTOR=0.000386;
 let tradeCount=0,totalEnergy=0,totalProfit=0,totalCO2=0;
 
 function genTrade(){
   if(allSellerData.length<2)return;
+  // Pick seller and buyer (both real buildings)
   const seller=allSellerData[Math.floor(Math.random()*allSellerData.length)];
-  const buyerTown=towns[Math.floor(Math.random()*towns.length)];
-  const dist=distKm(seller.lat,seller.lng,buyerTown.lat,buyerTown.lng);
+  const buyer=allSellerData[Math.floor(Math.random()*allSellerData.length)];
+  if(seller===buyer)return;
+
+  const dist=distKm(seller.lat,seller.lng,buyer.lat,buyer.lng);
   const prox=getProximityTier(dist);
   const hour=new Date().getHours();
   let solarFactor=0;
   if(hour>=6&&hour<=19)solarFactor=Math.sin((hour-6)/13*Math.PI)*0.85+Math.random()*0.15;
-  const isBattery=seller.type==='battery';
-  if(!isBattery&&solarFactor<0.05)return;
-  let kwh;
-  if(isBattery)kwh=parseFloat((10+Math.random()*30).toFixed(1));
-  else kwh=parseFloat((seller.kw*solarFactor*0.08*(0.8+Math.random()*0.4)).toFixed(1));
+  if(solarFactor<0.05)return;
+
+  let kwh=parseFloat((seller.kw*solarFactor*0.08*(0.8+Math.random()*0.4)).toFixed(1));
   if(kwh<0.5)return;
+
   const deliveredKwh=parseFloat((kwh*(1-prox.lineLoss)).toFixed(1));
   const lmp=getCurrentLMP()/1000;
   let p2pRate=Math.max(targetP2PRate,lmp*0.9);
-  if(isBattery)p2pRate+=LCOS_PENALTY;
   if(lmp<0.005)return;
+
   const buyerSavings=parseFloat(((comedSupplyRate-p2pRate-prox.toll)*deliveredKwh).toFixed(2));
   if(buyerSavings<=0)return;
-  if(isBattery&&(p2pRate-prox.toll-LCOS_PENALTY)<lmp)return;
 
   tradeCount++;totalEnergy+=deliveredKwh/1000;totalProfit+=buyerSavings;totalCO2+=deliveredKwh*CO2_FACTOR;
   document.getElementById('dash-trades').textContent=tradeCount;
@@ -886,8 +835,10 @@ function genTrade(){
   const now=new Date();
   const time=now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
   const entry=document.createElement('div');entry.className='trade-entry';
-  const tierTag=prox.tier==='local'?'':'('+prox.label+')';
-  entry.innerHTML=`<span class="trade-time">${time}</span><span class="trade-pair">${seller.town.substring(0,9)} → ${buyerTown.name.substring(0,9)} ${tierTag}</span><span class="trade-amount">${deliveredKwh}kWh</span><span class="trade-price">$${p2pRate.toFixed(4)}</span>`;
+  // Show real building names in the trade feed
+  const sellerName=seller.name.length>18?seller.name.substring(0,18)+'…':seller.name;
+  const buyerName=buyer.name.length>18?buyer.name.substring(0,18)+'…':buyer.name;
+  entry.innerHTML=`<span class="trade-time">${time}</span><span class="trade-pair">${sellerName} → ${buyerName}</span><span class="trade-amount">${deliveredKwh}kWh</span><span class="trade-price">$${p2pRate.toFixed(4)}</span>`;
   feed.insertBefore(entry,feed.firstChild);
   while(feed.children.length>50)feed.removeChild(feed.lastChild);
 }
