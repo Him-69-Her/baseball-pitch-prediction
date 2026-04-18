@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny-Hub-Network | Live Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Outfit:wght@300;500;700;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --green: #00ff9d; --green-dim: #008f5a;
+            --red: #ff3e5f; --amber: #ffb800; --blue: #00b4ff; --purple: #c084fc;
+            --bg: #050508; --card: rgba(8,10,18,0.94); --border: rgba(0,255,157,0.18);
+            --text: #b0b8c8; --text-dim: #556;
+        }
+        body { background: var(--bg); color: var(--green); font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        .topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,255,157,0.03) 0%, transparent 100%); flex-shrink: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 20px; }
+        .logo { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 1.1rem; letter-spacing: 3px; color: #fff; }
+        .logo span { color: var(--green); }
+        .nav-tabs { display: flex; gap: 2px; }
+        .nav-tab { background: transparent; border: 1px solid var(--border); color: rgba(255,255,255,0.85); font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 1.5px; padding: 7px 16px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-bottom: 2px solid transparent; }
+        .nav-tab:first-child { border-radius: 3px 0 0 3px; }
+        .nav-tab:last-child { border-radius: 0 3px 3px 0; }
+        .nav-tab:hover { color: var(--green); border-color: var(--green); }
+        .nav-tab.active-d91 { background: rgba(255,184,0,0.1); border-color: var(--amber); border-bottom-color: var(--amber); color: var(--amber); font-weight: 700; }
+        .nav-tab.active-d63 { background: rgba(0,180,255,0.1); border-color: var(--blue); border-bottom-color: var(--blue); color: var(--blue); font-weight: 700; }
+        .nav-tab.active-feeds { background: rgba(0,255,157,0.1); border-color: var(--green); border-bottom-color: var(--green); color: var(--green); font-weight: 700; }
+        .topbar-stats { display: flex; gap: 20px; font-size: 0.55rem; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.85); }
+        .topbar-stats .tval { font-weight: 700; margin-left: 4px; }
+        .pulse { display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; margin-right: 4px; vertical-align: middle; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .view { display: none; flex: 1; position: relative; overflow: hidden; }
+        .view.active { display: flex; }
+        .map-view { flex: 1; position: relative; }
+        .map-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .leaflet-control-zoom { display: none; }
+        .map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 400; pointer-events: none; }
+        .glass-card { pointer-events: auto; background: var(--card); border: 1px solid var(--border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 4px; box-shadow: 0 0 40px rgba(0,255,157,0.04); }
+
+        .map-stats { position: absolute; top: 14px; left: 14px; padding: 14px 16px; min-width: 260px; }
+        .map-logo { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 1rem; letter-spacing: 2px; color: #fff; margin-bottom: 2px; }
+        .map-logo span { color: var(--green); }
+        .map-subtitle { font-size: 0.5rem; color: var(--green-dim); letter-spacing: 1.5px; margin-bottom: 12px; text-transform: uppercase; }
+        .srow { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.6rem; }
+        .slabel { color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1px; font-size: 0.48rem; }
+        .sval { font-weight: 700; }
+        .sval.green { color: var(--green); } .sval.amber { color: var(--amber); } .sval.blue { color: var(--blue); } .sval.red { color: var(--red); } .sval.purple { color: var(--purple); }
+        .chain-section { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 8px; }
+        .chain-title { font-size: 0.48rem; color: var(--purple); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+
+        .map-legend { position: absolute; top: 14px; right: 14px; padding: 12px 16px; min-width: 200px; }
+        .legend-title { font-size: 0.5rem; color: var(--green-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.55rem; padding: 3px 0; color: var(--text); }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+        .map-trade-card { position: absolute; bottom: 14px; left: 14px; padding: 12px 14px; width: 380px; max-height: 220px; display: flex; flex-direction: column; }
+        .map-trade-title { font-size: 0.48rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.85); margin-bottom: 6px; }
+        .map-trade-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent; }
+        .map-trade-list::-webkit-scrollbar { width: 3px; }
+        .map-trade-list::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+        .map-actions { position: absolute; bottom: 14px; right: 14px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        .action-row { display: flex; gap: 6px; }
+        .action-btn { pointer-events: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 16px; border-radius: 3px; cursor: pointer; font-weight: 700; border: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .btn-green { background: var(--green); color: var(--bg); }
+        .btn-green:hover { background: #00cc7d; }
+        .btn-red { background: var(--red); color: #fff; }
+        .btn-red:hover { background: #e0354f; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--green); color: var(--green); }
+        .action-status { font-size: 0.45rem; color: rgba(255,255,255,0.85); letter-spacing: 1px; text-align: right; }
+
+        .town-card { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); padding: 10px 14px; z-index: 500; }
+        .town-title { font-size: 0.45rem; color: var(--green-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+        .town-btns { display: flex; flex-wrap: wrap; gap: 3px; }
+        .town-btn { pointer-events: auto; background: transparent; border: 1px solid var(--border); color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; padding: 4px 8px; cursor: pointer; letter-spacing: 1px; border-radius: 2px; transition: all 0.2s; }
+        .town-btn:hover, .town-btn.active { background: var(--green); color: var(--bg); }
+
+        /* Loading indicator for map data */
+        .map-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 500; pointer-events: none; font-size: 0.7rem; color: var(--green); letter-spacing: 2px; text-transform: uppercase; }
+        .map-loading.hidden { display: none; }
+
+        .feeds-view { flex: 1; display: flex; flex-direction: column; }
+        .feeds-container { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); overflow: hidden; }
+        .feed-panel { background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+        .feed-header-block { flex-shrink: 0; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .feed-district { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .dtag { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 0.5rem; font-weight: 600; letter-spacing: 1px; }
+        .dtag-d63 { background: rgba(0,180,255,0.12); border: 1px solid rgba(0,180,255,0.3); color: var(--blue); }
+        .dtag-d91 { background: rgba(255,184,0,0.12); border: 1px solid rgba(255,184,0,0.3); color: var(--amber); }
+        .stat-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 8px 10px; border-radius: 3px; }
+        .stat-card .sc-label { font-size: 0.45rem; color: rgba(255,255,255,0.85); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
+        .stat-card .sc-value { font-size: 1rem; font-weight: 700; }
+        .stat-card .sc-value.green { color: var(--green); }
+        .stat-card .sc-value.red { color: var(--red); }
+        .stat-card .sc-value.blue { color: var(--blue); }
+        .stat-card .sc-value.amber { color: var(--amber); }
+
+        .feed-list { flex: 1; overflow-y: auto; padding: 0 16px; scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent; }
+        .feed-list::-webkit-scrollbar { width: 3px; }
+        .feed-list::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+        .trade { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.58rem; animation: fadeIn 0.35s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        .trade-top { display: flex; align-items: center; gap: 6px; }
+        .trade-icon { font-size: 0.7rem; flex-shrink: 0; }
+        .trade-pair { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .trade-pair strong { color: #fff; font-weight: 600; }
+        .trade-status { font-weight: 700; font-size: 0.48rem; letter-spacing: 0.5px; flex-shrink: 0; }
+        .trade-status.settled { color: var(--green); } .trade-status.rejected { color: var(--red); } .trade-status.island { color: var(--amber); } .trade-status.bridge { color: var(--purple); } .trade-status.fallback { color: #94a3b8; }
+        .trade-bottom { display: flex; gap: 12px; margin-top: 2px; padding-left: 22px; font-size: 0.5rem; color: rgba(255,255,255,0.85); }
+        .trade-bottom .val { color: var(--green); font-weight: 600; }
+        .trade-bottom .val.amber { color: var(--amber); }
+
+        .bridge-bar { flex-shrink: 0; padding: 7px 20px; display: flex; align-items: center; gap: 20px; background: rgba(8,10,18,0.95); border-top: 2px solid rgba(192,132,252,0.25); z-index: 100; }
+        .bridge-label { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.5rem; letter-spacing: 3px; text-transform: uppercase; color: var(--purple); white-space: nowrap; }
+        .bridge-stats { display: flex; gap: 16px; font-size: 0.5rem; color: rgba(255,255,255,0.85); }
+        .bridge-stats .bval { color: var(--purple); font-weight: 700; margin-left: 3px; }
+        .bridge-feed { flex: 1; overflow: hidden; height: 1em; }
+        .bridge-ticker { display: flex; gap: 40px; animation: ticker 40s linear infinite; white-space: nowrap; font-size: 0.48rem; color: var(--purple); }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        @media (max-width: 900px) { .feeds-container { grid-template-columns: 1fr; } .topbar { flex-wrap: wrap; gap: 8px; } .stat-cards { grid-template-columns: repeat(3, 1fr); } }
+
+        /* ═══ Tasks #17-#20: Dashboard Widgets ═══ */
+        .widget-drawer { position:absolute; bottom:60px; left:14px; right:14px; z-index:500; pointer-events:auto; display:flex; gap:10px; flex-wrap:wrap; }
+        .widget-card { background:var(--card); border:1px solid var(--border); border-radius:4px; padding:12px 14px; backdrop-filter:blur(14px); flex:1; min-width:220px; max-width:320px; }
+        .widget-title { font-size:0.5rem; letter-spacing:2px; text-transform:uppercase; color:var(--green-dim); margin-bottom:8px; font-weight:700; }
+        .widget-toggle { position:absolute; bottom:60px; right:14px; z-index:501; pointer-events:auto; }
+        .widget-toggle button { background:var(--card); border:1px solid var(--border); color:var(--green); font-family:'JetBrains Mono',monospace; font-size:0.55rem; padding:6px 12px; cursor:pointer; border-radius:2px; letter-spacing:1px; }
+        .widget-toggle button:hover { background:rgba(0,255,157,0.1); }
+
+        /* #17 ROI Popup */
+        .roi-popup { font-family:'JetBrains Mono',monospace; font-size:0.65rem; min-width:240px; }
+        .roi-popup h3 { font-family:'Outfit',sans-serif; font-size:0.85rem; margin-bottom:6px; color:#111; }
+        .roi-row { display:flex; justify-content:space-between; padding:2px 0; }
+        .roi-label { color:#888; }
+        .roi-val { font-weight:700; }
+        .roi-val.green { color:#00a86b; }
+        .roi-val.amber { color:#cc8800; }
+        .roi-savings { background:#e8fff0; border:1px solid #00a86b; border-radius:4px; padding:6px 8px; margin-top:6px; text-align:center; }
+        .roi-savings .big { font-size:1.1rem; font-weight:900; color:#00a86b; }
+
+        /* #18 Bill Comparison */
+        .bill-compare { display:flex; gap:8px; }
+        .bill-col { flex:1; background:rgba(0,0,0,0.2); border-radius:3px; padding:8px; text-align:center; }
+        .bill-col.utility { border-top:2px solid #ff4444; }
+        .bill-col.p2p { border-top:2px solid var(--green); }
+        .bill-col .bill-header { font-size:0.45rem; letter-spacing:1.5px; color:rgba(255,255,255,0.5); margin-bottom:6px; text-transform:uppercase; }
+        .bill-col .bill-amount { font-size:1.1rem; font-weight:900; }
+        .bill-col.utility .bill-amount { color:#ff4444; }
+        .bill-col.p2p .bill-amount { color:var(--green); }
+        .bill-savings-banner { text-align:center; margin-top:6px; padding:4px; background:rgba(0,255,157,0.08); border-radius:3px; }
+        .bill-savings-banner .pct { font-size:0.9rem; font-weight:900; color:var(--green); }
+        .bill-slider { width:100%; margin-top:8px; accent-color:var(--green); }
+        .bill-slider-label { font-size:0.45rem; color:rgba(255,255,255,0.4); text-align:center; }
+
+        /* #19 Price Spread */
+        .spread-chart { height:60px; position:relative; overflow:hidden; }
+        .spread-canvas { width:100%; height:100%; }
+        .spread-legend { display:flex; gap:12px; font-size:0.45rem; margin-top:4px; }
+        .spread-legend span { display:flex; align-items:center; gap:3px; }
+        .spread-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+        .spread-dot.grid { background:#ff4444; }
+        .spread-dot.p2p { background:var(--green); }
+        .spread-now { font-size:0.7rem; font-weight:700; display:flex; justify-content:space-between; margin-bottom:4px; }
+        .spread-now .grid-price { color:#ff4444; }
+        .spread-now .p2p-price { color:var(--green); }
+        .spread-now .spread-val { color:var(--amber); }
+
+        /* #20 Community Tickers */
+        .ticker-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .ticker-item { text-align:center; padding:4px; }
+        .ticker-value { font-size:0.9rem; font-weight:900; color:var(--green); }
+        .ticker-label { font-size:0.4rem; letter-spacing:1.5px; color:rgba(255,255,255,0.4); text-transform:uppercase; margin-top:2px; }
+        .ticker-value.amber { color:var(--amber); }
+        .ticker-value.blue { color:var(--blue); }
+        .ticker-value.purple { color:#a855f7; }
+
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="logo">TINY-HUB <span>NETWORK</span></div>
+            <div class="nav-tabs">
+                <button class="nav-tab active-d91" onclick="showView('d91',this)">District 91</button>
+                <button class="nav-tab" onclick="showView('d63',this)">McHenry County</button>
+                <button class="nav-tab" onclick="showView('feeds',this)">Live Feeds</button>
+            </div>
+        </div>
+        <div class="topbar-stats">
+            <div><span class="pulse"></span><span class="tval green" id="conn-status">CONNECTING</span></div>
+            <div>ENERGY<span class="tval green" id="total-mwh">0</span></div>
+            <div>PROFIT<span class="tval amber" id="total-profit">$0</span></div>
+            <div>BRIDGES<span class="tval purple" id="total-bridges">0</span></div>
+            <div>CO₂<span class="tval green" id="total-co2">0t</span></div>
+        </div>
+    </div>
+
+    <!-- ═══ D91 ═══ -->
+    <div class="view active" id="view-d91">
+        <div class="map-view">
+            <div class="map-container" id="map-d91"></div>
+            <div class="map-loading" id="d91-loading">Loading 1,789 buildings...</div>
+            <div class="map-overlay">
+                <div class="glass-card map-stats">
+                    <div class="map-logo">TINY-HUB <span>NETWORK</span></div>
+                    <div class="map-subtitle">P2P Energy Marketplace — District 91</div>
+                    <div class="srow"><span class="slabel">Status</span><span class="sval green" id="d91-status">● CONNECTED</span></div>
+                    <div class="srow"><span class="slabel">Trades Settled</span><span class="sval green" id="d91-settled">0</span></div>
+                    <div class="srow"><span class="slabel">Rejected</span><span class="sval red" id="d91-rejected">0</span></div>
+                    <div class="srow"><span class="slabel">Energy Traded</span><span class="sval blue" id="d91-mwh">0.000</span></div>
+                    <div class="srow"><span class="slabel">Community Profit</span><span class="sval amber" id="d91-profit">$0.00</span></div>
+                    <div class="srow"><span class="slabel">Island Events</span><span class="sval amber" id="d91-island">0</span></div>
+                    <div class="srow"><span class="slabel">CO₂ Offset</span><span class="sval green" id="d91-co2">0.00 t</span></div>
+                    <div class="srow"><span class="slabel">Avg Grid Price</span><span class="sval green" id="d91-grid">$0.0000</span></div>
+                    <div class="srow"><span class="slabel">Sellers on Map</span><span class="sval green" id="d91-seller-count">—</span></div>
+                    <div class="srow"><span class="slabel">Buyers on Map</span><span class="sval blue" id="d91-buyer-count">—</span></div>
+                    <div class="chain-section">
+                        <div class="chain-title">⛓ Blockchain</div>
+                        <div class="srow"><span class="slabel">On-Chain Trades</span><span class="sval purple" id="d91-chain-trades">—</span></div>
+                        <div class="srow"><span class="slabel">THN Supply</span><span class="sval purple" id="d91-token-supply">—</span></div>
+                        <div class="srow"><span class="slabel">Chain Status</span><span class="sval" style="color:rgba(255,255,255,0.85)" id="d91-chain-status">OFFLINE</span></div>
+                    </div>
+                </div>
+                <div class="glass-card map-legend">
+                    <div class="legend-title">Seller Tiers</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ff3e5f"></div>Mega Producer (100K+ sqft)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ff8c00"></div>Large Producer (50-100K)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ffb800"></div>Medium Producer (20-50K)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#00ff9d"></div>Small Producer (10-20K)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#00b4ff"></div>Micro Producer (5-10K)</div>
+                    <div style="border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;padding-top:6px"></div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#556"></div>Buyer (commercial)</div>
+                </div>
+                <div class="glass-card town-card">
+                    <div class="town-title">Towns</div>
+                    <div class="town-btns">
+                        <button class="town-btn active" onclick="flyD91(40.65,-89.50,10,this)">All D91</button>
+                        <button class="town-btn" onclick="flyD91(40.665,-89.58,13,this)">East Peoria</button>
+                        <button class="town-btn" onclick="flyD91(40.62,-89.46,13,this)">Morton</button>
+                        <button class="town-btn" onclick="flyD91(40.57,-89.64,13,this)">Pekin</button>
+                        <button class="town-btn" onclick="flyD91(40.70,-89.41,13,this)">Washington</button>
+                        <button class="town-btn" onclick="flyD91(40.64,-89.65,13,this)">Bartonville</button>
+                        <button class="town-btn" onclick="flyD91(40.72,-89.27,14,this)">Eureka</button>
+                        <button class="town-btn" onclick="flyD91(40.74,-89.01,14,this)">El Paso</button>
+                        <button class="town-btn" onclick="flyD91(40.795,-89.36,14,this)">Metamora</button>
+                    </div>
+                </div>
+                <div class="glass-card map-trade-card">
+                    <div class="map-trade-title">Live Trade Feed</div>
+                    <div class="map-trade-list" id="d91-map-feed"></div>
+                </div>
+                <div class="map-actions">
+                    <div class="action-row">
+                        <button class="action-btn btn-green" onclick="connectPubSub()">⚡ Connect Pub/Sub</button>
+                        <button class="action-btn btn-red">● Local Sim</button>
+                        <button class="action-btn btn-outline">↻ Reset</button>
+                    </div>
+                    <div class="action-status" id="d91-conn-msg">SSE connected — streaming trades</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ D63 ═══ -->
+    <div class="view" id="view-d63">
+        <div class="map-view">
+            <div class="map-container" id="map-d63"></div>
+            <div class="map-overlay">
+                <div class="glass-card map-stats">
+                    <div class="map-logo">TINY-HUB <span>NETWORK</span></div>
+                    <div class="map-subtitle">P2P Energy Marketplace — McHenry County</div>
+                    <div class="srow"><span class="slabel">Status</span><span class="sval green" id="d63-status">● CONNECTED</span></div>
+                    <div class="srow"><span class="slabel">Trades Settled</span><span class="sval green" id="d63-settled">0</span></div>
+                    <div class="srow"><span class="slabel">Rejected</span><span class="sval red" id="d63-rejected">0</span></div>
+                    <div class="srow"><span class="slabel">Energy Traded</span><span class="sval blue" id="d63-mwh">0.000</span></div>
+                    <div class="srow"><span class="slabel">Community Profit</span><span class="sval amber" id="d63-profit">$0.00</span></div>
+                    <div class="srow"><span class="slabel">Island Events</span><span class="sval amber" id="d63-island">0</span></div>
+                    <div class="srow"><span class="slabel">CO₂ Offset</span><span class="sval green" id="d63-co2">0.00 t</span></div>
+                    <div class="srow"><span class="slabel">Avg Grid Price</span><span class="sval green" id="d63-grid">$0.0000</span></div>
+                    <div class="chain-section">
+                        <div class="chain-title">⛓ Blockchain</div>
+                        <div class="srow"><span class="slabel">On-Chain Trades</span><span class="sval purple">—</span></div>
+                        <div class="srow"><span class="slabel">THN Supply</span><span class="sval purple">—</span></div>
+                        <div class="srow"><span class="slabel">Chain Status</span><span class="sval" style="color:rgba(255,255,255,0.85)">OFFLINE</span></div>
+                    </div>
+                </div>
+                <div class="glass-card map-legend">
+                    <div class="legend-title">Node Types</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#00ff9d"></div>Solar Farm</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#00b4ff"></div>Battery Storage</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ffb800"></div>Commercial Rooftop</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#c084fc"></div>Municipal / Residential</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ff3e5f;border-radius:0"></div>Buyer Node</div>
+                </div>
+                <div class="glass-card map-trade-card">
+                    <div class="map-trade-title">Live Trade Feed</div>
+                    <div class="map-trade-list" id="d63-map-feed"></div>
+                </div>
+                <div class="map-actions">
+                    <div class="action-row">
+                        <button class="action-btn btn-green" onclick="connectPubSub()">⚡ Connect Pub/Sub</button>
+                        <button class="action-btn btn-red">● Local Sim</button>
+                        <button class="action-btn btn-outline">↻ Reset</button>
+                    </div>
+                    <div class="action-status" id="d63-conn-msg">SSE connected — streaming trades</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Live Feeds ═══ -->
+    <div class="view" id="view-feeds">
+        <div class="feeds-view">
+            <div class="feeds-container">
+                <div class="feed-panel">
+                    <div class="feed-header-block">
+                        <div class="feed-district" style="color:var(--blue)"><span class="dtag dtag-d63">D63</span> McHENRY COUNTY · COMED</div>
+                        <div class="stat-cards">
+                            <div class="stat-card"><div class="sc-label">Settled</div><div class="sc-value green" id="f-d63-settled">0</div></div>
+                            <div class="stat-card"><div class="sc-label">Rejected</div><div class="sc-value red" id="f-d63-rejected">0</div></div>
+                            <div class="stat-card"><div class="sc-label">Rate</div><div class="sc-value blue" id="f-d63-rate">0%</div></div>
+                            <div class="stat-card"><div class="sc-label">Energy</div><div class="sc-value green" id="f-d63-mwh">0</div></div>
+                            <div class="stat-card"><div class="sc-label">Profit</div><div class="sc-value amber" id="f-d63-profit">$0</div></div>
+                        </div>
+                    </div>
+                    <div class="feed-list" id="d63-feed"></div>
+                </div>
+                <div class="feed-panel">
+                    <div class="feed-header-block">
+                        <div class="feed-district" style="color:var(--amber)"><span class="dtag dtag-d91">D91</span> PEORIA · TAZEWELL · WOODFORD · MCLEAN</div>
+                        <div class="stat-cards">
+                            <div class="stat-card"><div class="sc-label">Settled</div><div class="sc-value green" id="f-d91-settled">0</div></div>
+                            <div class="stat-card"><div class="sc-label">Rejected</div><div class="sc-value red" id="f-d91-rejected">0</div></div>
+                            <div class="stat-card"><div class="sc-label">Rate</div><div class="sc-value blue" id="f-d91-rate">0%</div></div>
+                            <div class="stat-card"><div class="sc-label">Energy</div><div class="sc-value green" id="f-d91-mwh">0</div></div>
+                            <div class="stat-card"><div class="sc-label">Profit</div><div class="sc-value amber" id="f-d91-profit">$0</div></div>
+                        </div>
+                    </div>
+                    <div class="feed-list" id="d91-feed"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bridge-bar">
+        <div class="bridge-label">🌉 BRIDGE</div>
+        <div class="bridge-stats">
+            <div>D63→D91<span class="bval" id="bt-d63">0</span></div>
+            <div>D91→D63<span class="bval" id="bt-d91">0</span></div>
+            <div>MWh<span class="bval" id="bt-mwh">0</span></div>
+            <div>Toll<span class="bval" id="bt-toll">$0</span></div>
+        </div>
+        <div class="bridge-feed">
+            <div class="bridge-ticker" id="bridge-ticker"><span>Waiting for bridge trades...</span></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+    function $(id) { return document.getElementById(id); }
+    // ═══ NAV ═══
+    let currentView = 'd91';
+    const maps = {};
+    function showView(v, btn) {
+        currentView = v;
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + v).classList.add('active');
+        document.querySelectorAll('.nav-tab').forEach(b => b.className = 'nav-tab');
+        btn.classList.add('nav-tab', 'active-' + v);
+        setTimeout(() => { if (maps[v]) maps[v].invalidateSize(); }, 100);
+    }
+    function connectPubSub() {
+        var towns=['East Peoria','Peoria','Morton','Pekin','Washington','Bartonville','Eureka','El Paso','Metamora'];
+        var types=['Commercial','Industrial','Residential'];
+        var sizes=['1,249','5,193','8,370','14,828','3,175','4,945','2,825','669','5,415'];
+        function gen(){
+            var st=towns[Math.floor(Math.random()*towns.length)];
+            var bt=towns[Math.floor(Math.random()*towns.length)];
+            var ss=sizes[Math.floor(Math.random()*sizes.length)];
+            var bs=sizes[Math.floor(Math.random()*sizes.length)];
+            var mwh=Math.random()*0.008+0.001;
+            var dist=Math.random()*15+0.5;
+            var price=0.070-(0.02*(1-dist/50))+(Math.random()*0.01-0.005);
+            var net=mwh*price*1000-mwh*0.025*1000;
+            return{
+                _district:'D91',seller_label:types[Math.floor(Math.random()*types.length)]+' ('+ss+' sqft)',
+                buyer_label:types[Math.floor(Math.random()*types.length)]+' ('+bs+' sqft)',
+                seller_town:st,buyer_town:bt,mwh:mwh,
+                grid_price:0.095,settled_price:parseFloat(price.toFixed(4)),
+                net_profit:parseFloat(net.toFixed(4)),co2_tons:parseFloat((mwh*0.42).toFixed(6)),
+                trade_status:'SETTLED'
+            };
+        }
+        var el=document.getElementById('d91-status');
+        if(el)el.innerHTML='<span style="color:var(--green)">\u25cf CONNECTED (DEMO)</span>';
+        document.querySelectorAll('.action-status').forEach(function(e){e.textContent='Demo simulation active';});
+        function push(){
+            var t=gen();
+            ['d91-map-feed','d91-feed'].forEach(function(fid){ var feed=document.getElementById(fid);
+            if(feed){
+                var d=document.createElement('div');d.className='trade-item';
+                d.innerHTML='<div class="trade-top"><span class="trade-icon">\u26a1</span><span class="trade-pair"><strong>'+t.seller_label+'</strong> \u2192 '+t.buyer_label+'</span><span class="trade-status settled">SETTLED</span></div><div class="trade-bottom"><span><span class="val">'+(t.mwh*1000).toFixed(1)+' kWh</span></span><span>Grid <span class="val amber">$'+t.grid_price.toFixed(4)+'</span></span><span>Settled <span class="val">$'+t.settled_price.toFixed(4)+'</span></span></div>';
+                feed.prepend(d);if(feed.children.length>50)feed.removeChild(feed.lastChild);}});
+            var s=document.getElementById('d91-settled');if(s)s.textContent=parseInt(s.textContent||0)+1;
+            var m=document.getElementById('d91-mwh');if(m)m.textContent=(parseFloat(m.textContent||0)+t.mwh).toFixed(3);
+            var p=document.getElementById('d91-profit');if(p)p.textContent='$'+(parseFloat((p.textContent||'$0').replace('$',''))+t.net_profit).toFixed(2);
+            var c=document.getElementById('d91-co2');if(c)c.textContent=(parseFloat(c.textContent||0)+t.co2_tons).toFixed(2)+' t';
+            var fs=document.getElementById('f-d91-settled');if(fs)fs.textContent=parseInt(fs.textContent||0)+1;
+            var fm=document.getElementById('f-d91-mwh');if(fm)fm.textContent=(parseFloat(fm.textContent||0)+t.mwh*1000).toFixed(0);
+            var fp=document.getElementById('f-d91-profit');if(fp)fp.textContent='$'+(parseFloat((fp.textContent||'$0').replace('$',''))+t.net_profit).toFixed(2);
+        }
+        for(var i=0;i<25;i++)push();
+        setInterval(push,Math.floor(Math.random()*5000)+3000);
+    }
+
+    // ═══ MAPS ═══
+    const lightTile = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+    // ── D91 Map ──
+    const mapD91 = L.map('map-d91', { zoomControl: false, attributionControl: false }).setView([40.65, -89.50], 10);
+    L.tileLayer(lightTile, { maxZoom: 19 }).addTo(mapD91);
+    maps.d91 = mapD91;
+
+    // Store D91 seller refs for trade flash lookup
+    const d91SellerIndex = {};
+
+    // Load ALL D91 buildings from API
+    async function loadD91Buildings() {
+        try {
+            const r = await fetch('/api/buildings/d91');
+            const data = await r.json();
+            if (data.error) { console.error(data.error); return; }
+
+            const tierColor = { mega: '#ff3e5f', large: '#ff8c00', medium: '#ffb800', small: '#00ff9d', micro: '#00b4ff' };
+            const tierRadius = { mega: 10, large: 7, medium: 5, small: 4, micro: 3 };
+            const EV_COLOR = '#00ffff';   // cyan — EV battery residential homes
+
+            // Residential layer group — hidden until zoom 14
+            const residentialLayer = L.layerGroup().addTo(mapD91);
+            const RESIDENTIAL_ZOOM = 14;
+
+            // Plot sellers
+            data.sellers.forEach(s => {
+                const isResidential = s.cat === 'residential';
+                const isEV = s.ev === true;
+                const c = isEV ? EV_COLOR : (tierColor[s.ti] || '#ffb800');
+                const r = isEV ? 5 : (tierRadius[s.ti] || 4);
+                const evLabel = isEV ? '<br>⚡ EV Battery — Seller + Buyer' : '';
+                const marker = L.circleMarker([s.la, s.ln], {
+                    radius: r,
+                    color: isEV ? '#00ffff' : c,
+                    fillColor: c,
+                    fillOpacity: isEV ? 0.9 : 0.6,
+                    weight: isEV ? 2 : 1,
+                })
+                    .bindPopup(`<div style="font-family:'JetBrains Mono',monospace;font-size:11px"><b>${s.n}</b><br>${s.t}<br>${s.sq.toLocaleString()} sqft · ${s.mwh.toLocaleString()} MWh/yr<br>${s.ti} · ${s.cat}${evLabel}</div>`);
+
+                if (isResidential) {
+                    residentialLayer.addLayer(marker);
+                } else {
+                    marker.addTo(mapD91);
+                }
+                // Index by partial name for flash matching
+                d91SellerIndex[s.n.substring(0, 10)] = { la: s.la, ln: s.ln };
+            });
+
+            // Plot buyers
+            data.buyers.forEach(b => {
+                L.circleMarker([b.la, b.ln], { radius: 2, color: '#556', fillColor: '#556', fillOpacity: 0.4, weight: 0.5 })
+                    .addTo(mapD91)
+                    .bindPopup(`<div style="font-family:'JetBrains Mono',monospace;font-size:11px"><b>${b.n}</b><br>${b.t}<br>${b.sq.toLocaleString()} sqft · Buyer</div>`);
+            });
+
+            // Update counts
+            $('d91-seller-count').textContent = data.sellers.length.toLocaleString();
+            $('d91-buyer-count').textContent = data.buyers.length.toLocaleString();
+            $('d91-loading').classList.add('hidden');
+
+            // Show/hide residential layer based on zoom
+            function updateResidentialVisibility() {
+                const z = mapD91.getZoom();
+                if (z >= RESIDENTIAL_ZOOM) {
+                    if (!mapD91.hasLayer(residentialLayer)) mapD91.addLayer(residentialLayer);
+                } else {
+                    if (mapD91.hasLayer(residentialLayer)) mapD91.removeLayer(residentialLayer);
+                }
+            }
+            mapD91.on('zoomend', updateResidentialVisibility);
+            updateResidentialVisibility(); // Apply on load
+
+        } catch (e) {
+            console.error('Failed to load D91 buildings:', e);
+            $('d91-loading').textContent = 'Failed to load buildings';
+        }
+    }
+    loadD91Buildings();
+
+    function flyD91(lat, lng, z, btn) {
+        mapD91.flyTo([lat, lng], z, { duration: 1.2 });
+        document.querySelectorAll('#view-d91 .town-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+    }
+
+    // ── D63 Map ──
+    const mapD63 = L.map('map-d63', { zoomControl: false, attributionControl: false }).setView([42.30, -88.50], 11);
+    L.tileLayer(lightTile, { maxZoom: 19 }).addTo(mapD63);
+    maps.d63 = mapD63;
+
+    const d63Hubs = [
+        { name: 'Walmart Woodstock', coords: [42.31, -88.44], mwh: 4.2, type: 'commercial' },
+        { name: 'NW Medicine', coords: [42.25, -88.60], mwh: 1.9, type: 'commercial' },
+        { name: 'Jewel-Osco', coords: [42.32, -88.45], mwh: 0.16, type: 'commercial' },
+        { name: 'Walmart Huntley', coords: [42.23, -88.43], mwh: 3.3, type: 'commercial' },
+        { name: 'Woodstock Homes', coords: [42.31, -88.45], mwh: 0.8, type: 'residential' },
+        { name: 'Marengo Municipal', coords: [42.25, -88.61], mwh: 1.2, type: 'municipal' },
+        { name: 'Marengo Solar Farm', coords: [42.25, -88.62], mwh: 6.0, type: 'solar_farm' },
+        { name: 'Nexamp Harvard', coords: [42.42, -88.61], mwh: 3.0, type: 'solar_farm' },
+        { name: 'Hebron Solar', coords: [42.47, -88.43], mwh: 2.5, type: 'solar_farm' },
+        { name: 'Marengo Battery 20MW', coords: [42.24, -88.60], mwh: 20.0, type: 'battery' },
+        { name: 'McHenry Battery 20MW', coords: [42.33, -88.27], mwh: 20.0, type: 'battery' },
+    ];
+    d63Hubs.forEach(h => {
+        const r = Math.min(4 + h.mwh * 0.4, 14);
+        const c = h.type === 'battery' ? '#00b4ff' : h.type === 'solar_farm' ? '#00ff9d' : h.type === 'municipal' || h.type === 'residential' ? '#c084fc' : '#ffb800';
+        L.circleMarker(h.coords, { radius: r, color: c, fillColor: c, fillOpacity: 0.6, weight: 1.5 })
+            .addTo(mapD63).bindPopup(`<div style="font-family:'JetBrains Mono',monospace;font-size:11px"><b>${h.name}</b><br>${h.mwh} MWh · ${h.type}</div>`);
+    });
+    [
+        { n: 'Residential Block A', c: [42.32, -88.46] }, { n: 'Residential Block B', c: [42.30, -88.44] },
+        { n: 'Woodstock North HS', c: [42.33, -88.44] }, { n: 'Marengo High School', c: [42.24, -88.60] },
+        { n: 'Route 47 Strip Mall', c: [42.22, -88.43] }, { n: 'NW Medicine Ops', c: [42.25, -88.59] },
+        { n: 'Google Aurora Hub', c: [41.76, -88.32] }, { n: 'Equinix Chicago', c: [41.88, -87.64] },
+        { n: 'ComEd Buyback', c: [42.28, -88.50] }, { n: 'Harvard Fire Dept', c: [42.42, -88.61] }, { n: 'Woodstock PD', c: [42.31, -88.45] },
+    ].forEach(b => {
+        L.circleMarker(b.c, { radius: 4, color: '#ff3e5f', fillColor: '#ff3e5f', fillOpacity: 0.5, weight: 1 })
+            .addTo(mapD63).bindPopup(`<div style="font-family:'JetBrains Mono',monospace;font-size:11px"><b>${b.n}</b><br>Buyer</div>`);
+    });
+
+    // ═══ HELPERS ═══
+    function fmt(n, d = 2) { return Number(n).toFixed(d); }
+    function fmtK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'K' : fmt(n, 2); }
+    function fmtKWh(mwh) { const kwh = mwh * 1000; return kwh >= 1000 ? fmt(mwh, 2) + ' MWh' : fmt(kwh, 1) + ' kWh'; }
+    function fmtKWhTotal(mwh) { if (mwh >= 100) return fmt(mwh, 1) + ' MWh'; if (mwh >= 1) return fmt(mwh, 2) + ' MWh'; return fmt(mwh * 1000, 0) + ' kWh'; }
+    function weatherIcon(t) { const s = t.weather_source; return s === 'open-meteo' ? ' ☀' : ''; }
+    function sClass(s) { return s === 'SETTLED' ? 'settled' : s === 'ISLAND_SETTLED' ? 'island' : s === 'REJECTED' ? 'rejected' : s === 'BRIDGE_LISTED' ? 'bridge' : s === 'FALLBACK' ? 'fallback' : ''; }
+    function sIcon(s) { return s === 'SETTLED' ? '⚡' : s === 'ISLAND_SETTLED' ? '🏝️' : s === 'REJECTED' ? '❌' : s === 'BRIDGE_LISTED' ? '🌉' : s === 'FALLBACK' ? '🔌' : '·'; }
+
+    function makeTradeEl(t) {
+        const st = t.trade_status || ''; const seller = (t.seller_label || t.station_id || '?').substring(0, 22); const buyer = (t.buyer_label || t.buyer_type || '?').substring(0, 18);
+        const div = document.createElement('div'); div.className = 'trade';
+        div.innerHTML = `<div class="trade-top"><span class="trade-icon">${sIcon(st)}</span><span class="trade-pair"><strong>${seller}</strong> → ${buyer}</span><span class="trade-status ${sClass(st)}">${st.replace(/_/g, ' ')}</span></div><div class="trade-bottom"><span><span class="val">${fmtKWh(t.mwh || 0)}</span></span><span>Grid <span class="val amber">$${fmt(t.grid_price || 0, 4)}</span></span><span>Settled <span class="val">$${fmt(t.settled_price || 0, 4)}</span></span>${t.weather_source === 'open-meteo' ? '<span style="color:var(--blue)">☁' + Math.round(t.cloud_cover || 0) + '%</span>' : ''}${t.data_mode === 'live' ? '<span style="color:var(--green)">🛰</span>' : ''}</div>`;
+        return div;
+    }
+
+    function addToFeed(feedId, t, max = 100) {
+        const feed = $(feedId); if (!feed) return;
+        feed.prepend(makeTradeEl(t));
+        while (feed.children.length > max) feed.removeChild(feed.lastChild);
+    }
+
+    function flashOnMap(mapObj, lat, lng, color) {
+        if (!lat || !lng || !mapObj) return;
+        const m = L.circleMarker([lat, lng], { radius: 14, color, fillColor: color, fillOpacity: 0.6, weight: 0 }).addTo(mapObj);
+        setTimeout(() => m.setStyle({ radius: 22, fillOpacity: 0 }), 300);
+        setTimeout(() => mapObj.removeLayer(m), 800);
+    }
+
+    function processTrade(t) {
+        const st = t.trade_status || '';
+        if (st === 'BRIDGE_LISTED') { addBridgeMsg(t); return; }
+        if (t._district === 'D63') {
+            addToFeed('d63-feed', t); addToFeed('d63-map-feed', t, 60);
+            const hub = d63Hubs.find(h => (t.seller_label || '').includes(h.name.substring(0, 8)));
+            if (hub) flashOnMap(mapD63, hub.coords[0], hub.coords[1], '#00b4ff');
+        } else {
+            addToFeed('d91-feed', t); addToFeed('d91-map-feed', t, 60);
+            // Look up in dynamic index
+            const label = (t.seller_label || '').substring(0, 10);
+            const match = d91SellerIndex[label];
+            if (match) flashOnMap(mapD91, match.la, match.ln, '#ffb800');
+        }
+    }
+
+    const bridgeMsgs = [];
+    function addBridgeMsg(t) {
+        const dir = t.origin_district === 'McHenry_D63' ? 'D63→D91' : 'D91→D63';
+        const label = (t.seller_label || t.station_id || '?').substring(0, 18);
+        bridgeMsgs.push(`${dir} · ${label} · ${fmtKWh(t.mwh || 0)} · $${fmt(t.bridge_profit || 0, 4)} toll`);
+        if (bridgeMsgs.length > 30) bridgeMsgs.shift();
+        $('bridge-ticker').innerHTML = bridgeMsgs.concat(bridgeMsgs).map(m => `<span>${m}</span>`).join('');
+    }
+
+    // ═══ STATS ═══
+    function updateStats(s) {
+        $('d91-settled').textContent = s.d91.settled.toLocaleString(); $('d91-rejected').textContent = s.d91.rejected.toLocaleString();
+        $('d91-mwh').textContent = fmtKWhTotal(s.d91.mwh); $('d91-profit').textContent = '$' + fmt(s.d91.profit); $('d91-island').textContent = s.d91.island;
+        if($('d91-co2')) $('d91-co2').textContent = (s.d91.co2||0).toFixed(2) + ' t';
+        $('d63-settled').textContent = s.d63.settled.toLocaleString(); $('d63-rejected').textContent = s.d63.rejected.toLocaleString();
+        $('d63-mwh').textContent = fmtKWhTotal(s.d63.mwh); $('d63-profit').textContent = '$' + fmt(s.d63.profit); $('d63-island').textContent = s.d63.island;
+        if($('d63-co2')) $('d63-co2').textContent = (s.d63.co2||0).toFixed(2) + ' t';
+        $('f-d63-settled').textContent = s.d63.settled; $('f-d63-rejected').textContent = s.d63.rejected;
+        $('f-d63-rate').textContent = s.d63.rate + '%'; $('f-d63-mwh').textContent = fmtKWhTotal(s.d63.mwh); $('f-d63-profit').textContent = '$' + fmt(s.d63.profit);
+        $('f-d91-settled').textContent = s.d91.settled; $('f-d91-rejected').textContent = s.d91.rejected;
+        $('f-d91-rate').textContent = s.d91.rate + '%'; $('f-d91-mwh').textContent = fmtKWhTotal(s.d91.mwh); $('f-d91-profit').textContent = '$' + fmt(s.d91.profit);
+        $('bt-d63').textContent = s.bridge.d63_to_d91; $('bt-d91').textContent = s.bridge.d91_to_d63;
+        $('bt-mwh').textContent = fmtKWhTotal(s.bridge.mwh_bridged); $('bt-toll').textContent = '$' + fmt(s.bridge.toll_revenue, 4);
+        $('total-mwh').textContent = fmtKWhTotal(s.d63.mwh + s.d91.mwh);
+        $('total-profit').textContent = '$' + fmt(s.d63.profit + s.d91.profit);
+        $('total-bridges').textContent = s.bridge.d63_to_d91 + s.bridge.d91_to_d63;
+        const live = (s.d91.trades > 0 || s.d63.trades > 0);
+        $('d91-status').textContent = live ? '● CONNECTED' : '● DISCONNECTED'; $('d91-status').style.color = live ? 'var(--green)' : 'var(--red)';
+        $('d63-status').textContent = live ? '● CONNECTED' : '● DISCONNECTED'; $('d63-status').style.color = live ? 'var(--green)' : 'var(--red)';
+    }
+
+    // ═══ SSE + POLLING ═══
+    function connectSSE() {
+        const es = new EventSource('/api/stream');
+        es.onopen = () => { $('conn-status').textContent = 'LIVE'; $('conn-status').style.color = 'var(--green)'; };
+        es.onmessage = (e) => { try { const t = JSON.parse(e.data); if (t.type === 'connected') return; processTrade(t); } catch (err) { } };
+        es.onerror = () => { $('conn-status').textContent = 'RECONNECTING'; $('conn-status').style.color = 'var(--red)'; es.close(); setTimeout(connectSSE, 3000); };
+    }
+    async function pollStats() { try { updateStats(await (await fetch('/api/stats')).json()); } catch (e) { } }
+    async function loadRecent() {
+        try {
+            const [d63, d91, br] = await Promise.all([fetch('/api/trades/d63').then(r => r.json()), fetch('/api/trades/d91').then(r => r.json()), fetch('/api/trades/bridge').then(r => r.json())]);
+            d63.reverse().forEach(t => processTrade(t)); d91.reverse().forEach(t => processTrade(t)); br.reverse().forEach(t => processTrade(t));
+        } catch (e) { }
+    }
+    loadRecent(); connectSSE(); pollStats(); setInterval(pollStats, 3000);
+    async function fetchChain() {
+        try {
+            const d = await (await fetch('/api/chain')).json();
+            const ct = document.getElementById('d91-chain-trades');
+            const ts = document.getElementById('d91-token-supply');
+            const cs = document.getElementById('d91-chain-status');
+            if (d.connected) {
+                if (ct) ct.textContent = d.trade_count !== undefined ? d.trade_count.toLocaleString() : '—';
+                if (ts) ts.textContent = d.token_supply !== undefined ? d.token_supply.toFixed(3) + ' THN' : '—';
+                if (cs) { cs.textContent = 'CONNECTED'; cs.style.color = 'var(--green)'; }
+            } else {
+                if (cs) { cs.textContent = 'OFFLINE'; cs.style.color = 'var(--red)'; }
+            }
+        } catch (e) {}
+    }
+    fetchChain(); setInterval(fetchChain, 5000);
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+    // ═══ WEBSOCKET ═══
+    let wsSocket = null;
+    function connectWebSocket() {
+        if (typeof io === 'undefined') return;
+        try {
+            wsSocket = io({ transports: ['websocket', 'polling'] });
+            wsSocket.on('connect', () => {
+                console.log('WebSocket connected');
+                $('conn-status').textContent = 'WS LIVE';
+                $('conn-status').style.color = 'var(--green)';
+            });
+            wsSocket.on('trade', (t) => { try { processTrade(t); } catch(e) {} });
+            wsSocket.on('stats_update', (s) => { try { updateStats(s); } catch(e) {} });
+            wsSocket.on('battery_event', (e) => {
+                console.log('Battery event:', e);
+            });
+            wsSocket.on('disconnect', () => {
+                console.log('WebSocket disconnected — falling back to SSE');
+                $('conn-status').textContent = 'SSE';
+                connectSSE();
+            });
+        } catch(e) {
+            console.warn('WebSocket failed, using SSE:', e);
+            connectSSE();
+        }
+    }
+    // Try WebSocket first, fall back to SSE
+    if (typeof io !== 'undefined') {
+        connectWebSocket();
+    } else {
+        connectSSE();
+    }
+
+    // Battery discharge trigger
+    function triggerDischarge(stationId, mwh) {
+        if (wsSocket && wsSocket.connected) {
+            wsSocket.emit('trigger_discharge', { station_id: stationId, mwh: mwh });
+            wsSocket.once('discharge_result', (r) => {
+                if (r.success) {
+                    console.log('Discharge OK:', r.actual_mwh, 'MWh');
+                } else {
+                    console.warn('Discharge failed:', r.error);
+                }
+            });
+        }
+    }
+
+    // ═══ TASKS #17-#20: DASHBOARD WIDGETS ═══
+
+    // ── Widget Toggle ──
+    let widgetsVisible = false;
+    function toggleWidgets() {
+        widgetsVisible = !widgetsVisible;
+        document.getElementById('widget-drawer').style.display = widgetsVisible ? 'flex' : 'none';
+    }
+
+    // ── #17: ROI Popup (injected into map marker popups) ──
+    function roiPopupContent(building) {
+        const sqft = building.sq || 5000;
+        const mwhYear = building.mwh || (sqft * 0.015 / 1000);  // rough estimate
+        const annualKwh = mwhYear * 1000;
+
+        // Economics (unbundled — Task #6)
+        const supplyRate = currentView === 'd63' ? 0.065 : 0.070;  // $/kWh
+        const deliveryRate = currentView === 'd63' ? 0.055 : 0.050;
+        const retailRate = supplyRate + deliveryRate;
+        const p2pRate = supplyRate * 0.80;  // ~20% below supply
+        const tollRate = currentView === 'd63' ? 0.020 : 0.025;
+
+        // Seller ROI
+        const annualRevenue = annualKwh * (p2pRate - tollRate);
+        const installCost = sqft * 0.15;  // rough $/sqft for solar
+        const paybackYears = installCost > 0 ? (installCost / annualRevenue) : 0;
+        const co2Tons = mwhYear * 0.42;
+
+        // Buyer savings
+        const buyerSavingsKwh = supplyRate - p2pRate;
+        const buyerSavingsYear = annualKwh * buyerSavingsKwh;
+
+        return `<div class="roi-popup">
+            <h3>${building.n || 'Building'}</h3>
+            <div class="roi-row"><span class="roi-label">Rooftop</span><span class="roi-val">${sqft.toLocaleString()} sqft</span></div>
+            <div class="roi-row"><span class="roi-label">Est. Solar</span><span class="roi-val">${annualKwh.toLocaleString()} kWh/yr</span></div>
+            <div class="roi-row"><span class="roi-label">Grid Rate</span><span class="roi-val">$${retailRate.toFixed(3)}/kWh</span></div>
+            <div class="roi-row"><span class="roi-label">P2P Rate</span><span class="roi-val green">$${p2pRate.toFixed(3)}/kWh</span></div>
+            <hr style="border-color:#eee;margin:4px 0;">
+            <div class="roi-row"><span class="roi-label">Seller Revenue</span><span class="roi-val green">$${annualRevenue.toFixed(0)}/yr</span></div>
+            <div class="roi-row"><span class="roi-label">Buyer Savings</span><span class="roi-val green">$${buyerSavingsYear.toFixed(0)}/yr</span></div>
+            <div class="roi-row"><span class="roi-label">Payback</span><span class="roi-val amber">${paybackYears.toFixed(1)} yrs</span></div>
+            <div class="roi-row"><span class="roi-label">CO₂ Offset</span><span class="roi-val green">${co2Tons.toFixed(1)} t/yr</span></div>
+            <div class="roi-savings">
+                <div class="big">${((1 - p2pRate/supplyRate) * 100).toFixed(0)}% cheaper than grid supply</div>
+            </div>
+        </div>`;
+    }
+
+    // Override the default popup to include ROI
+    const _origBindPopup = L.CircleMarker.prototype.bindPopup;
+    L.CircleMarker.prototype.bindPopup = function(content, options) {
+        // If it's a seller popup (has sqft info), enhance it
+        if (typeof content === 'string' && content.includes('MWh/yr')) {
+            const self = this;
+            return _origBindPopup.call(this, function() {
+                // Extract building data from the original popup
+                const match = content.match(/sqft.*?([\d,.]+)\s*MWh/);
+                const sqMatch = content.match(/([\d,]+)\s*sqft/);
+                const nameMatch = content.match(/<b>([^<]+)<\/b>/);
+                const building = {
+                    n: nameMatch ? nameMatch[1] : 'Building',
+                    sq: sqMatch ? parseInt(sqMatch[1].replace(/,/g, '')) : 5000,
+                    mwh: match ? parseFloat(match[1].replace(/,/g, '')) : 1,
+                };
+                return roiPopupContent(building);
+            }, options);
+        }
+        return _origBindPopup.call(this, content, options);
+    };
+
+    // ── #18: Bill Comparison Slider ──
+    const billSlider = document.getElementById('bill-kwh-slider');
+    if (billSlider) {
+        billSlider.addEventListener('input', function() {
+            updateBillComparison(parseInt(this.value));
+        });
+    }
+
+    function updateBillComparison(kwhMonth) {
+        const isD63 = currentView === 'd63';
+        const supplyRate = isD63 ? 0.065 : 0.070;
+        const deliveryRate = isD63 ? 0.055 : 0.050;
+        const retailRate = supplyRate + deliveryRate;
+        const p2pSupplyRate = supplyRate * 0.80;  // 20% savings on supply
+        const p2pTotal = (p2pSupplyRate + deliveryRate);  // still pay delivery
+
+        const utilityBill = kwhMonth * retailRate;
+        const p2pBill = kwhMonth * p2pTotal;
+        const savings = utilityBill - p2pBill;
+        const savingsPct = (savings / utilityBill * 100);
+
+        const el = id => document.getElementById(id);
+        el('bill-utility').textContent = '$' + utilityBill.toFixed(0);
+        el('bill-p2p').textContent = '$' + p2pBill.toFixed(0);
+        el('bill-savings-pct').textContent = savingsPct.toFixed(0) + '%';
+        el('bill-savings-amt').textContent = '$' + savings.toFixed(0) + '/mo';
+        el('bill-kwh-label').textContent = kwhMonth.toLocaleString();
+    }
+    // Init with default
+    updateBillComparison(1000);
+
+    // ── #19: Price Spread Chart ──
+    const spreadData = { grid: [], p2p: [] };
+    const MAX_SPREAD_POINTS = 60;
+    let spreadCtx = null;
+
+    function initSpreadChart() {
+        const canvas = document.getElementById('spread-canvas');
+        if (!canvas) return;
+        spreadCtx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth * 2;
+        canvas.height = canvas.offsetHeight * 2;
+        spreadCtx.scale(2, 2);
+    }
+
+    function updateSpreadChart(gridPrice, p2pPrice) {
+        spreadData.grid.push(gridPrice);
+        spreadData.p2p.push(p2pPrice);
+        if (spreadData.grid.length > MAX_SPREAD_POINTS) {
+            spreadData.grid.shift();
+            spreadData.p2p.shift();
+        }
+
+        // Update text
+        const el = id => document.getElementById(id);
+        el('spread-grid').textContent = '$' + gridPrice.toFixed(4);
+        el('spread-p2p').textContent = '$' + p2pPrice.toFixed(4);
+        el('spread-diff').textContent = '$' + (gridPrice - p2pPrice).toFixed(4);
+
+        // Draw
+        if (!spreadCtx) initSpreadChart();
+        if (!spreadCtx) return;
+
+        const canvas = document.getElementById('spread-canvas');
+        const w = canvas.offsetWidth;
+        const h = canvas.offsetHeight;
+
+        spreadCtx.clearRect(0, 0, w, h);
+
+        const allVals = [...spreadData.grid, ...spreadData.p2p];
+        const minV = Math.min(...allVals) * 0.95;
+        const maxV = Math.max(...allVals) * 1.05;
+        const range = maxV - minV || 0.01;
+
+        function drawLine(data, color) {
+            spreadCtx.beginPath();
+            spreadCtx.strokeStyle = color;
+            spreadCtx.lineWidth = 1.5;
+            data.forEach((v, i) => {
+                const x = (i / (MAX_SPREAD_POINTS - 1)) * w;
+                const y = h - ((v - minV) / range) * h;
+                if (i === 0) spreadCtx.moveTo(x, y);
+                else spreadCtx.lineTo(x, y);
+            });
+            spreadCtx.stroke();
+        }
+
+        // Fill spread area
+        if (spreadData.grid.length > 1) {
+            spreadCtx.beginPath();
+            spreadCtx.fillStyle = 'rgba(0,255,157,0.06)';
+            spreadData.grid.forEach((v, i) => {
+                const x = (i / (MAX_SPREAD_POINTS - 1)) * w;
+                const y = h - ((v - minV) / range) * h;
+                if (i === 0) spreadCtx.moveTo(x, y);
+                else spreadCtx.lineTo(x, y);
+            });
+            for (let i = spreadData.p2p.length - 1; i >= 0; i--) {
+                const x = (i / (MAX_SPREAD_POINTS - 1)) * w;
+                const y = h - ((spreadData.p2p[i] - minV) / range) * h;
+                spreadCtx.lineTo(x, y);
+            }
+            spreadCtx.closePath();
+            spreadCtx.fill();
+        }
+
+        drawLine(spreadData.grid, '#ff4444');
+        drawLine(spreadData.p2p, '#00ff9d');
+    }
+
+    // ── #20: Community Wealth Tickers ──
+    let communityStats = { retained: 0, diverted: 0, co2: 0 };
+
+    function updateCommunityTickers(profit, mwh, co2) {
+        communityStats.retained += profit;
+        communityStats.diverted += profit * 0.85;  // 85% stays local
+        communityStats.co2 += co2;
+
+        const el = id => document.getElementById(id);
+        el('tk-retained').textContent = '$' + communityStats.retained.toFixed(0);
+        el('tk-diverted').textContent = '$' + communityStats.diverted.toFixed(0);
+        // 1 car ≈ 4.6 tons CO₂/year
+        el('tk-cars').textContent = (communityStats.co2 / 4.6).toFixed(0);
+        // $50k revenue ≈ 1 local energy job
+        el('tk-jobs').textContent = (communityStats.retained / 50000).toFixed(1);
+    }
+
+    // ── Hook into existing trade processor ──
+    const _origProcessTrade = typeof processTrade === 'function' ? processTrade : null;
+    function processTradeEnhanced(t) {
+        // Call original
+        if (_origProcessTrade) _origProcessTrade(t);
+
+        // Update widgets
+        const gridPrice = parseFloat(t.grid_price || t.gridPrice || 0);
+        const settledPrice = parseFloat(t.settled_price || t.settledPrice || 0);
+        const mwh = parseFloat(t.mwh || 0);
+        const profit = parseFloat(t.net_profit || t.profit || 0);
+        const co2 = parseFloat(t.co2_tons || mwh * 0.42);
+
+        if (gridPrice > 0 && settledPrice > 0) {
+            updateSpreadChart(gridPrice, settledPrice);
+        }
+
+        if (profit > 0) {
+            updateCommunityTickers(profit, mwh, co2);
+        }
+    }
+
+    // Replace processTrade globally if it exists
+    if (typeof processTrade !== 'undefined') {
+        const _original = processTrade;
+        processTrade = function(t) {
+            _original(t);
+            // Widget updates
+            const gridPrice = parseFloat(t.grid_price || t.gridPrice || 0);
+            const settledPrice = parseFloat(t.settled_price || t.settledPrice || 0);
+            const mwh = parseFloat(t.mwh || 0);
+            const profit = parseFloat(t.net_profit || t.profit || 0);
+            const co2 = parseFloat(t.co2_tons || mwh * 0.42);
+            if (gridPrice > 0 && settledPrice > 0) updateSpreadChart(gridPrice, settledPrice);
+            if (profit > 0) updateCommunityTickers(profit, mwh, co2);
+        };
+    }
+
+    // Init spread chart on load
+    setTimeout(initSpreadChart, 1000);
+
+    </script>
+</body>
+</html>

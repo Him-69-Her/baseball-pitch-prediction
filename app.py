@@ -595,11 +595,13 @@ def api_ws_status():
         "connected_clients": get_client_count(),
         "transport": "websocket + sse",
     })
-
-
 @app.route("/how-it-works")
 def how_it_works():
     return render_template("how_it_works.html")
+
+@app.route("/mchenry")
+def mchenry():
+    return render_template("mchenry.html")
 
 if __name__ == "__main__":
     if socketio:
