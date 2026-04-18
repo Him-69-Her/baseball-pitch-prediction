@@ -308,54 +308,56 @@ def run_trade():
         print()
 
 
-# ── Banner ──────────────────────────────────────────────────
-print()
-print("  ╔══════════════════════════════════════════════════════════════╗")
-print("  ║   TINY-HUB-NETWORK — D63 McHenry County (LIVE DATA)        ║")
-print("  ║   ComEd Territory · PJM Interconnection                     ║")
-print("  ╠══════════════════════════════════════════════════════════════╣")
-print(f"  ║  Sellers: {len(SELLERS):>2}  |  Buyers: {len(BUYERS):>2}                            ║")
-print(f"  ║  Grid price:  {'PJM Real-Time LMP' if USE_GRIDSTATUS else 'Simulation':>25}     ║")
-print(f"  ║  Solar output: {'Irradiance Model':>25}     ║")
-print(f"  ║  ComEd toll: ${COMED_TOLL}/MWh                                  ║")
-print(f"  ║  Island threshold: ${ISLAND_THRESHOLD}/MWh                         ║")
-print(f"  ║  Pub/Sub topic: {TOPIC_ID:>20}                    ║")
-print("  ╚══════════════════════════════════════════════════════════════╝")
-print()
+if __name__ == "__main__":
 
-# Start grid price refresh
-if USE_GRIDSTATUS:
-    threading.Thread(target=refresh_grid_price_loop, daemon=True).start()
-    p = fetch_pjm_lmp()
-    if p:
-        print(f"  [Grid] Initial PJM LMP: ${GRID_PRICE_CACHE['lmp_mwh']:.2f}/MWh (${p:.4f}/kWh)")
-    else:
-        print("  [Grid] Initial PJM fetch failed — using simulation until next refresh")
+    # ── Banner ──────────────────────────────────────────────────
+    print()
+    print("  ╔══════════════════════════════════════════════════════════════╗")
+    print("  ║   TINY-HUB-NETWORK — D63 McHenry County (LIVE DATA)        ║")
+    print("  ║   ComEd Territory · PJM Interconnection                     ║")
+    print("  ╠══════════════════════════════════════════════════════════════╣")
+    print(f"  ║  Sellers: {len(SELLERS):>2}  |  Buyers: {len(BUYERS):>2}                            ║")
+    print(f"  ║  Grid price:  {'PJM Real-Time LMP' if USE_GRIDSTATUS else 'Simulation':>25}     ║")
+    print(f"  ║  Solar output: {'Irradiance Model':>25}     ║")
+    print(f"  ║  ComEd toll: ${COMED_TOLL}/MWh                                  ║")
+    print(f"  ║  Island threshold: ${ISLAND_THRESHOLD}/MWh                         ║")
+    print(f"  ║  Pub/Sub topic: {TOPIC_ID:>20}                    ║")
+    print("  ╚══════════════════════════════════════════════════════════════╝")
     print()
 
-# Initial weather check
-print_weather_status(D63_LAT, D63_LNG, "D63 Weather")
-
-# ── Main Loop ───────────────────────────────────────────────
-while True:
-    try:
-        run_trade()
-        time.sleep(random.uniform(3, 8))
-    except KeyboardInterrupt:
-        total = trade_count + rejected_count
-        rate = (trade_count / total * 100) if total > 0 else 0
+    # Start grid price refresh
+    if USE_GRIDSTATUS:
+        threading.Thread(target=refresh_grid_price_loop, daemon=True).start()
+        p = fetch_pjm_lmp()
+        if p:
+            print(f"  [Grid] Initial PJM LMP: ${GRID_PRICE_CACHE['lmp_mwh']:.2f}/MWh (${p:.4f}/kWh)")
+        else:
+            print("  [Grid] Initial PJM fetch failed — using simulation until next refresh")
         print()
-        print("  ╔══════════════════════════════════════════════════════════════╗")
-        print("  ║                  D63 LIVE FINAL REPORT                      ║")
-        print("  ╠══════════════════════════════════════════════════════════════╣")
-        print(f"  ║  Trades settled:    {trade_count:>6}                                ║")
-        print(f"  ║  Trades rejected:   {rejected_count:>6}                                ║")
-        print(f"  ║  Settlement rate:   {rate:>6.1f}%                               ║")
-        print(f"  ║  Total MWh traded:  {total_mwh_traded:>9.2f}                           ║")
-        print(f"  ║  Community profit:  ${total_profit:>10.2f}                          ║")
-        print(f"  ║  Island events:     {island_events:>6}                                ║")
-        print("  ╚══════════════════════════════════════════════════════════════╝")
-        break
-    except Exception as e:
-        print(f"  Error: {e}")
-        time.sleep(5)
+
+    # Initial weather check
+    print_weather_status(D63_LAT, D63_LNG, "D63 Weather")
+
+    # ── Main Loop ───────────────────────────────────────────────
+    while True:
+        try:
+            run_trade()
+            time.sleep(random.uniform(3, 8))
+        except KeyboardInterrupt:
+            total = trade_count + rejected_count
+            rate = (trade_count / total * 100) if total > 0 else 0
+            print()
+            print("  ╔══════════════════════════════════════════════════════════════╗")
+            print("  ║                  D63 LIVE FINAL REPORT                      ║")
+            print("  ╠══════════════════════════════════════════════════════════════╣")
+            print(f"  ║  Trades settled:    {trade_count:>6}                                ║")
+            print(f"  ║  Trades rejected:   {rejected_count:>6}                                ║")
+            print(f"  ║  Settlement rate:   {rate:>6.1f}%                               ║")
+            print(f"  ║  Total MWh traded:  {total_mwh_traded:>9.2f}                           ║")
+            print(f"  ║  Community profit:  ${total_profit:>10.2f}                          ║")
+            print(f"  ║  Island events:     {island_events:>6}                                ║")
+            print("  ╚══════════════════════════════════════════════════════════════╝")
+            break
+        except Exception as e:
+            print(f"  Error: {e}")
+            time.sleep(5)
