@@ -16,6 +16,7 @@ COPY app.py cloudsql_api.py chain_api.py openadr_vtn.py \
      vnm_reporting.py ./
 COPY district91_buildings.json district91_names.json ./
 COPY templates/ ./templates/
+COPY static/ ./static/
 COPY docker-entrypoint-cloudrun.sh .
 RUN chmod +x docker-entrypoint-cloudrun.sh
 
