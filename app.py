@@ -77,84 +77,156 @@ _sim_thread = None
 _sim_running = False
 
 def _run_d63_sim():
-    """Background thread: runs D63 marketplace trades, broadcasts to SSE."""
+    """Background thread: self-contained D63 marketplace simulator.
+    No external imports — all logic inlined to avoid module-level side effects."""
     global _sim_running
     import random as _rand
     import time as _time
-    try:
-        from d63_marketplace_live import run_trade, SELLERS, BUYERS, get_grid_price, solar_output, COMED_TOLL, CO2_TONS_PER_MWH
-        print("  ⚡ GO LIVE — D63 simulator started")
-        _trade_count = 0
-        _rejected = 0
-        _total_mwh = 0.0
-        _total_profit = 0.0
-        while _sim_running:
-            try:
-                # Run the real matching engine trade
-                grid_price = get_grid_price()
-                seller = _rand.choice(SELLERS)
-                mwh = solar_output(
-                    seller["capacity_mwh"],
-                    seller.get("lat", 42.31),
-                    seller.get("lng", -88.44),
-                    seller.get("is_battery", False),
-                )
-                if mwh <= 0:
-                    _time.sleep(1)
-                    continue
-                buyer = _rand.choice(BUYERS)
-                ask_price = round(grid_price * _rand.uniform(0.55, 0.85), 4)
-                bid_price = round(min(buyer["max_bid"], grid_price * _rand.uniform(0.7, 1.1)), 4)
-                settled = round((ask_price + bid_price) / 2, 4)
-                profit = round((settled - COMED_TOLL) * mwh, 4)
-                if bid_price >= ask_price:
-                    status = "SETTLED"
-                    _trade_count += 1
-                    _total_profit += profit
-                    _total_mwh += mwh
+    import math as _math
+    from datetime import datetime as _dt, timezone as _tz
+
+    # ── Sellers (real McHenry County buildings) ──
+    _SELLERS = [
+        {"id": "s1",  "type": "commercial",  "label": "Walmart Woodstock",      "capacity_mwh": 4.2,  "lat": 42.31, "lng": -88.44, "is_battery": False},
+        {"id": "s2",  "type": "commercial",  "label": "NW Medicine",            "capacity_mwh": 1.9,  "lat": 42.25, "lng": -88.60, "is_battery": False},
+        {"id": "s3",  "type": "commercial",  "label": "Jewel-Osco Woodstock",   "capacity_mwh": 0.16, "lat": 42.32, "lng": -88.45, "is_battery": False},
+        {"id": "s4",  "type": "commercial",  "label": "Walmart Huntley",        "capacity_mwh": 3.3,  "lat": 42.23, "lng": -88.43, "is_battery": False},
+        {"id": "s5",  "type": "residential", "label": "Woodstock Homes",        "capacity_mwh": 0.8,  "lat": 42.31, "lng": -88.45, "is_battery": False},
+        {"id": "s6",  "type": "municipal",   "label": "Marengo Municipal",      "capacity_mwh": 1.2,  "lat": 42.25, "lng": -88.61, "is_battery": False},
+        {"id": "s7",  "type": "solar_farm",  "label": "Marengo Solar Farm",     "capacity_mwh": 6.0,  "lat": 42.25, "lng": -88.62, "is_battery": False},
+        {"id": "s8",  "type": "solar_farm",  "label": "Nexamp Harvard",         "capacity_mwh": 3.0,  "lat": 42.42, "lng": -88.61, "is_battery": False},
+        {"id": "s9",  "type": "solar_farm",  "label": "Hebron Solar",           "capacity_mwh": 2.5,  "lat": 42.47, "lng": -88.43, "is_battery": False},
+        {"id": "s10", "type": "battery",     "label": "Marengo Battery 20MW",   "capacity_mwh": 20.0, "lat": 42.24, "lng": -88.60, "is_battery": True},
+        {"id": "s11", "type": "battery",     "label": "McHenry Battery 20MW",   "capacity_mwh": 20.0, "lat": 42.33, "lng": -88.27, "is_battery": True},
+        {"id": "s12", "type": "commercial",  "label": "Marian Central HS",      "capacity_mwh": 1.5,  "lat": 42.31, "lng": -88.46, "is_battery": False},
+        {"id": "s13", "type": "commercial",  "label": "Woodstock North HS",     "capacity_mwh": 1.8,  "lat": 42.33, "lng": -88.46, "is_battery": False},
+        {"id": "s14", "type": "commercial",  "label": "Crystal Lake Plaza",     "capacity_mwh": 2.1,  "lat": 42.24, "lng": -88.32, "is_battery": False},
+        {"id": "s15", "type": "commercial",  "label": "Algonquin Commons",      "capacity_mwh": 2.8,  "lat": 42.17, "lng": -88.29, "is_battery": False},
+    ]
+    _BUYERS = [
+        {"id": "b1",  "type": "neighbor",   "label": "Residential Block A",   "max_bid": 0.18},
+        {"id": "b2",  "type": "neighbor",   "label": "Residential Block B",   "max_bid": 0.16},
+        {"id": "b3",  "type": "school",     "label": "Woodstock North HS",    "max_bid": 0.15},
+        {"id": "b4",  "type": "school",     "label": "Marengo High School",   "max_bid": 0.14},
+        {"id": "b5",  "type": "business",   "label": "Route 47 Strip Mall",   "max_bid": 0.20},
+        {"id": "b6",  "type": "business",   "label": "NW Medicine Ops",       "max_bid": 0.22},
+        {"id": "b7",  "type": "datacenter", "label": "Google Aurora Hub",     "max_bid": 0.25},
+        {"id": "b8",  "type": "datacenter", "label": "Equinix Chicago",       "max_bid": 0.23},
+        {"id": "b9",  "type": "grid",       "label": "ComEd Buyback",         "max_bid": 0.08},
+        {"id": "b10", "type": "municipal",  "label": "Harvard Fire Dept",     "max_bid": 0.14},
+        {"id": "b11", "type": "municipal",  "label": "Woodstock PD",          "max_bid": 0.15},
+        {"id": "b12", "type": "neighbor",   "label": "Crystal Lake Homes",    "max_bid": 0.17},
+        {"id": "b13", "type": "business",   "label": "Huntley Outlet Mall",   "max_bid": 0.19},
+        {"id": "b14", "type": "neighbor",   "label": "Cary Subdivision",      "max_bid": 0.16},
+    ]
+    _COMED_TOLL = 0.02
+    _CO2_TONS_PER_MWH = 0.42
+
+    def _solar_output(capacity, lat, lng, is_battery):
+        """Solar output model — sun angle + simulated cloud cover."""
+        if is_battery:
+            return round(capacity * _rand.uniform(0.3, 0.7), 4)
+        now = _dt.now(_tz.utc)
+        hour_utc = now.hour + now.minute / 60.0
+        hour_local = (hour_utc - 6) % 24  # CST = UTC-6
+        day = now.timetuple().tm_yday
+        declination = 23.45 * _math.sin(_math.radians((360 / 365) * (day - 81)))
+        hour_angle = 15.0 * (hour_local - 12.0)
+        sin_alt = (_math.sin(_math.radians(lat)) * _math.sin(_math.radians(declination)) +
+                   _math.cos(_math.radians(lat)) * _math.cos(_math.radians(declination)) *
+                   _math.cos(_math.radians(hour_angle)))
+        if sin_alt <= 0.02:
+            return 0.0
+        altitude = _math.degrees(_math.asin(min(sin_alt, 1.0)))
+        cloud = _rand.uniform(0, 60)
+        cloud_mult = max(0.15, 1.0 - cloud / 100.0)
+        raw = capacity * (altitude / 90.0) * cloud_mult * _rand.uniform(0.85, 1.15)
+        return round(max(0, raw), 4)
+
+    def _get_grid_price():
+        """Simulated MISO/PJM LMP price in $/kWh."""
+        now = _dt.now(_tz.utc)
+        hour_local = (now.hour - 6) % 24  # CST
+        # LMP curve: low overnight, ramp morning, dip midday solar, peak evening
+        if hour_local < 5:
+            base = 0.025 + _rand.uniform(0, 0.010)
+        elif hour_local < 8:
+            base = 0.035 + _rand.uniform(0, 0.020)
+        elif hour_local < 12:
+            base = 0.045 + _rand.uniform(0, 0.025)
+        elif hour_local < 15:
+            base = 0.035 + _rand.uniform(0, 0.015)  # solar dip
+        elif hour_local < 19:
+            base = 0.060 + _rand.uniform(0, 0.040)  # evening ramp
+        elif hour_local < 21:
+            base = 0.050 + _rand.uniform(0, 0.030)
+        else:
+            base = 0.030 + _rand.uniform(0, 0.012)
+        return round(base, 4)
+
+    print("  ⚡ GO LIVE — D63 simulator started (self-contained)")
+    while _sim_running:
+        try:
+            grid_price = _get_grid_price()
+            seller = _rand.choice(_SELLERS)
+            mwh = _solar_output(
+                seller["capacity_mwh"],
+                seller.get("lat", 42.31),
+                seller.get("lng", -88.44),
+                seller.get("is_battery", False),
+            )
+            if mwh <= 0:
+                _time.sleep(1)
+                continue
+            buyer = _rand.choice(_BUYERS)
+            islanding = grid_price >= 0.30
+            ask_price = round(grid_price * _rand.uniform(0.55, 0.85), 4)
+            if islanding:
+                ask_price = round(grid_price * _rand.uniform(0.3, 0.5), 4)
+            bid_price = round(min(buyer["max_bid"], grid_price * _rand.uniform(0.7, 1.1)), 4)
+            settled = round((ask_price + bid_price) / 2, 4)
+            profit = round((settled - _COMED_TOLL) * mwh, 4)
+            if bid_price >= ask_price:
+                status = "ISLAND_SETTLED" if islanding else "SETTLED"
+            else:
+                status = "REJECTED"
+                settled = 0.0
+                profit = 0.0
+            co2 = round(mwh * _CO2_TONS_PER_MWH, 4) if "SETTLED" in status else 0
+            trade = {
+                "station_id": seller["id"],
+                "district": "McHenry_D63",
+                "seller_type": seller["type"],
+                "seller_label": seller["label"],
+                "buyer_type": buyer["type"],
+                "buyer_label": buyer["label"],
+                "mwh": mwh,
+                "ask_price": ask_price,
+                "bid_price": bid_price,
+                "settled_price": settled,
+                "net_profit": profit,
+                "grid_price": grid_price,
+                "trade_status": status,
+                "co2_tons": co2,
+                "time": _time.strftime("%H:%M:%S"),
+                "_district": "D63",
+            }
+            with stats_lock:
+                stats["d63"]["trades"] += 1
+                if "SETTLED" in status:
+                    stats["d63"]["settled"] += 1
+                    stats["d63"]["mwh"] += mwh
+                    stats["d63"]["profit"] += profit
+                    stats["d63"]["co2"] += co2
                 else:
-                    status = "REJECTED"
-                    _rejected += 1
-                    settled = 0.0
-                    profit = 0.0
-                trade = {
-                    "station_id": seller["id"],
-                    "district": "McHenry_D63",
-                    "seller_type": seller["type"],
-                    "seller_label": seller["label"],
-                    "buyer_type": buyer["type"],
-                    "buyer_label": buyer["label"],
-                    "mwh": mwh,
-                    "ask_price": ask_price,
-                    "bid_price": bid_price,
-                    "settled_price": settled,
-                    "net_profit": profit,
-                    "grid_price": grid_price,
-                    "trade_status": status,
-                    "co2_tons": round(mwh * CO2_TONS_PER_MWH, 4) if status == "SETTLED" else 0,
-                    "time": _time.strftime("%H:%M:%S"),
-                    "_district": "D63",
-                }
-                # Update stats directly
-                with stats_lock:
-                    stats["d63"]["trades"] += 1
-                    if status == "SETTLED":
-                        stats["d63"]["settled"] += 1
-                        stats["d63"]["mwh"] += mwh
-                        stats["d63"]["profit"] += profit
-                        stats["d63"]["co2"] += trade["co2_tons"]
-                    else:
-                        stats["d63"]["rejected"] += 1
-                # Broadcast directly to SSE — no Pub/Sub roundtrip needed
-                broadcast_sse(trade)
-                _time.sleep(_rand.uniform(2, 5))
-            except Exception as _e:
-                print(f"  [GoLive] trade error: {_e}")
-                _time.sleep(3)
-    except ImportError as _e:
-        print(f"  [GoLive] Cannot import d63_marketplace_live: {_e}")
-    except Exception as _e:
-        print(f"  [GoLive] Startup error: {_e}")
+                    stats["d63"]["rejected"] += 1
+                if islanding:
+                    stats["d63"]["island"] += 1
+            broadcast_sse(trade)
+            _time.sleep(_rand.uniform(2, 5))
+        except Exception as _e:
+            print(f"  [GoLive] trade error: {_e}")
+            _time.sleep(3)
     print("  ⚡ GO LIVE — D63 simulator stopped")
 
 @app.route("/api/go-live", methods=["POST"])
