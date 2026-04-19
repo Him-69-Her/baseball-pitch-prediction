@@ -416,6 +416,12 @@ section.block{
 }
 @media(max-width:700px){section.block{padding:2rem 1.4rem}}
 
+
+/* Gap between thesis intro and solar-app hook */
+.thesis-hook, h2.solar-hook, .solar-app-hook { margin-top: 3.5rem !important; }
+/* Fallback: any h2/h3 containing the magenta hook text gets breathing room */
+#tab-thesis h2 + hr, #tab-thesis p + hr { margin: 2.5rem 0 !important; }
+
 </style></head>
 
 <body>
@@ -528,7 +534,7 @@ section.block{
       <p>That's not actually the hard part anymore. We're already putting solar panels on roofs and batteries in garages faster than the grid knows what to do with them. The assets that could stabilize the grid are already here. They're just sitting idle. <strong>The real problem is routing and settlement.</strong></p>
     </div>
 
-    <div class="thesis-hook">Tiny-Hub isn't a solar app. It's a routing engine.</div>
+    <div class="thesis-hook"><span style="display:block;margin-top:2.5rem"></span>Tiny-Hub isn't a solar app. It's a routing engine.</div>
 
     <div class="thesis-intro">
       <p>We don't look at the grid like a public utility. We look at it like the worst logistics network in the country. Power gets hauled long distances, tolled at every junction, and priced by rules that were written before anyone had solar on their roof. We're rebuilding the routing from the ground up around four things the incumbents are ignoring.</p>
@@ -560,14 +566,7 @@ section.block{
         <div class="thesis-take"><strong>Our take:</strong> Our dispatch never discharges unless profit beats wear cost. We don't burn up your hardware to save the utility.</div>
       </div>
     </div>
-
-    <div class="thesis-close">
-      <h4>// The Bottom Line</h4>
-      <p>The legacy grid is a one-way street: power flows down, and local capital flows out. We have zero interest in building polite software for incumbent monopolies, and we aren't asking for their permission.</p>
-      <p>Using federal preemption (FERC Order 2222) as our legal shield, we've built an invisible, parallel routing layer that simply goes right under them. It renders their local tollbooths structurally and mathematically obsolete.</p>
-      <p><strong>The infrastructure is live and the grid math is solved. Now we go.</strong></p>
-    </div>
-  </section>
+    </section>
 
   <!-- 04 WHERE WE ARE NOW -->
   <section class="block" id="status">
@@ -577,18 +576,19 @@ section.block{
       <div class="status-card">
         <div class="status-card-head"><div class="status-card-title">Platform</div><div class="status-dot">LIVE</div></div>
         <ul class="status-items">
-          <li>Public site at <strong>tinyhub.energy</strong>, deployed on Google Cloud Run with CI/CD from <code>tinyhub-cicd</code></li>
-          <li>Full GCP enterprise org: separate projects for platform, data, and blockchain with isolated IAM</li>
+          <li>Public site at <strong>tinyhub.energy</strong>, deployed on Google Cloud Run with CI/CD</li>
+          <li>Enterprise skeleton broken out into Development, Testing, and Production folders. Under each main folder you will find separate projects for platform, data, and blockchain with isolated IAM</li>
           <li>Real-time dashboard with WebSocket/SSE, matching engine, REST API live</li>
         </ul>
       </div>
       <div class="status-card">
         <div class="status-card-head"><div class="status-card-title">Data</div><div class="status-dot">LIVE</div></div>
         <ul class="status-items">
-          <li><strong>District 91</strong> (Ameren / MISO) fully mapped as a digital twin</li>
+          <li><strong>McHenry County</strong> (ComEd / PJM) mapped with Google Places + Google Solar APIs — real building footprints, real solar potential, tiered by mega / large / medium / small</li>
           <li>PostGIS spatial proximity matching + Open-Meteo DNI + MISO LMP</li>
-          <li>Green Button ingestion with optimistic settlement (works around 24-48h data delay)</li>
+          <li>McHenry County digital twin built on Google's full map stack: Places API for buildings, Solar API for per-roof kWh potential, Maps JS API for live rendering</li>
           <li>Pub/Sub topics + BigQuery pipelines for real-time grid events</li>
+          <li>Live <strong>PJM real-time 5-minute LMP ingestion</strong> via <code>gridstatus</code> API — actual grid prices driving every match and settlement</li>
         </ul>
       </div>
       <div class="status-card">
@@ -597,7 +597,7 @@ section.block{
           <li>Smart contracts deployed on <strong>Arbitrum Sepolia</strong> (L2): TinyHubMarket + TinyHubToken</li>
           <li>Batch settler with optimistic aggregation, ~95% gas savings vs per-trade</li>
           <li>Cloud KMS wallets, Firestore identity, Firebase Auth</li>
-          <li>ERC-4337 account abstraction via managed Pimlico / Biconomy</li>
+          <li>Built for future ERC-4337 account abstraction via managed Pimlico / Biconomy</li>
         </ul>
       </div>
       <div class="status-card">
