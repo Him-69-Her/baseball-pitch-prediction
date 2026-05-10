@@ -110,8 +110,8 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: 35.209.110.230
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
+          username: ${{ fromJson(toJson(secrets)).VM_USER }}
+          key: ${{ fromJson(toJson(secrets)).VM_SSH_KEY }}
           script: |
             cd ~/tiny-hub
             git pull origin main
@@ -135,9 +135,9 @@ jobs:
       - run: npx hardhat compile
       - name: Deploy to Arbitrum Sepolia
         env:
-          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
-          SETTLER_ADDRESS: ${{ secrets.SETTLER_ADDRESS }}
-          ARBISCAN_API_KEY: ${{ secrets.ARBISCAN_API_KEY }}
+          DEPLOYER_PRIVATE_KEY: ${{ fromJson(toJson(secrets)).DEPLOYER_PRIVATE_KEY }}
+          SETTLER_ADDRESS: ${{ fromJson(toJson(secrets)).SETTLER_ADDRESS }}
+          ARBISCAN_API_KEY: ${{ fromJson(toJson(secrets)).ARBISCAN_API_KEY }}
         run: npx hardhat run deploy_l2.js --network arbitrumSepolia
       - name: Save deployment artifact
         uses: actions/upload-artifact@v4
@@ -148,8 +148,8 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: 35.209.110.230
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
+          username: ${{ fromJson(toJson(secrets)).VM_USER }}
+          key: ${{ fromJson(toJson(secrets)).VM_SSH_KEY }}
           script: |
             cd ~/tiny-hub
             git pull origin main

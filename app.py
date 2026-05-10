@@ -111,23 +111,33 @@ def _run_d63_sim():
         {"id": "s15", "type": "commercial",  "label": "Algonquin Commons",      "capacity_mwh": 2.8,  "lat": 42.17, "lng": -88.29, "is_battery": False},
     ]
     _BUYERS = [
-        {"id": "b1",  "type": "neighbor",   "label": "Residential Block A",   "max_bid": 0.18},
-        {"id": "b2",  "type": "neighbor",   "label": "Residential Block B",   "max_bid": 0.16},
-        {"id": "b3",  "type": "school",     "label": "Woodstock North HS",    "max_bid": 0.15},
-        {"id": "b4",  "type": "school",     "label": "Marengo High School",   "max_bid": 0.14},
-        {"id": "b5",  "type": "business",   "label": "Route 47 Strip Mall",   "max_bid": 0.20},
-        {"id": "b6",  "type": "business",   "label": "NW Medicine Ops",       "max_bid": 0.22},
-        {"id": "b7",  "type": "datacenter", "label": "Google Aurora Hub",     "max_bid": 0.25},
-        {"id": "b8",  "type": "datacenter", "label": "Equinix Chicago",       "max_bid": 0.23},
-        {"id": "b9",  "type": "grid",       "label": "ComEd Buyback",         "max_bid": 0.08},
-        {"id": "b10", "type": "municipal",  "label": "Harvard Fire Dept",     "max_bid": 0.14},
-        {"id": "b11", "type": "municipal",  "label": "Woodstock PD",          "max_bid": 0.15},
-        {"id": "b12", "type": "neighbor",   "label": "Crystal Lake Homes",    "max_bid": 0.17},
-        {"id": "b13", "type": "business",   "label": "Huntley Outlet Mall",   "max_bid": 0.19},
-        {"id": "b14", "type": "neighbor",   "label": "Cary Subdivision",      "max_bid": 0.16},
+        {"id": "b1",  "type": "neighbor",   "label": "Residential Block A",   "max_bid": 0.18, "lat": 42.31, "lng": -88.46},
+        {"id": "b2",  "type": "neighbor",   "label": "Residential Block B",   "max_bid": 0.16, "lat": 42.29, "lng": -88.43},
+        {"id": "b3",  "type": "school",     "label": "Woodstock North HS",    "max_bid": 0.15, "lat": 42.33, "lng": -88.46},
+        {"id": "b4",  "type": "school",     "label": "Marengo High School",   "max_bid": 0.14, "lat": 42.25, "lng": -88.60},
+        {"id": "b5",  "type": "business",   "label": "Route 47 Strip Mall",   "max_bid": 0.20, "lat": 42.30, "lng": -88.44},
+        {"id": "b6",  "type": "business",   "label": "NW Medicine Ops",       "max_bid": 0.22, "lat": 42.25, "lng": -88.60},
+        {"id": "b7",  "type": "datacenter", "label": "Google Aurora Hub",     "max_bid": 0.25, "lat": 41.76, "lng": -88.32},
+        {"id": "b8",  "type": "datacenter", "label": "Equinix Chicago",       "max_bid": 0.23, "lat": 41.88, "lng": -87.63},
+        {"id": "b9",  "type": "grid",       "label": "ComEd Buyback",         "max_bid": 0.08, "lat": 42.30, "lng": -88.40},
+        {"id": "b10", "type": "municipal",  "label": "Harvard Fire Dept",     "max_bid": 0.14, "lat": 42.42, "lng": -88.61},
+        {"id": "b11", "type": "municipal",  "label": "Woodstock PD",          "max_bid": 0.15, "lat": 42.31, "lng": -88.45},
+        {"id": "b12", "type": "neighbor",   "label": "Crystal Lake Homes",    "max_bid": 0.17, "lat": 42.24, "lng": -88.32},
+        {"id": "b13", "type": "business",   "label": "Huntley Outlet Mall",   "max_bid": 0.19, "lat": 42.17, "lng": -88.43},
+        {"id": "b14", "type": "neighbor",   "label": "Cary Subdivision",      "max_bid": 0.16, "lat": 42.21, "lng": -88.24},
     ]
     _COMED_TOLL = 0.02
     _CO2_TONS_PER_MWH = 0.42
+
+    def _haversine(lat1, lng1, lat2, lng2):
+        """Haversine distance in km."""
+        R = 6371
+        dLat = _math.radians(lat2 - lat1)
+        dLng = _math.radians(lng2 - lng1)
+        a = (_math.sin(dLat / 2) ** 2 +
+             _math.cos(_math.radians(lat1)) * _math.cos(_math.radians(lat2)) *
+             _math.sin(dLng / 2) ** 2)
+        return round(R * 2 * _math.atan2(_math.sqrt(a), _math.sqrt(1 - a)), 1)
 
     def _solar_output(capacity, lat, lng, is_battery):
         """Solar output model — sun angle + simulated cloud cover."""
@@ -200,11 +210,14 @@ def _run_d63_sim():
                 settled = 0.0
                 profit = 0.0
             co2 = round(mwh * _CO2_TONS_PER_MWH, 4) if "SETTLED" in status else 0
+            dist = _haversine(seller["lat"], seller["lng"],
+                              buyer.get("lat", 42.30), buyer.get("lng", -88.40))
             trade = {
                 "station_id": seller["id"],
                 "district": "McHenry_D63",
                 "seller_type": seller["type"],
                 "seller_label": seller["label"],
+                "buyer_id": buyer["id"],
                 "buyer_type": buyer["type"],
                 "buyer_label": buyer["label"],
                 "mwh": mwh,
@@ -215,6 +228,11 @@ def _run_d63_sim():
                 "grid_price": grid_price,
                 "trade_status": status,
                 "co2_tons": co2,
+                "distance_km": dist,
+                "seller_lat": seller["lat"],
+                "seller_lng": seller["lng"],
+                "buyer_lat": buyer.get("lat", 42.30),
+                "buyer_lng": buyer.get("lng", -88.40),
                 "time": _time.strftime("%H:%M:%S"),
                 "_district": "D63",
             }
@@ -236,30 +254,202 @@ def _run_d63_sim():
             _time.sleep(3)
     print("  ⚡ GO LIVE — D63 simulator stopped")
 
+# ── Go Live: D91 Simulator ───────────────────────────────────
+_d91_sim_thread = None
+_d91_sim_running = False
+
+def _run_d91_sim():
+    """Background thread: self-contained D91 marketplace simulator.
+    Uses real Peoria/Tazewell/Woodford County buildings."""
+    global _d91_sim_running
+    import random as _rand
+    import time as _time
+    import math as _math
+    from datetime import datetime as _dt, timezone as _tz
+
+    # ── Sellers (real D91 Peoria-area buildings) ──
+    _SELLERS = [
+        {"id": "d91-s1",  "type": "industrial",  "label": "Caterpillar Global HQ",     "capacity_mwh": 8.5,  "lat": 40.69, "lng": -89.59, "is_battery": False},
+        {"id": "d91-s2",  "type": "commercial",  "label": "OSF Saint Francis Medical",  "capacity_mwh": 4.2,  "lat": 40.70, "lng": -89.60, "is_battery": False},
+        {"id": "d91-s3",  "type": "commercial",  "label": "UnityPoint Methodist",       "capacity_mwh": 3.8,  "lat": 40.69, "lng": -89.58, "is_battery": False},
+        {"id": "d91-s4",  "type": "commercial",  "label": "Bradley University",         "capacity_mwh": 2.9,  "lat": 40.70, "lng": -89.62, "is_battery": False},
+        {"id": "d91-s5",  "type": "commercial",  "label": "ICC East Peoria Campus",     "capacity_mwh": 1.8,  "lat": 40.67, "lng": -89.53, "is_battery": False},
+        {"id": "d91-s6",  "type": "industrial",  "label": "Komatsu Mining",             "capacity_mwh": 5.2,  "lat": 40.68, "lng": -89.55, "is_battery": False},
+        {"id": "d91-s7",  "type": "commercial",  "label": "Shoppes at Grand Prairie",   "capacity_mwh": 3.1,  "lat": 40.72, "lng": -89.60, "is_battery": False},
+        {"id": "d91-s8",  "type": "solar_farm",  "label": "Tazewell Solar Farm",        "capacity_mwh": 7.0,  "lat": 40.55, "lng": -89.52, "is_battery": False},
+        {"id": "d91-s9",  "type": "solar_farm",  "label": "Woodford Solar Array",       "capacity_mwh": 5.5,  "lat": 40.78, "lng": -89.30, "is_battery": False},
+        {"id": "d91-s10", "type": "battery",     "label": "Peoria Battery 25MW",        "capacity_mwh": 25.0, "lat": 40.70, "lng": -89.61, "is_battery": True},
+        {"id": "d91-s11", "type": "battery",     "label": "Morton Battery 15MW",        "capacity_mwh": 15.0, "lat": 40.61, "lng": -89.46, "is_battery": True},
+        {"id": "d91-s12", "type": "commercial",  "label": "Peoria Civic Center",        "capacity_mwh": 2.4,  "lat": 40.69, "lng": -89.59, "is_battery": False},
+        {"id": "d91-s13", "type": "municipal",   "label": "Peoria Water Works",         "capacity_mwh": 1.6,  "lat": 40.72, "lng": -89.58, "is_battery": False},
+        {"id": "d91-s14", "type": "residential", "label": "North Peoria Homes",         "capacity_mwh": 1.2,  "lat": 40.75, "lng": -89.60, "is_battery": False},
+        {"id": "d91-s15", "type": "commercial",  "label": "Northwoods Mall",            "capacity_mwh": 2.6,  "lat": 40.76, "lng": -89.62, "is_battery": False},
+        {"id": "d91-s16", "type": "industrial",  "label": "Parker-Hannifin Morton",     "capacity_mwh": 4.0,  "lat": 40.61, "lng": -89.47, "is_battery": False},
+        {"id": "d91-s17", "type": "commercial",  "label": "Pekin Hospital",             "capacity_mwh": 2.2,  "lat": 40.57, "lng": -89.64, "is_battery": False},
+        {"id": "d91-s18", "type": "solar_farm",  "label": "McLean County Solar",        "capacity_mwh": 6.0,  "lat": 40.50, "lng": -89.00, "is_battery": False},
+    ]
+    _BUYERS = [
+        {"id": "d91-b1",  "type": "industrial",  "label": "Caterpillar Ops Demand",     "max_bid": 0.24},
+        {"id": "d91-b2",  "type": "industrial",  "label": "Parker-Hannifin Demand",     "max_bid": 0.23},
+        {"id": "d91-b3",  "type": "industrial",  "label": "Nestle USA Demand",          "max_bid": 0.22},
+        {"id": "d91-b4",  "type": "industrial",  "label": "Winpak Heat Seal Demand",    "max_bid": 0.21},
+        {"id": "d91-b5",  "type": "medical",     "label": "OSF Healthcare System",      "max_bid": 0.25},
+        {"id": "d91-b6",  "type": "medical",     "label": "UnityPoint Health",          "max_bid": 0.23},
+        {"id": "d91-b7",  "type": "school",      "label": "Bradley University",         "max_bid": 0.15},
+        {"id": "d91-b8",  "type": "school",      "label": "ICC District 91",            "max_bid": 0.14},
+        {"id": "d91-b9",  "type": "neighbor",    "label": "Peoria Residential (8,200)",  "max_bid": 0.17},
+        {"id": "d91-b10", "type": "neighbor",    "label": "East Peoria Homes (3,100)",   "max_bid": 0.16},
+        {"id": "d91-b11", "type": "neighbor",    "label": "Morton Subdivision",          "max_bid": 0.16},
+        {"id": "d91-b12", "type": "business",    "label": "Shoppes Grand Prairie",       "max_bid": 0.20},
+        {"id": "d91-b13", "type": "municipal",   "label": "Peoria City Services",        "max_bid": 0.15},
+        {"id": "d91-b14", "type": "grid",        "label": "Ameren IL Buyback",           "max_bid": 0.08},
+        {"id": "d91-b15", "type": "grid",        "label": "MISO Market Buyback",         "max_bid": 0.06},
+    ]
+    _AMEREN_TOLL = 0.025
+    _CO2_TONS_PER_MWH = 0.42
+
+    def _solar_output(capacity, lat, lng, is_battery):
+        """Solar output model — sun angle + simulated cloud cover."""
+        if is_battery:
+            return round(capacity * _rand.uniform(0.3, 0.7), 4)
+        now = _dt.now(_tz.utc)
+        hour_utc = now.hour + now.minute / 60.0
+        hour_local = (hour_utc - 6) % 24  # CST = UTC-6
+        day = now.timetuple().tm_yday
+        declination = 23.45 * _math.sin(_math.radians((360 / 365) * (day - 81)))
+        hour_angle = 15.0 * (hour_local - 12.0)
+        sin_alt = (_math.sin(_math.radians(lat)) * _math.sin(_math.radians(declination)) +
+                   _math.cos(_math.radians(lat)) * _math.cos(_math.radians(declination)) *
+                   _math.cos(_math.radians(hour_angle)))
+        if sin_alt <= 0.02:
+            return 0.0
+        altitude = _math.degrees(_math.asin(min(sin_alt, 1.0)))
+        cloud = _rand.uniform(0, 60)
+        cloud_mult = max(0.15, 1.0 - cloud / 100.0)
+        raw = capacity * (altitude / 90.0) * cloud_mult * _rand.uniform(0.85, 1.15)
+        return round(max(0, raw), 4)
+
+    def _get_grid_price():
+        """Simulated MISO LMP price in $/kWh (Ameren IL territory)."""
+        now = _dt.now(_tz.utc)
+        hour_local = (now.hour - 6) % 24  # CST
+        if hour_local < 5:
+            base = 0.028 + _rand.uniform(0, 0.012)
+        elif hour_local < 8:
+            base = 0.038 + _rand.uniform(0, 0.022)
+        elif hour_local < 12:
+            base = 0.048 + _rand.uniform(0, 0.028)
+        elif hour_local < 15:
+            base = 0.038 + _rand.uniform(0, 0.018)  # solar dip
+        elif hour_local < 19:
+            base = 0.065 + _rand.uniform(0, 0.045)  # evening ramp
+        elif hour_local < 21:
+            base = 0.055 + _rand.uniform(0, 0.035)
+        else:
+            base = 0.032 + _rand.uniform(0, 0.015)
+        return round(base, 4)
+
+    print("  ⚡ GO LIVE — D91 simulator started (self-contained)")
+    while _d91_sim_running:
+        try:
+            grid_price = _get_grid_price()
+            seller = _rand.choice(_SELLERS)
+            mwh = _solar_output(
+                seller["capacity_mwh"],
+                seller.get("lat", 40.65),
+                seller.get("lng", -89.50),
+                seller.get("is_battery", False),
+            )
+            if mwh <= 0:
+                _time.sleep(1)
+                continue
+            buyer = _rand.choice(_BUYERS)
+            islanding = grid_price >= 0.32
+            ask_price = round(grid_price * _rand.uniform(0.55, 0.85), 4)
+            if islanding:
+                ask_price = round(grid_price * _rand.uniform(0.3, 0.5), 4)
+            bid_price = round(min(buyer["max_bid"], grid_price * _rand.uniform(0.7, 1.1)), 4)
+            settled = round((ask_price + bid_price) / 2, 4)
+            profit = round((settled - _AMEREN_TOLL) * mwh, 4)
+            if bid_price >= ask_price:
+                status = "ISLAND_SETTLED" if islanding else "SETTLED"
+            else:
+                status = "REJECTED"
+                settled = 0.0
+                profit = 0.0
+            co2 = round(mwh * _CO2_TONS_PER_MWH, 4) if "SETTLED" in status else 0
+            trade = {
+                "station_id": seller["id"],
+                "district": "IL_D91",
+                "seller_type": seller["type"],
+                "seller_label": seller["label"],
+                "buyer_id": buyer["id"],
+                "buyer_type": buyer["type"],
+                "buyer_label": buyer["label"],
+                "mwh": mwh,
+                "ask_price": ask_price,
+                "bid_price": bid_price,
+                "settled_price": settled,
+                "net_profit": profit,
+                "grid_price": grid_price,
+                "trade_status": status,
+                "co2_tons": co2,
+                "time": _time.strftime("%H:%M:%S"),
+                "_district": "D91",
+            }
+            with stats_lock:
+                d91_trades.appendleft(trade)
+                stats["d91"]["trades"] += 1
+                if "SETTLED" in status:
+                    stats["d91"]["settled"] += 1
+                    stats["d91"]["mwh"] += mwh
+                    stats["d91"]["profit"] += profit
+                    stats["d91"]["co2"] += co2
+                else:
+                    stats["d91"]["rejected"] += 1
+                if islanding:
+                    stats["d91"]["island"] += 1
+            broadcast_sse(trade)
+            _time.sleep(_rand.uniform(2, 6))
+        except Exception as _e:
+            print(f"  [D91 GoLive] trade error: {_e}")
+            _time.sleep(3)
+    print("  ⚡ GO LIVE — D91 simulator stopped")
+
+
+def _start_all_sims():
+    """Start both D63 and D91 simulators."""
+    global _sim_thread, _sim_running, _d91_sim_thread, _d91_sim_running
+    if not _sim_running:
+        _sim_running = True
+        _sim_thread = threading.Thread(target=_run_d63_sim, daemon=True)
+        _sim_thread.start()
+    if not _d91_sim_running:
+        _d91_sim_running = True
+        _d91_sim_thread = threading.Thread(target=_run_d91_sim, daemon=True)
+        _d91_sim_thread.start()
+
+
 @app.route("/api/go-live", methods=["POST"])
 def api_go_live():
-    """Authenticate and start live D63 simulator."""
-    global _sim_thread, _sim_running
+    """Authenticate and start live D63 + D91 simulators."""
     data = request.get_json() or {}
     pw = data.get("password", "")
     if pw != ADMIN_PASS:
         return jsonify({"status": "error", "message": "Invalid password"}), 401
     session["live"] = True
-    if not _sim_running:
-        _sim_running = True
-        _sim_thread = threading.Thread(target=_run_d63_sim, daemon=True)
-        _sim_thread.start()
-        return jsonify({"status": "ok", "message": "Live mode activated — D63 simulator started"})
-    return jsonify({"status": "ok", "message": "Already live"})
+    _start_all_sims()
+    return jsonify({"status": "ok", "message": "Live mode activated — D63 + D91 simulators started"})
 
 @app.route("/api/go-live/stop", methods=["POST"])
 def api_stop_live():
-    """Stop the live simulator."""
-    global _sim_running
+    """Stop both live simulators."""
+    global _sim_running, _d91_sim_running
     if not session.get("live"):
         return jsonify({"status": "error", "message": "Not authenticated"}), 401
     _sim_running = False
-    return jsonify({"status": "ok", "message": "Simulator stopped"})
+    _d91_sim_running = False
+    return jsonify({"status": "ok", "message": "Both simulators stopped"})
 socketio = init_socketio(app)
 
 # ── Config ──────────────────────────────────────────────────
@@ -578,14 +768,9 @@ def _deferred_startup():
     except Exception as _e:
         print(f"  ⚠️  OpenADR VTN init failed: {_e}")
 
-try:
-    import gevent as _gevent
-    pass  # _gevent.spawn(_deferred_startup)  # DISABLED — blocks gevent
-    print("  ⏸️  Pub/Sub subscribers DISABLED (gRPC/gevent conflict)")
-except ImportError:
-    import threading as _th
-    pass  # _th.Thread(target=_deferred_startup)  # DISABLED
-    print("  ⏸️  Pub/Sub subscribers DISABLED (local dev)")
+# ── Auto-start simulators (no GCP needed) ───────────────────
+_start_all_sims()
+print("  ✅ D63 + D91 simulators auto-started (local mode)")
 
 register_postgis_routes(app)
 register_chain_routes(app)

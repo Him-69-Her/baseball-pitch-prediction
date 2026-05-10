@@ -9,7 +9,7 @@
             "type": "debugpy",
             "request": "attach",
             "connect": {
-                "host": "j",
+                "host": "localhost",
                 "port": 5678
             },
             "pathMappings": [
@@ -25,18 +25,7 @@
             "request": "launch",
             "program": "${file}"
         },
-        {
-            "type": "ruby_lsp",
-            "request": "launch",
-            "name": "Debug program",
-            "program": "ruby "
-        },
-        {
-            "type": "ruby_lsp",
-            "request": "launch",
-            "name": "Debug program",
-            "program": "ruby "
-        },
+
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
