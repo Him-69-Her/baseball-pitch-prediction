@@ -55,7 +55,8 @@ jobs:
       - name: Lint
         run: flake8 *.py --max-line-length=120 --ignore=E501,W503,E402 --count
       - name: Test matching engine
-        run: python -c "
+        run: |
+          python -c "
           from matching_engine import MatchingEngine;
           e = MatchingEngine(toll=0.025, mode='pro_rata');
           e.add_sell_order('s1','Solar A','Town','solar',1.0,0.05,lat=40.6,lng=-89.5);
@@ -65,14 +66,16 @@ jobs:
           print(f'  ✅ {len(trades)} trades matched');
           "
       - name: Test fraud detection
-        run: python -c "
+        run: |
+          python -c "
           from fraud_detection import FraudDetector;
           d = FraudDetector();
           r = d.check_trade({'mwh':0.1,'station_id':'test','seller_type':'solar'}, {'area_sqft':10000,'lat':40.6,'lng':-89.5});
           print(f'  ✅ Fraud check: flagged={r.flagged}, severity={r.severity}');
           "
       - name: Test VNM reporting
-        run: python -c "
+        run: |
+          python -c "
           from vnm_reporting import VNMReporter;
           r = VNMReporter();
           trades = [{'trade_status':'SETTLED','mwh':1.0,'station_id':'s1','seller_label':'Test','buyer_id':'b1','buyer_label':'Buyer','settled_price':0.08,'co2_tons':0.42}];

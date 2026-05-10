@@ -41,6 +41,22 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 app.register_blueprint(oadr_bp)
 
+# ── Web Page Blueprints ─────────────────────────────────────
+from src.pages.landing.routes import landing_bp
+from src.pages.dashboard.routes import dashboard_bp
+from src.pages.about.routes import about_bp
+from src.pages.how_it_works.routes import how_it_works_bp
+from src.pages.d91map.routes import d91map_bp
+from src.pages.mchenry.routes import mchenry_bp
+
+app.register_blueprint(landing_bp)
+app.register_blueprint(dashboard_bp)
+app.register_blueprint(about_bp)
+app.register_blueprint(how_it_works_bp)
+app.register_blueprint(d91map_bp)
+app.register_blueprint(mchenry_bp)
+
+
 @app.context_processor
 def inject_maps_key():
     return {"MAPS_API_KEY": MAPS_API_KEY}
@@ -60,17 +76,8 @@ def check_auth():
     return None
 
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    """Auth disabled — public demo mode. Redirect to landing."""
-    return redirect("/")
 
 
-@app.route("/logout")
-def logout():
-    """Auth disabled — public demo mode."""
-    session.clear()
-    return redirect("/")
 
 # ── Go Live: D63 Simulator ───────────────────────────────────
 _sim_thread = None
@@ -407,23 +414,10 @@ def start_subscribers():
 
 
 # ── Routes ──────────────────────────────────────────────────
-@app.route("/")
-def index():
-    return render_template("landing.html")
-
-@app.route("/dashboard")
-def dashboard():
-    return render_template("dashboard.html")
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
 
 
-@app.route("/d91map")
-def d91map():
-    """Serve the existing D91 building map."""
-    return render_template("district91_map.html")
+
+
 
 
 @app.route("/api/buildings/d91")
@@ -782,13 +776,7 @@ def api_ws_status():
         "connected_clients": get_client_count(),
         "transport": "websocket + sse",
     })
-@app.route("/how-it-works")
-def how_it_works():
-    return render_template("how_it_works.html")
 
-@app.route("/mchenry")
-def mchenry():
-    return render_template("mchenry.html")
 
 if __name__ == "__main__":
     if socketio:
