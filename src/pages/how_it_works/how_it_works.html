@@ -129,6 +129,16 @@ section.block:last-child{margin-bottom:0}
 footer{padding:3rem 2rem 2rem;border-top:1px solid rgba(0,240,255,0.15);display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase}
 footer .brand{color:var(--sun-2)}
 @media(max-width:600px){footer{grid-template-columns:1fr;text-align:center}}
+
+/* Basic Flow Overview heading */
+.flow-overview-heading{
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(1.1rem,1.8vw,1.4rem);
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--sun-1);text-shadow:0 0 8px var(--sun-3);
+  margin:0 0 1rem 0;
+}
+
 </style>
 </head>
 <body>
@@ -216,6 +226,7 @@ footer .brand{color:var(--sun-2)}
     </div>
 
     <div class="prose">
+      <h3 class="flow-overview-heading">Basic Flow Overview</h3>
       <p>A rooftop generates surplus solar. The matching engine finds the nearest buyer. The trade settles on Arbitrum L2 in a 5-minute batch. The electrons flow over the existing ComEd or Ameren wire. The neighborhood keeps the profit.</p>
       <p>Click the tabs above to see how each step works.</p>
     </div>
@@ -226,7 +237,7 @@ footer .brand{color:var(--sun-2)}
     <h2 class="section-title">Match</h2>
     <div class="prose">
       <p>Every 5 minutes, the matching engine scans all active sellers and buyers in the district. Sellers are ranked by surplus output (driven by real-time solar irradiance). Buyers are ranked by demand. The engine pairs them using <em>proximity-first matching</em>: the closest seller to each buyer wins.</p>
-      <p>This isn't theoretical. The engine runs against a digital twin of District 91 (Ameren / MISO territory) with over a thousand real buildings mapped with lat/lng coordinates and solar capacity data.</p>
+      <p>This isn't theoretical. The engine runs against a digital twin of McHenry County (ComEd / PJM territory) with over a thousand real buildings mapped with lat/lng coordinates and solar capacity data.</p>
     </div>
 
     <div class="callout">Distance is an economic penalty. Closer trades lose less energy to line loss and avoid macro-grid tolls entirely.</div>
@@ -254,7 +265,7 @@ footer .brand{color:var(--sun-2)}
       <span class="tech-label">Tick Rate</span><span class="tech-val"><strong>5 minutes</strong></span>
       <span class="tech-label">Proximity</span><span class="tech-val">Under 5 km preferred, up to 50 km fallback</span>
       <span class="tech-label">Line Loss</span><span class="tech-val">5% local distribution, scaled by distance</span>
-      <span class="tech-label">Data Source</span><span class="tech-val">Open-Meteo DNI + MISO LMP (live)</span>
+      <span class="tech-label">Data Source</span><span class="tech-val">Open-Meteo DNI + PJM LMP (live)</span>
     </div>
   </section>
 

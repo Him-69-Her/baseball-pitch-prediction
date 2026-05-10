@@ -49,14 +49,12 @@ from src.pages.dashboard.routes import dashboard_bp
 from src.pages.about.routes import about_bp
 from src.pages.how_it_works.routes import how_it_works_bp
 from src.pages.d91map.routes import d91map_bp
-from src.pages.mchenry.routes import mchenry_bp
 
 app.register_blueprint(landing_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(about_bp)
 app.register_blueprint(how_it_works_bp)
 app.register_blueprint(d91map_bp)
-app.register_blueprint(mchenry_bp)
 
 
 @app.context_processor

@@ -2,8 +2,7 @@
 McHenry County demo · static bundle.
 Serves /mchenry/* from static/mchenry/ as a self-contained subsite.
 Forces trailing slash so relative asset paths resolve correctly.
-Also provides /mchenry/api/config.js — runtime injection of the
-Maps API key from env (so the key never ships in static files).
+Provides /mchenry/api/config.js · runtime injection of the Maps API key.
 """
 from flask import Blueprint, send_from_directory, redirect, Response
 import os
@@ -19,9 +18,6 @@ DEMO_DIR = os.path.join(
 
 @mchenry_bp.route('/mchenry')
 def mchenry_redirect():
-    # Browsers resolve relative paths from the parent of the current path.
-    # Without trailing slash, "assets/sim.js" -> /assets/sim.js (404).
-    # With it, "assets/sim.js" -> /mchenry/assets/sim.js (correct).
     return redirect('/mchenry/', code=301)
 
 
