@@ -1,5 +1,5 @@
 /* =============================================================
-   TINY-HUB · LIVE MAP (Light Cartography + Customer Layer)
+   TINY-HUB · LIVE MAP (Light cartography + customer prospects)
    ============================================================= */
 
 .map-shell {
@@ -65,7 +65,38 @@
   100% { left: 100%; }
 }
 
-/* ------ Layer drawer (dark UI on light map) ------ */
+/* ------ Empty prompt (when no category enabled) ------ */
+.empty-prompt {
+  position: absolute;
+  top: 1rem; left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  background: rgba(5, 8, 14, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--hair-cyan-2);
+  padding: 0.75rem 1.2rem;
+  font-family: var(--font-mono);
+  text-align: center;
+  pointer-events: none;
+  max-width: calc(100% - 360px);
+}
+.empty-prompt__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-shadow: 0 0 5px var(--cyan-dim);
+}
+.empty-prompt__body {
+  font-size: 0.7rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+
+/* ------ Layer drawer ------ */
 .layer-drawer {
   position: absolute;
   top: 1rem; left: 1rem;
@@ -179,8 +210,14 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--cyan);
-  margin-bottom: 0.5rem;
   text-shadow: 0 0 4px var(--cyan-dim);
+}
+.layer-drawer__section-sub {
+  font-size: 0.6rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  margin: 0.2rem 0 0.5rem;
+  text-transform: uppercase;
 }
 
 .cust-sub {
@@ -205,7 +242,6 @@
   font-weight: 900;
   font-size: 0.7rem;
   color: white;
-  letter-spacing: 0;
 }
 .cust-sub__name {
   font-size: 0.72rem;
@@ -213,6 +249,13 @@
   letter-spacing: 0.04em;
 }
 .cust-sub.is-on .cust-sub__name { color: var(--cyan); }
+.cust-sub__err {
+  font-size: 0.55rem;
+  color: var(--magenta);
+  letter-spacing: 0;
+  text-transform: none;
+  margin-top: 0.15rem;
+}
 .cust-sub__count {
   font-size: 0.6rem;
   color: var(--ink-dim);
@@ -239,7 +282,68 @@
 }
 .zoom-hud .cyan { color: var(--cyan); }
 
-/* ------ Info panel (district + customer share base styles) ------ */
+/* ------ Hover tooltip (follows cursor) ------ */
+.map-tooltip {
+  position: fixed;
+  z-index: 20;
+  background: rgba(5, 8, 14, 0.96);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--sun-2);
+  padding: 0.5rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink);
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  min-width: 180px;
+  max-width: 260px;
+}
+.map-tooltip__head {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 0.3rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dashed rgba(255, 149, 0, 0.18);
+}
+.map-tooltip__chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 0.55rem;
+  color: white;
+}
+.map-tooltip__cat {
+  font-size: 0.6rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.map-tooltip__name {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--sun-1);
+  text-shadow: 0 0 4px var(--sun-3);
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+.map-tooltip__solar {
+  display: flex; gap: 0.45rem;
+  font-size: 0.66rem;
+  color: var(--cyan);
+  margin-top: 0.3rem;
+}
+.map-tooltip__hint {
+  margin-top: 0.3rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-align: right;
+}
+
+/* ------ Info panel (customer-specific) ------ */
 .info-panel {
   position: absolute;
   left: 1rem; bottom: 1rem;
@@ -248,33 +352,38 @@
   background: rgba(5, 8, 14, 0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--hair-cyan-2);
+  border: 1px solid var(--cyan-dim);
   z-index: 10;
   transform: translateY(120%);
   transition: transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
   font-family: var(--font-mono);
   pointer-events: none;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
 }
 .info-panel.is-open { transform: translateY(0); pointer-events: auto; }
+
+.info-panel::-webkit-scrollbar { width: 4px; }
+.info-panel::-webkit-scrollbar-track { background: transparent; }
+.info-panel::-webkit-scrollbar-thumb { background: var(--hair-cyan-2); }
 
 .info-panel::before, .info-panel::after {
   content: ''; position: absolute;
   width: 12px; height: 12px;
-  border: 1.5px solid var(--sun-2);
+  border: 1.5px solid var(--cyan-dim);
   pointer-events: none;
 }
 .info-panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
 .info-panel::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
-
-.info-panel--customer::before, .info-panel--customer::after {
-  border-color: var(--cyan-dim);
-}
 
 .info-panel__head {
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 0.7rem 0.9rem;
   border-bottom: 1px dashed rgba(0,240,255,0.12);
   gap: 0.5rem;
+  position: sticky; top: 0;
+  background: rgba(5, 8, 14, 0.96);
+  z-index: 1;
 }
 .info-panel__id {
   font-size: 0.62rem;
@@ -288,14 +397,10 @@
   font-weight: 700;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
-  color: var(--sun-1);
-  text-shadow: 0 0 5px var(--sun-3);
-  margin-top: 0.1rem;
-  line-height: 1.2;
-}
-.info-panel--customer .info-panel__name {
   color: var(--cyan);
   text-shadow: 0 0 5px var(--cyan-dim);
+  margin-top: 0.1rem;
+  line-height: 1.2;
 }
 .info-panel__addr {
   font-size: 0.66rem;
@@ -344,7 +449,6 @@
 .info-metric__val.cyan { color: var(--cyan); text-shadow: 0 0 4px var(--cyan-dim); }
 .info-metric__val.good { color: var(--green-live); text-shadow: 0 0 4px var(--green-live); }
 
-/* Customer badge in info-panel header */
 .cust-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px;
@@ -356,7 +460,6 @@
   margin-right: 0.25rem;
 }
 
-/* Customer onboarding CTA */
 .cust-cta {
   display: block;
   width: 100%;
@@ -387,7 +490,7 @@
   text-align: center;
 }
 
-/* Solar block (district info) */
+/* Solar block in info panel */
 .info-panel__solar {
   margin-top: 0.9rem;
   padding-top: 0.7rem;
@@ -398,8 +501,8 @@
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--cyan);
-  text-shadow: 0 0 4px var(--cyan-dim);
+  color: var(--sun-1);
+  text-shadow: 0 0 4px var(--sun-3);
   margin-bottom: 0.5rem;
 }
 .solar-row {
@@ -412,14 +515,6 @@
 .solar-row__k { color: var(--ink-dim); letter-spacing: 0.08em; font-size: 0.66rem; text-transform: uppercase; }
 .solar-row__v { color: var(--ink); font-weight: 500; }
 
-.solar-loading {
-  font-size: 0.7rem;
-  color: var(--ink-dim);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  text-align: center;
-  padding: 0.5rem 0;
-}
 .solar-error {
   font-size: 0.7rem;
   color: var(--magenta);
@@ -427,7 +522,7 @@
   padding: 0.5rem 0;
 }
 
-/* ------ Side rail (right) ------ */
+/* ------ Side rail ------ */
 .map-rail {
   border-left: 1px solid var(--hair-cyan-2);
   background: rgba(5, 8, 14, 0.92);
@@ -473,11 +568,6 @@
   border-color: var(--cyan-dim);
   background: rgba(0,240,255,0.06);
 }
-.district-chip.is-active {
-  border-color: var(--sun-2);
-  background: rgba(255,149,0,0.06);
-  box-shadow: inset 2px 0 0 var(--sun-1);
-}
 .district-chip__id { color: var(--ink-dim); font-size: 0.62rem; letter-spacing: 0.15em; }
 .district-chip__name { color: var(--ink); font-family: var(--font-display); font-size: 0.82rem; letter-spacing: 0.04em; }
 .district-chip__stat { color: var(--cyan); font-size: 0.7rem; }
@@ -496,7 +586,6 @@
   color: var(--ink-dim);
 }
 
-/* Prospect summary in side rail */
 .prospect-row {
   display: grid;
   grid-template-columns: 22px 1fr auto;
@@ -525,25 +614,34 @@
 }
 
 .prospect-total {
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--hair-cyan-2);
+}
+.prospect-total__row {
+  display: flex; justify-content: space-between;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--ink-dim);
   letter-spacing: 0.06em;
-  margin-top: 0.7rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid var(--hair-cyan-2);
-  line-height: 1.5;
+  padding: 0.2rem 0;
 }
-.prospect-total .cyan {
+.prospect-total__row .cyan {
   color: var(--cyan);
   font-family: var(--font-display);
   font-weight: 700;
   text-shadow: 0 0 4px var(--cyan-dim);
+}
+.prospect-total__row .sun {
+  color: var(--sun-1);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-shadow: 0 0 4px var(--sun-3);
 }
 
 @media (max-width: 860px) {
   .map-shell { grid-template-columns: 1fr; }
   .map-rail { border-left: none; border-top: 1px solid var(--hair-cyan-2); max-height: 50vh; }
   .layer-drawer, .info-panel { width: calc(100% - 2rem); }
-  .info-panel { width: calc(100% - 2rem); }
+  .empty-prompt { max-width: calc(100% - 2rem); }
 }
