@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>TINYHUB // Live Map</title>
+<title>TINYHUB // Live Map · McHenry County</title>
 <link rel="stylesheet" href="assets/atmosphere.css" />
 <link rel="stylesheet" href="assets/livemap.css" />
 </head>
@@ -11,6 +11,29 @@
 
 <div id="app"></div>
 
+<!-- Config from Flask (injects MAPS_API_KEY) -->
+<script src="api/config.js"></script>
+
+<!-- Maps JS API -->
+<script>
+  // Wait for config, then load Maps
+  (function loadMaps() {
+    if (!window.TINYHUB_CONFIG || !window.TINYHUB_CONFIG.mapsApiKey) {
+      setTimeout(loadMaps, 50);
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${window.TINYHUB_CONFIG.mapsApiKey}&v=weekly&libraries=visualization,geometry,marker&loading=async&callback=__mapsReady`;
+    s.async = true;
+    document.head.appendChild(s);
+  })();
+  window.__mapsReady = function () { window.__MAPS_READY = true; };
+</script>
+
+<!-- deck.gl for animated arc + scatter overlays on top of Maps -->
+<script src="https://unpkg.com/deck.gl@9.0.27/dist.min.js"></script>
+
+<!-- React + Babel -->
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
