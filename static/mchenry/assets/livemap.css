@@ -1,5 +1,5 @@
 /* =============================================================
-   TINY-HUB · LIVE MAP (Light cartography + customer prospects)
+   TINY-HUB · LIVE MAP (Light cartography · all toggles)
    ============================================================= */
 
 .map-shell {
@@ -63,37 +63,6 @@
 @keyframes scan {
   0% { left: -40%; }
   100% { left: 100%; }
-}
-
-/* ------ Empty prompt (when no category enabled) ------ */
-.empty-prompt {
-  position: absolute;
-  top: 1rem; left: 50%;
-  transform: translateX(-50%);
-  z-index: 8;
-  background: rgba(5, 8, 14, 0.92);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--hair-cyan-2);
-  padding: 0.75rem 1.2rem;
-  font-family: var(--font-mono);
-  text-align: center;
-  pointer-events: none;
-  max-width: calc(100% - 360px);
-}
-.empty-prompt__title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--cyan);
-  text-shadow: 0 0 5px var(--cyan-dim);
-}
-.empty-prompt__body {
-  font-size: 0.7rem;
-  color: var(--ink-dim);
-  letter-spacing: 0.05em;
-  margin-top: 0.3rem;
 }
 
 /* ------ Layer drawer ------ */
@@ -197,11 +166,14 @@
 }
 .layer-row.is-disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ------ Drawer section (Customer subgroup) ------ */
+/* ------ Drawer sections ------ */
 .layer-drawer__section {
   margin-top: 0.8rem;
   padding-top: 0.7rem;
   border-top: 1px solid rgba(0,240,255,0.1);
+}
+.layer-drawer__section:first-child {
+  margin-top: 0; padding-top: 0; border-top: none;
 }
 .layer-drawer__section-head {
   font-family: var(--font-display);
@@ -211,12 +183,13 @@
   text-transform: uppercase;
   color: var(--cyan);
   text-shadow: 0 0 4px var(--cyan-dim);
+  margin-bottom: 0.3rem;
 }
 .layer-drawer__section-sub {
   font-size: 0.6rem;
   color: var(--ink-dim);
   letter-spacing: 0.1em;
-  margin: 0.2rem 0 0.5rem;
+  margin: 0 0 0.5rem;
   text-transform: uppercase;
 }
 
@@ -282,7 +255,7 @@
 }
 .zoom-hud .cyan { color: var(--cyan); }
 
-/* ------ Hover tooltip (follows cursor) ------ */
+/* ------ Hover tooltip ------ */
 .map-tooltip {
   position: fixed;
   z-index: 20;
@@ -343,7 +316,7 @@
   text-align: right;
 }
 
-/* ------ Info panel (customer-specific) ------ */
+/* ------ Info panel ------ */
 .info-panel {
   position: absolute;
   left: 1rem; bottom: 1rem;
@@ -352,7 +325,7 @@
   background: rgba(5, 8, 14, 0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--cyan-dim);
+  border: 1px solid var(--hair-cyan-2);
   z-index: 10;
   transform: translateY(120%);
   transition: transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -363,6 +336,9 @@
 }
 .info-panel.is-open { transform: translateY(0); pointer-events: auto; }
 
+.info-panel--district { border-color: var(--sun-2); }
+.info-panel--customer { border-color: var(--cyan-dim); }
+
 .info-panel::-webkit-scrollbar { width: 4px; }
 .info-panel::-webkit-scrollbar-track { background: transparent; }
 .info-panel::-webkit-scrollbar-thumb { background: var(--hair-cyan-2); }
@@ -370,8 +346,14 @@
 .info-panel::before, .info-panel::after {
   content: ''; position: absolute;
   width: 12px; height: 12px;
-  border: 1.5px solid var(--cyan-dim);
+  border: 1.5px solid currentColor;
   pointer-events: none;
+}
+.info-panel--district::before, .info-panel--district::after {
+  border-color: var(--sun-2);
+}
+.info-panel--customer::before, .info-panel--customer::after {
+  border-color: var(--cyan-dim);
 }
 .info-panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
 .info-panel::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
@@ -397,10 +379,14 @@
   font-weight: 700;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
-  color: var(--cyan);
-  text-shadow: 0 0 5px var(--cyan-dim);
+  color: var(--sun-1);
+  text-shadow: 0 0 5px var(--sun-3);
   margin-top: 0.1rem;
   line-height: 1.2;
+}
+.info-panel--customer .info-panel__name {
+  color: var(--cyan);
+  text-shadow: 0 0 5px var(--cyan-dim);
 }
 .info-panel__addr {
   font-size: 0.66rem;
@@ -449,6 +435,16 @@
 .info-metric__val.cyan { color: var(--cyan); text-shadow: 0 0 4px var(--cyan-dim); }
 .info-metric__val.good { color: var(--green-live); text-shadow: 0 0 4px var(--green-live); }
 
+.info-hint {
+  margin-top: 0.8rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed rgba(0,240,255,0.1);
+  font-size: 0.66rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
 .cust-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px;
@@ -490,7 +486,6 @@
   text-align: center;
 }
 
-/* Solar block in info panel */
 .info-panel__solar {
   margin-top: 0.9rem;
   padding-top: 0.7rem;
@@ -568,6 +563,11 @@
   border-color: var(--cyan-dim);
   background: rgba(0,240,255,0.06);
 }
+.district-chip.is-active {
+  border-color: var(--sun-2);
+  background: rgba(255,149,0,0.06);
+  box-shadow: inset 2px 0 0 var(--sun-1);
+}
 .district-chip__id { color: var(--ink-dim); font-size: 0.62rem; letter-spacing: 0.15em; }
 .district-chip__name { color: var(--ink); font-family: var(--font-display); font-size: 0.82rem; letter-spacing: 0.04em; }
 .district-chip__stat { color: var(--cyan); font-size: 0.7rem; }
@@ -643,5 +643,4 @@
   .map-shell { grid-template-columns: 1fr; }
   .map-rail { border-left: none; border-top: 1px solid var(--hair-cyan-2); max-height: 50vh; }
   .layer-drawer, .info-panel { width: calc(100% - 2rem); }
-  .empty-prompt { max-width: calc(100% - 2rem); }
 }

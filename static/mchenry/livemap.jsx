@@ -1,14 +1,26 @@
 /* =============================================================
    TINY-HUB · LIVE MAP
-   Light cartography + customer prospect registry.
+   Light cartography. All features as togglable layers.
 
-   Map shows ONLY registered prospect buildings. Toggle a category
-   to fetch its locations (Places API) and per-building solar
-   analysis (Solar API · Building Insights). Footprints render
-   as gold roof-segment polygons. Click for full data.
+   NETWORK
+   ✓ Districts (12 McHenry communities — real geographic)
+   ✓ Trade flows (animated polylines — synthetic)
+   ✓ Distance corridors (between district pairs — geometric)
+   ✓ Solar heatmap (county scatter — decorative)
+
+   OVERLAYS
+   ✓ Air Quality (Google AQ tiles — real)
+   ✓ Photorealistic 3D (Map Tiles API — real)
+
+   REGISTERED PROSPECTS
+   ✓ Walmart / Jewel-Osco / Amazon / Schools
+     - Places API · location lookup
+     - Solar API · per-building roof analysis
+     - Footprints rendered as gold polygons
+     - Click → full info panel · Hover → tooltip
    ============================================================= */
 
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const { useState, useEffect, useRef, useMemo } = React;
 const { TweaksPanel, TweakSection, TweakSlider, useTweaks } = window.Tweaks;
 
 // ─── Display helpers ──────────────────────────────────────────
@@ -30,8 +42,7 @@ const COUNTY = {
 const CUSTOMER_CATEGORIES = {
   walmart: {
     label: 'Walmart',
-    color: '#0071ce',
-    darkColor: '#003478',
+    color: '#0071ce', darkColor: '#003478',
     letter: 'W',
     estKwhPerDay: 28000,
     type: 'big-box retail',
@@ -39,8 +50,7 @@ const CUSTOMER_CATEGORIES = {
   },
   jewel: {
     label: 'Jewel-Osco',
-    color: '#d6001c',
-    darkColor: '#7a0011',
+    color: '#d6001c', darkColor: '#7a0011',
     letter: 'J',
     estKwhPerDay: 4500,
     type: 'grocery / supermarket',
@@ -48,8 +58,7 @@ const CUSTOMER_CATEGORIES = {
   },
   amazon: {
     label: 'Amazon',
-    color: '#ff9900',
-    darkColor: '#b86b00',
+    color: '#ff9900', darkColor: '#b86b00',
     letter: 'A',
     estKwhPerDay: 95000,
     type: 'logistics / fulfillment',
@@ -57,8 +66,7 @@ const CUSTOMER_CATEGORIES = {
   },
   schools: {
     label: 'Schools',
-    color: '#2e7d32',
-    darkColor: '#1b5e20',
+    color: '#2e7d32', darkColor: '#1b5e20',
     letter: 'S',
     estKwhPerDay: 3500,
     type: 'K-12 / public',
@@ -67,7 +75,7 @@ const CUSTOMER_CATEGORIES = {
   }
 };
 
-// ─── Concurrency limiter for Solar API batching ───────────────
+// ─── Concurrency limiter (Solar API) ──────────────────────────
 async function batchFetch(items, fn, concurrency = 6) {
   const results = new Array(items.length);
   let idx = 0;
@@ -75,14 +83,16 @@ async function batchFetch(items, fn, concurrency = 6) {
     while (idx < items.length) {
       const i = idx++;
       try { results[i] = await fn(items[i]); }
-      catch (e) { results[i] = null; }
+      catch (e) {
+        console.warn('batchFetch item failed:', items[i], e);
+        results[i] = null;
+      }
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
   return results;
 }
 
-// ─── Wait for Maps SDK ────────────────────────────────────────
 function useMapsReady() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -121,6 +131,16 @@ const LIGHT_MAP_STYLE = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#5a8aa6' }] },
   { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f4f1ea' }] }
 ];
+
+// ─── Marker icons ─────────────────────────────────────────────
+function makeDistrictMarker(size = 32, color = '#ff9500', outline = '#7a3f00') {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+      <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 3}" fill="${color}" stroke="${outline}" stroke-width="2.5"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${size/5}" fill="#fff" opacity="0.9"/>
+    </svg>`;
+  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+}
 
 function makeCustomerMarker(size = 28, color = '#0071ce', outline = '#003478', letter = 'W') {
   const svg = `
@@ -194,16 +214,32 @@ function LayerDrawer({ layers, onToggle, zoom, custEnabled, onCustToggle, custCo
         <div className="layer-drawer__caret">▾</div>
       </div>
       <div className="layer-drawer__body">
-        <LayerRow name="Air Quality" sub="Google AQ tiles · live"
-          on={layers.airQuality} onToggle={v => onToggle('airQuality', v)} />
-        <LayerRow name="Photorealistic 3D"
-          sub={zoom < 16 ? `Zoom ≥ 16 to enable (now ${zoom})` : 'Map Tiles API'}
-          on={layers.tiles3d} onToggle={v => onToggle('tiles3d', v)}
-          disabled={zoom < 16} />
+
+        <div className="layer-drawer__section">
+          <div className="layer-drawer__section-head">Network</div>
+          <LayerRow name="Districts" sub="real · 12 communities"
+            on={layers.districts} onToggle={v => onToggle('districts', v)} />
+          <LayerRow name="Trade flows" sub="synthetic · animated"
+            on={layers.flows} onToggle={v => onToggle('flows', v)} />
+          <LayerRow name="Distance corridors" sub="geometric · between districts"
+            on={layers.corridors} onToggle={v => onToggle('corridors', v)} />
+          <LayerRow name="Solar heatmap" sub="decorative · ambient scatter"
+            on={layers.solarHeatmap} onToggle={v => onToggle('solarHeatmap', v)} />
+        </div>
+
+        <div className="layer-drawer__section">
+          <div className="layer-drawer__section-head">Overlays</div>
+          <LayerRow name="Air Quality" sub="real · Google AQ tiles"
+            on={layers.airQuality} onToggle={v => onToggle('airQuality', v)} />
+          <LayerRow name="Photorealistic 3D"
+            sub={zoom < 16 ? `real · zoom ≥ 16 (now ${zoom})` : 'real · Map Tiles API'}
+            on={layers.tiles3d} onToggle={v => onToggle('tiles3d', v)}
+            disabled={zoom < 16} />
+        </div>
 
         <div className="layer-drawer__section">
           <div className="layer-drawer__section-head">Registered prospects</div>
-          <div className="layer-drawer__section-sub">Toggle on · footprints highlight gold</div>
+          <div className="layer-drawer__section-sub">Footprints + per-building Solar API</div>
           {Object.keys(CUSTOMER_CATEGORIES).map(key => (
             <CustomerSubRow
               key={key}
@@ -216,12 +252,52 @@ function LayerDrawer({ layers, onToggle, zoom, custEnabled, onCustToggle, custCo
             />
           ))}
         </div>
+
       </div>
     </div>
   );
 }
 
-// ─── Customer info panel ──────────────────────────────────────
+// ─── District info panel (no solar — that's per-building) ────
+function DistrictInfoPanel({ district, snap, onClose }) {
+  if (!district) return null;
+  const districtSnap = (snap.districts || []).find(d => d.id === district.id);
+  return (
+    <div className="info-panel info-panel--district is-open">
+      <div className="info-panel__head">
+        <div>
+          <div className="info-panel__id">{district.id} · DISTRICT</div>
+          <div className="info-panel__name">{district.name}</div>
+        </div>
+        <button className="info-panel__close" onClick={onClose}>×</button>
+      </div>
+      <div className="info-panel__body">
+        <div className="info-panel__metrics">
+          <div className="info-metric">
+            <div className="info-metric__lbl">Houses</div>
+            <div className="info-metric__val">{fmt.num(districtSnap?.houses)}</div>
+          </div>
+          <div className="info-metric">
+            <div className="info-metric__lbl">MWh / day</div>
+            <div className="info-metric__val cyan">{fmt.fixed(districtSnap?.mwhDay, 1)}</div>
+          </div>
+          <div className="info-metric">
+            <div className="info-metric__lbl">Saved · today</div>
+            <div className="info-metric__val good">{fmt.money(districtSnap?.savedDay)}</div>
+          </div>
+          <div className="info-metric">
+            <div className="info-metric__lbl">Status</div>
+            <div className="info-metric__val">{districtSnap?.status?.toUpperCase() || dash}</div>
+          </div>
+        </div>
+        <div className="info-hint">
+          For per-building solar potential, toggle a Registered Prospects category.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CustomerInfoPanel({ customer, onClose }) {
   if (!customer) return null;
   const cat = CUSTOMER_CATEGORIES[customer.category];
@@ -277,7 +353,6 @@ function CustomerInfoPanel({ customer, onClose }) {
   );
 }
 
-// ─── Hover tooltip (follows cursor) ───────────────────────────
 function HoverTooltip({ hover }) {
   if (!hover) return null;
   const cat = CUSTOMER_CATEGORIES[hover.category];
@@ -367,16 +442,29 @@ function App() {
   const mapsReady = useMapsReady();
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
-  const customerMarkersRef = useRef({});  // { walmart: [marker, marker, ...], ... }
-  const customerPolygonsRef = useRef({}); // { walmart: [rect, rect, ...], ... }
+
+  const districtMarkersRef = useRef([]);
+  const flowsRef = useRef([]);
+  const corridorsRef = useRef([]);
+  const solarHeatmapRef = useRef(null);
   const aqLayerRef = useRef(null);
+  const customerMarkersRef = useRef({});
+  const customerPolygonsRef = useRef({});
 
   const [snap, setSnap] = useState(() => window.TinyHubSim.snapshot());
+  const [activeDistrict, setActiveDistrict] = useState(null);
   const [activeCustomer, setActiveCustomer] = useState(null);
   const [hover, setHover] = useState(null);
   const [zoom, setZoom] = useState(11);
+
+  // Layers · districts + flows ON by default so map isn't empty
   const [layers, setLayers] = useState({
-    airQuality: false, tiles3d: false
+    districts: true,
+    flows: true,
+    corridors: false,
+    solarHeatmap: false,
+    airQuality: false,
+    tiles3d: false
   });
 
   const [custEnabled, setCustEnabled] = useState({
@@ -415,7 +503,145 @@ function App() {
     document.querySelector('.map-loading')?.classList.add('is-hidden');
   }, [mapsReady]);
 
-  // Air Quality tiles
+  // ─── District markers ────────────────────────────────────────
+  useEffect(() => {
+    if (!mapsReady || !mapRef.current) return;
+    const map = mapRef.current;
+    districtMarkersRef.current.forEach(m => m.setMap(null));
+    districtMarkersRef.current = [];
+    if (!layers.districts) return;
+
+    (snap.districts || []).forEach(d => {
+      const marker = new google.maps.Marker({
+        position: { lat: d.lat, lng: d.lng },
+        map,
+        icon: {
+          url: makeDistrictMarker(34, '#ff9500', '#7a3f00'),
+          scaledSize: new google.maps.Size(34, 34),
+          anchor: new google.maps.Point(17, 17)
+        },
+        title: `${d.id} · ${d.name}`,
+        zIndex: 800
+      });
+      marker.addListener('click', () => {
+        setActiveCustomer(null);
+        setActiveDistrict(d);
+        map.panTo({ lat: d.lat, lng: d.lng });
+      });
+      districtMarkersRef.current.push(marker);
+    });
+  }, [mapsReady, layers.districts, snap.districts]);
+
+  // ─── Trade flows ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapsReady || !mapRef.current) return;
+    flowsRef.current.forEach(f => f.setMap(null));
+    flowsRef.current = [];
+    if (!layers.flows) return;
+    const all = snap.districts || [];
+    if (all.length < 2) return;
+
+    const lineSymbol = {
+      path: 'M 0,-1 0,1',
+      strokeColor: '#0091a8',
+      strokeOpacity: 0.85,
+      scale: 3
+    };
+
+    all.forEach((a, i) => {
+      const others = all.filter((_, j) => j !== i)
+        .map(b => ({ b, d: Math.hypot(a.lat - b.lat, a.lng - b.lng) }))
+        .sort((x, y) => x.d - y.d).slice(0, 2);
+      others.forEach(({ b }) => {
+        const line = new google.maps.Polyline({
+          path: [{ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng }],
+          strokeOpacity: 0,
+          icons: [{ icon: lineSymbol, offset: '0', repeat: '14px' }],
+          map: mapRef.current,
+          zIndex: 100
+        });
+        flowsRef.current.push(line);
+      });
+    });
+
+    let count = 0;
+    const id = window.setInterval(() => {
+      count = (count + 2) % 200;
+      flowsRef.current.forEach(line => {
+        const icons = line.get('icons');
+        if (icons && icons[0]) {
+          icons[0].offset = count + '%';
+          line.set('icons', icons);
+        }
+      });
+    }, 60);
+    return () => window.clearInterval(id);
+  }, [mapsReady, layers.flows, snap.districts]);
+
+  // ─── Distance corridors ─────────────────────────────────────
+  useEffect(() => {
+    if (!mapsReady || !mapRef.current) return;
+    corridorsRef.current.forEach(c => c.setMap(null));
+    corridorsRef.current = [];
+    if (!layers.corridors) return;
+    const all = snap.districts || [];
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        const corridor = new google.maps.Polyline({
+          path: [{ lat: all[i].lat, lng: all[i].lng }, { lat: all[j].lat, lng: all[j].lng }],
+          strokeColor: '#a51c64',
+          strokeOpacity: 0.18,
+          strokeWeight: 1,
+          map: mapRef.current,
+          zIndex: 50
+        });
+        corridorsRef.current.push(corridor);
+      }
+    }
+  }, [mapsReady, layers.corridors, snap.districts]);
+
+  // ─── Solar heatmap (decorative scatter) ─────────────────────
+  useEffect(() => {
+    if (!mapsReady || !mapRef.current) return;
+    if (solarHeatmapRef.current) {
+      solarHeatmapRef.current.setMap(null);
+      solarHeatmapRef.current = null;
+    }
+    if (!layers.solarHeatmap) return;
+    if (!google.maps.visualization) return;
+
+    const points = [];
+    const rng = (seed) => {
+      let s = seed;
+      return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    };
+    const r = rng(42);
+    for (let i = 0; i < 800; i++) {
+      const lat = COUNTY.south + r() * (COUNTY.north - COUNTY.south);
+      const lng = COUNTY.west + r() * (COUNTY.east - COUNTY.west);
+      points.push({
+        location: new google.maps.LatLng(lat, lng),
+        weight: 0.3 + r() * 0.7
+      });
+    }
+
+    solarHeatmapRef.current = new google.maps.visualization.HeatmapLayer({
+      data: points,
+      map: mapRef.current,
+      radius: 22,
+      opacity: 0.4,
+      gradient: [
+        'rgba(255, 255, 255, 0)',
+        'rgba(255, 232, 156, 0.5)',
+        'rgba(255, 195, 88, 0.7)',
+        'rgba(255, 149, 0, 0.85)',
+        'rgba(232, 90, 30, 0.95)',
+        'rgba(180, 30, 60, 1)'
+      ]
+    });
+  }, [mapsReady, layers.solarHeatmap]);
+
+  // ─── Air Quality tiles ──────────────────────────────────────
   useEffect(() => {
     if (!mapsReady || !mapRef.current) return;
     const map = mapRef.current;
@@ -437,7 +663,7 @@ function App() {
     aqLayerRef.current = aqType;
   }, [mapsReady, layers.airQuality]);
 
-  // 3D toggle
+  // ─── 3D toggle ──────────────────────────────────────────────
   useEffect(() => {
     if (!mapsReady || !mapRef.current) return;
     const map = mapRef.current;
@@ -450,7 +676,7 @@ function App() {
     }
   }, [mapsReady, layers.tiles3d]);
 
-  // Customer category fetch + render (markers + footprints)
+  // ─── Customer markers + footprints ──────────────────────────
   useEffect(() => {
     if (!mapsReady || !mapRef.current) return;
     const map = mapRef.current;
@@ -458,7 +684,7 @@ function App() {
     Object.keys(CUSTOMER_CATEGORIES).forEach(category => {
       const enabled = custEnabled[category];
 
-      // Lazy fetch on first toggle
+      // Lazy fetch
       if (enabled && !custData[category] && !custLoading[category] && !custErrors[category]) {
         setCustLoading(s => ({ ...s, [category]: true }));
         const cat = CUSTOMER_CATEGORIES[category];
@@ -466,7 +692,6 @@ function App() {
         (async () => {
           try {
             const places = await fetchPlaces(cat.searchQuery, cat.pageSize || 10);
-            // Enrich each place with Solar API building data (6 concurrent)
             const buildings = await batchFetch(places, p =>
               fetchBuildingInsights(p.lat, p.lng).catch(() => null), 6);
             const enriched = places.map((p, i) => ({ ...p, building: buildings[i] }));
@@ -480,7 +705,6 @@ function App() {
         })();
       }
 
-      // Clear existing markers + polygons for this category
       (customerMarkersRef.current[category] || []).forEach(m => m.setMap(null));
       (customerPolygonsRef.current[category] || []).forEach(p => p.setMap(null));
       customerMarkersRef.current[category] = [];
@@ -491,29 +715,25 @@ function App() {
       if (!items || items.length === 0) return;
       const cat = CUSTOMER_CATEGORIES[category];
 
-      // Render polygons (footprints) FIRST so markers sit on top
+      // Footprints first (under markers)
       items.forEach(item => {
         if (!item.building) return;
         const segments = item.building.roofSegments;
         const bbox = item.building.boundingBox;
 
         const handleClick = () => {
+          setActiveDistrict(null);
           setActiveCustomer({ ...item, category });
           map.panTo({ lat: item.lat, lng: item.lng });
           if (map.getZoom() < 16) map.setZoom(17);
         };
-
         const handleMouseOver = (e) => {
           const dom = e?.domEvent;
           if (!dom) return;
-          setHover({
-            ...item, category,
-            x: dom.clientX, y: dom.clientY
-          });
+          setHover({ ...item, category, x: dom.clientX, y: dom.clientY });
         };
         const handleMouseOut = () => setHover(null);
 
-        // Roof segments (most accurate footprint visualization)
         if (segments && segments.length > 0) {
           segments.forEach(seg => {
             if (!seg.boundingBox?.sw || !seg.boundingBox?.ne) return;
@@ -556,7 +776,7 @@ function App() {
         }
       });
 
-      // Markers ON TOP of polygons
+      // Markers on top
       items.forEach(item => {
         const marker = new google.maps.Marker({
           position: { lat: item.lat, lng: item.lng },
@@ -570,6 +790,7 @@ function App() {
           zIndex: 1000
         });
         marker.addListener('click', () => {
+          setActiveDistrict(null);
           setActiveCustomer({ ...item, category });
           map.panTo({ lat: item.lat, lng: item.lng });
           if (map.getZoom() < 16) map.setZoom(17);
@@ -603,7 +824,7 @@ function App() {
     return acc + items.reduce((s, it) => s + (it.building?.maxKwh || 0), 0);
   }, 0);
 
-  const anyEnabled = Object.values(custEnabled).some(v => v);
+  const anyCustomer = Object.values(custEnabled).some(v => v);
 
   return (
     <>
@@ -638,14 +859,11 @@ function App() {
             ZOOM <span className="cyan">{zoom}</span> · {layers.tiles3d ? '3D' : '2D'}
           </div>
 
-          {!anyEnabled && (
-            <div className="empty-prompt">
-              <div className="empty-prompt__title">McHenry County</div>
-              <div className="empty-prompt__body">
-                Toggle a prospect category in the layer drawer to load registered buildings
-              </div>
-            </div>
-          )}
+          <DistrictInfoPanel
+            district={activeDistrict}
+            snap={snap}
+            onClose={() => setActiveDistrict(null)}
+          />
 
           <CustomerInfoPanel
             customer={activeCustomer}
@@ -682,7 +900,7 @@ function App() {
             </div>
           </div>
 
-          {anyEnabled && (
+          {anyCustomer && (
             <div className="map-rail__section">
               <div className="eyebrow">// PROSPECTS · LOADED</div>
               {Object.entries(CUSTOMER_CATEGORIES).map(([key, cat]) => {
@@ -715,11 +933,16 @@ function App() {
             <div className="eyebrow">// 12 DISTRICTS · NETWORK</div>
             <div className="district-list">
               {(snap.districts || []).map(d => (
-                <div key={d.id} className="district-chip"
-                     onClick={() => {
-                       mapRef.current?.panTo({ lat: d.lat, lng: d.lng });
-                       if (mapRef.current?.getZoom() < 13) mapRef.current.setZoom(13);
-                     }}>
+                <div
+                  key={d.id}
+                  className={`district-chip ${activeDistrict?.id === d.id ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setActiveCustomer(null);
+                    setActiveDistrict(d);
+                    mapRef.current?.panTo({ lat: d.lat, lng: d.lng });
+                    if (mapRef.current?.getZoom() < 13) mapRef.current.setZoom(13);
+                  }}
+                >
                   <span className="district-chip__id">{d.id}</span>
                   <span className="district-chip__name">{d.name}</span>
                   <span className="district-chip__stat">{fmt.num(d.houses)}</span>
