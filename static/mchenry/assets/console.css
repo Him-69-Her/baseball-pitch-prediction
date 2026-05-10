@@ -1,0 +1,144 @@
+/* =============================================================
+   TINY-HUB · CONSOLE
+   Page chrome shared by Analytics Console, Solver, Final Report.
+   Page-specific styles live in their own files; this file is
+   the dashboard panel vocabulary.
+   ============================================================= */
+
+/* Panel grid — 3-up, 2-up, full-width helpers */
+.console-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 4.4rem 1.6rem 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.console-h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+  letter-spacing: 0.04em;
+  color: var(--sun-1);
+  text-shadow: 0 0 10px var(--sun-2), 0 0 24px var(--sun-3);
+  margin: 0 0 0.4rem;
+}
+
+.console-sub {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.92rem;
+  color: var(--ink-body);
+  max-width: 75ch;
+  margin: 0 0 1.2rem;
+}
+.console-sub em { color: var(--cyan); font-style: normal; font-weight: 500; }
+.console-sub strong { color: var(--sun-1); font-weight: 600; }
+
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.4rem;
+}
+
+.console-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.console-grid--2 { grid-template-columns: 1fr 1fr; }
+.console-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+.console-grid--full { grid-template-columns: 1fr; }
+
+@media (max-width: 900px) {
+  .console-grid--2, .console-grid--3 { grid-template-columns: 1fr; }
+}
+
+/* Panel body padding default */
+.card .panel-body { padding: 1rem 1.1rem; }
+
+/* Small mono key/value lines */
+.kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed rgba(0, 240, 255, 0.08);
+}
+.kv:last-child { border-bottom: none; }
+.kv__k { color: var(--ink-dim); letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.66rem; }
+.kv__v { color: var(--ink); font-weight: 500; }
+.kv__v.cyan { color: var(--cyan); }
+.kv__v.good { color: var(--green-live); }
+.kv__v.mag  { color: var(--magenta); }
+
+/* Trade ticker rows */
+.ticker {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.ticker__row {
+  display: grid;
+  grid-template-columns: 70px 1fr 1fr 70px 80px;
+  gap: 0.6rem;
+  padding: 0.45rem 1.1rem;
+  border-bottom: 1px dashed rgba(0, 240, 255, 0.08);
+  align-items: center;
+}
+
+.ticker__row:hover { background: rgba(0, 240, 255, 0.03); }
+
+.ticker__time { color: var(--ink-dim); font-size: 0.7rem; }
+.ticker__addr { color: var(--cyan); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticker__qty  { color: var(--sun-1); text-align: right; font-weight: 700; }
+.ticker__status { font-size: 0.62rem; letter-spacing: 0.18em; text-align: right; }
+.ticker__status.matched { color: var(--green-live); }
+.ticker__status.pending { color: var(--magenta); }
+
+/* Sparkline shell */
+.spark {
+  padding: 0.6rem 0.9rem 0.4rem;
+}
+.spark__lbl {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.3rem;
+}
+
+/* Eyebrow text */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--magenta);
+  text-shadow: 0 0 5px var(--magenta);
+  margin-bottom: 0.3rem;
+}
+
+/* Triangle bullet section header */
+.section-bullet {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sun-1);
+  text-shadow: 0 0 5px var(--sun-3);
+}
+.section-bullet::before { content: '▸ '; color: var(--cyan); margin-right: 0.3rem; }
+
+/* Scrollbar styling for any overflow container */
+.ticker::-webkit-scrollbar { width: 6px; }
+.ticker::-webkit-scrollbar-track { background: rgba(0, 240, 255, 0.04); }
+.ticker::-webkit-scrollbar-thumb { background: var(--hair-cyan-2); }
+.ticker::-webkit-scrollbar-thumb:hover { background: var(--cyan-dim); }

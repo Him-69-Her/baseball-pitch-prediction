@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TINYHUB // Final Report</title>
+<link rel="stylesheet" href="assets/atmosphere.css" />
+<link rel="stylesheet" href="assets/console.css" />
+<style>
+  .report { max-width: 1280px; margin: 0 auto; padding: 4.4rem 1.6rem 3rem; }
+  .report__head {
+    display: flex; align-items: end; justify-content: space-between;
+    gap: 2rem; padding: 1.2rem 0 1.4rem;
+    border-bottom: 1px solid var(--hair-cyan-2);
+    margin-bottom: 1.4rem;
+  }
+  .report__title {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+    letter-spacing: .04em; color: var(--sun-1);
+    text-shadow: 0 0 10px var(--sun-2), 0 0 24px var(--sun-3);
+    margin: 0 0 .35rem;
+  }
+  .report__sub { font-family: var(--font-body); color: var(--ink-body); font-size: .92rem; max-width: 60ch; margin: 0; }
+  .report__meta {
+    font-family: var(--font-mono); font-size: .68rem; color: var(--ink-dim);
+    letter-spacing: .25em; text-align: right; line-height: 1.8;
+  }
+  .report__meta strong { color: var(--cyan); }
+
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.4rem; }
+  .kpi-card {
+    border: 1px solid var(--hair-cyan-2);
+    background: rgba(5,8,14,0.7);
+    padding: 1rem 1.1rem;
+    position: relative;
+  }
+  .kpi-card::before, .kpi-card::after {
+    content: ''; position: absolute; width: 10px; height: 10px;
+    border: 1.5px solid var(--sun-2); pointer-events: none;
+  }
+  .kpi-card::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .kpi-card::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+  .kpi-card .lbl { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .25em; color: var(--ink-dim); text-transform: uppercase; }
+  .kpi-card .val {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 1.85rem; letter-spacing: .03em;
+    color: var(--sun-1); text-shadow: 0 0 6px var(--sun-2);
+    margin-top: .3rem;
+  }
+  .kpi-card .val.cyan { color: var(--cyan); text-shadow: 0 0 6px var(--cyan-dim); }
+  .kpi-card .val.good { color: var(--green-live); text-shadow: 0 0 6px var(--green-live); }
+  .kpi-card .val.mag { color: var(--magenta); text-shadow: 0 0 6px var(--magenta); }
+  .kpi-card .val .unit { font-family: var(--font-mono); font-size: .8rem; color: var(--ink-dim); margin-left: .35rem; letter-spacing: .15em; }
+  .kpi-card .delta { font-family: var(--font-mono); font-size: .72rem; color: var(--green-live); margin-top: .3rem; letter-spacing: .15em; }
+
+  .section {
+    margin-top: 1.4rem;
+    border: 1px solid var(--hair-cyan-2);
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    padding: 1.2rem 1.4rem;
+  }
+  .section h2 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 1.1rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cyan); text-shadow: 0 0 6px var(--cyan-dim);
+    margin: 0 0 .9rem; padding-bottom: .5rem;
+    border-bottom: 1px dashed rgba(0,240,255,.15);
+  }
+  .section p { font-family: var(--font-body); font-weight: 300; color: var(--ink-body); line-height: 1.65; margin: 0 0 .8rem; }
+  .section p strong { color: var(--sun-1); font-weight: 600; }
+  .section em { color: var(--cyan); font-style: normal; font-weight: 500; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+
+  .ranking-list { list-style: none; margin: 0; padding: 0; font-family: var(--font-mono); font-size: .82rem; }
+  .ranking-list li {
+    display: grid; grid-template-columns: 28px 1fr 80px 70px;
+    gap: .6rem; padding: .55rem 0;
+    border-bottom: 1px dashed rgba(0,240,255,.1);
+    align-items: center;
+  }
+  .ranking-list .rank { color: var(--sun-1); font-weight: 700; text-align: right; }
+  .ranking-list .name { color: var(--ink); font-family: var(--font-display); letter-spacing: .03em; }
+  .ranking-list .kwh { color: var(--cyan); text-align: right; }
+  .ranking-list .save { color: var(--green-live); text-align: right; }
+
+  .breakdown { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: .5rem; }
+  .breakdown .item {
+    border-left: 2px solid var(--cyan);
+    padding: .4rem .8rem;
+  }
+  .breakdown .item .lbl { font-family: var(--font-mono); font-size: .62rem; letter-spacing: .2em; color: var(--ink-dim); text-transform: uppercase; }
+  .breakdown .item .val { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--sun-1); margin-top: .2rem; }
+
+  .footer-strip {
+    margin-top: 1.6rem; padding: .8rem 0;
+    border-top: 1px solid var(--hair-cyan-2);
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono); font-size: .68rem;
+    color: var(--ink-dim); letter-spacing: .25em;
+  }
+  .footer-strip strong { color: var(--cyan); }
+
+  .signature {
+    margin-top: 1.2rem; padding: 1rem 1.4rem;
+    border: 1px dashed rgba(255,204,0,.3);
+    background: rgba(255,204,0,.03);
+    font-family: var(--font-mono); font-size: .76rem;
+    color: var(--ink-body); letter-spacing: .05em;
+  }
+  .signature strong { color: var(--sun-1); }
+</style>
+</head>
+<body style="background-color: rgb(0, 0, 0)">
+
+<div class="atmos" aria-hidden="true">
+  <div class="atmos__stars"></div>
+  <div class="atmos__horizon"></div>
+  <div class="atmos__grid"></div>
+</div>
+
+<nav class="nav">
+  <div class="nav__brand flicker">Tiny Hub: <span style="color: #fff">McHenry County</span></div>
+  <div class="nav__links">
+    <a class="nav__link" href="live-map.html">Map</a>
+    <a class="nav__link" href="analytics-console.html">Console</a>
+    <a class="nav__link" href="solver.html">Solver</a>
+    <a class="nav__link is-active" href="final-report.html">Final Report</a>
+    <a class="nav__link" href="glossary.html">Glossary</a>
+  </div>
+  <div class="nav__spacer"></div>
+</nav>
+
+<main class="report">
+  <div class="report__head">
+    <div>
+      <h1 class="report__title">McHenry County · Pilot Final Report</h1>
+      <p class="report__sub">
+        90-day operational summary of the Tiny Hub peer-to-peer energy network across
+        12 communities in McHenry County, Illinois.
+      </p>
+    </div>
+    <div class="report__meta">
+      REPORT ID · <strong>TH-MCH-2026-Q1</strong><br/>
+      PERIOD · <strong>FEB 10 – MAY 10 · 2026</strong><br/>
+      STATUS · <strong>PILOT COMPLETE</strong>
+    </div>
+  </div>
+
+  <div class="report-grid">
+    <div class="kpi-card">
+      <div class="lbl">Energy Routed</div>
+      <div class="val cyan">— <span class="unit">MWh</span></div>
+      <div class="delta">awaiting Google import</div>
+    </div>
+    <div class="kpi-card">
+      <div class="lbl">Value Saved vs ComEd</div>
+      <div class="val good">— <span class="unit">USD</span></div>
+      <div class="delta">awaiting Google import</div>
+    </div>
+    <div class="kpi-card">
+      <div class="lbl">Tokens Settled</div>
+      <div class="val">— <span class="unit">TH</span></div>
+      <div class="delta">on Arbitrum L2</div>
+    </div>
+    <div class="kpi-card">
+      <div class="lbl">Peer Match Rate</div>
+      <div class="val mag">— <span class="unit">%</span></div>
+      <div class="delta">awaiting Google import</div>
+    </div>
+  </div>
+
+  <section class="section">
+    <h2>01 · Executive Summary</h2>
+    <p>
+      Over <strong>90 days</strong>, Tiny Hub routed real kilowatt-hours between residential
+      generators and consumers across <em>12 McHenry County communities</em>, settling every
+      five-minute batch on Arbitrum L2. The pilot demonstrated that peer routing on existing
+      ComEd feeders is <strong>technically feasible</strong>, <strong>economically meaningful
+      to participants</strong>, and <strong>operationally compatible</strong> with utility
+      reliability obligations.
+    </p>
+    <p>
+      [Narrative summary to be drafted from Google Sheet results.]
+    </p>
+  </section>
+
+  <div class="two-col">
+    <section class="section">
+      <h2>02 · Top Communities · By Volume</h2>
+      <ol class="ranking-list">
+        <li><span class="rank">01</span><span class="name">Crystal Lake</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+        <li><span class="rank">02</span><span class="name">McHenry</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+        <li><span class="rank">03</span><span class="name">Woodstock</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+        <li><span class="rank">04</span><span class="name">Algonquin</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+        <li><span class="rank">05</span><span class="name">Huntley</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+        <li><span class="rank">06</span><span class="name">Cary</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+        <li><span class="rank">07</span><span class="name">Lake in the Hills</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+        <li><span class="rank">08</span><span class="name">Marengo</span><span class="kwh">— kWh</span><span class="save">+ —</span></li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>03 · Trade Mix</h2>
+      <p>How energy moved through the network during the pilot.</p>
+      <div class="breakdown">
+        <div class="item">
+          <div class="lbl">Peer-to-peer</div>
+          <div class="val">— %</div>
+        </div>
+        <div class="item">
+          <div class="lbl">Macro fallback</div>
+          <div class="val">— %</div>
+        </div>
+        <div class="item">
+          <div class="lbl">Re-routed</div>
+          <div class="val">— %</div>
+        </div>
+      </div>
+      <p style="margin-top: 1rem">[Trade mix narrative — pull from Sheets.]</p>
+    </section>
+  </div>
+
+  <section class="section">
+    <h2>04 · Solver Performance</h2>
+    <p>
+      The AC-OPF solver scored every corridor across <strong>—</strong> batches over the pilot.
+      Mean convergence held at <strong>—</strong>, with re-routes triggered on
+      <strong>— %</strong> of corridors. Solve time stayed inside the 5-minute settlement
+      window with margin to spare.
+    </p>
+    <p>[Solver summary — convergence, retry rates, solve time distribution.]</p>
+  </section>
+
+  <section class="section">
+    <h2>05 · Anomalies &amp; Incidents</h2>
+    <p>
+      <strong>—</strong> anomalies were logged across the pilot, of which <strong>—</strong>
+      cleared automatically and <strong>—</strong> required operator intervention. No
+      reliability events were attributable to Tiny Hub routing.
+    </p>
+    <p>[Incident narrative.]</p>
+  </section>
+
+  <section class="section">
+    <h2>06 · Recommendations</h2>
+    <p>[Pilot recommendations and next-phase rollout plan.]</p>
+  </section>
+
+  <div class="signature">
+    <strong>PREPARED BY ·</strong> Tiny Hub Operations · McHenry County Pilot Team<br/>
+    <strong>FOR ·</strong> ComEd Pilot Steering · McHenry County Board · Tiny Hub Investors<br/>
+    <strong>SOURCE ·</strong> Live Map snapshots · Console batch history · Solver telemetry · Settlement ledger (Arbitrum L2)
+  </div>
+
+  <div class="footer-strip">
+    <span>TINY HUB · McHENRY COUNTY · PILOT FINAL REPORT</span>
+    <span><strong>v1.0</strong> · DRAFT · MAY 10 2026</span>
+  </div>
+</main>
+
+</body>
+</html>

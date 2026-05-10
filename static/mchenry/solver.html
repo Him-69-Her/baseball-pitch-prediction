@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TINYHUB // Solver</title>
+<link rel="stylesheet" href="assets/atmosphere.css" />
+<link rel="stylesheet" href="assets/console.css" />
+<style>
+  .solver-shell { max-width: 1480px; margin: 0 auto; padding: 1rem 1.6rem 2rem; }
+  .solver-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  .solver-grid--full { grid-template-columns: 1fr; }
+  .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+  .stat-row .ms { flex: 1; min-width: 160px; }
+  .solver-h1 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+    letter-spacing: .04em; color: var(--sun-1);
+    text-shadow: 0 0 10px var(--sun-2), 0 0 24px var(--sun-3);
+    margin: 0 0 .35rem;
+  }
+  .solver-sub {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: .92rem; color: var(--ink-body); max-width: 75ch; margin: 0;
+  }
+  .solver-sub em { color: var(--cyan); font-style: normal; font-weight: 500; }
+
+  .pipeline { display: flex; align-items: stretch; gap: .6rem; flex-wrap: wrap; padding: .8rem; }
+  .pipe-step {
+    flex: 1; min-width: 160px;
+    border: 1px solid var(--hair-cyan-2);
+    background: rgba(0,240,255,.04);
+    padding: .65rem .8rem;
+    position: relative;
+  }
+  .pipe-step .num {
+    font-family: var(--font-mono); font-size: .6rem; letter-spacing: .25em;
+    color: var(--ink-dim);
+  }
+  .pipe-step .ttl {
+    font-family: var(--font-display); font-weight: 700; font-size: .98rem;
+    color: var(--cyan); letter-spacing: .04em; margin: .15rem 0;
+  }
+  .pipe-step .body {
+    font-family: var(--font-body); font-size: .78rem; line-height: 1.4;
+    color: var(--ink-body);
+  }
+  .pipe-step .meta {
+    font-family: var(--font-mono); font-size: .62rem; color: var(--ink-dim);
+    letter-spacing: .15em; margin-top: .35rem;
+  }
+  .pipe-arrow { display: flex; align-items: center; color: var(--sun-1); font-size: 1.2rem; }
+
+  .empty-state {
+    padding: 4rem 1.5rem;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    letter-spacing: .22em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .empty-state__eyebrow { font-size: .62rem; color: var(--magenta); margin-bottom: .4rem; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+
+<script src="assets/sim.js"></script>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// Display helpers — keep null/undefined out of the DOM
+const dash = '—';
+const fmt = {
+  num: (v, d = 0) => v == null ? dash : Number(v).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }),
+  fixed: (v, d = 2) => v == null ? dash : Number(v).toFixed(d)
+};
+
+function NavBar() {
+  return (
+    <nav className="nav">
+      <div className="nav__brand flicker">Tiny Hub: <span style={{ color: '#fff' }}>McHenry County</span></div>
+      <div className="nav__links">
+        <a className="nav__link" href="live-map.html">Map</a>
+        <a className="nav__link" href="analytics-console.html">Console</a>
+        <a className="nav__link is-active" href="solver.html">Solver</a>
+        <a className="nav__link" href="final-report.html">Final Report</a>
+        <a className="nav__link" href="glossary.html">Glossary</a>
+      </div>
+      <div className="nav__spacer" />
+    </nav>
+  );
+}
+
+function EmptyState({ label }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-state__eyebrow">// PENDING</div>
+      <div>{label}</div>
+    </div>
+  );
+}
+
+function App() {
+  const [snap, setSnap] = useState(() => window.TinyHubSim.snapshot());
+  useEffect(() => {
+    const id = setInterval(() => {
+      window.TinyHubSim.tick();
+      setSnap(window.TinyHubSim.snapshot());
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const districtCount = (snap.districts || []).length;
+
+  return (
+    <>
+      <div className="atmos" aria-hidden="true">
+        <div className="atmos__stars" />
+        <div className="atmos__horizon" />
+        <div className="atmos__grid" />
+      </div>
+      <NavBar />
+      <main className="solver-shell" style={{ paddingTop: '4.4rem' }}>
+        <div>
+          <h1 className="solver-h1">Solver · AC-OPF Routing Engine</h1>
+          <p className="solver-sub">
+            Decides whether each match is <em>physically feasible</em> on the wire before it settles.
+            The non-convex AC optimal power flow solver scores every corridor 0–1 every batch;
+            scores below <em>0.60</em> trigger a re-route, between <em>0.60–0.85</em> trigger retries,
+            above <em>0.85</em> converge clean.
+          </p>
+        </div>
+
+        <div className="stat-row">
+          <div className="ms"><span className="ms__lbl">CONVERGENCE</span>
+            <span className="ms__val cyan">{fmt.fixed(snap.convergence, 3)}</span></div>
+          <div className="ms"><span className="ms__lbl">FEASIBILITY</span>
+            <span className="ms__val">{fmt.fixed(snap.feasibility, 3)}</span></div>
+          <div className="ms"><span className="ms__lbl">SOLVE TIME</span>
+            <span className="ms__val">{dash}<span className="ms__unit">ms</span></span></div>
+          <div className="ms"><span className="ms__lbl">RETRIES · BATCH</span>
+            <span className="ms__val">{dash}</span></div>
+          <div className="ms"><span className="ms__lbl">RE-ROUTES · BATCH</span>
+            <span className="ms__val">{dash}</span></div>
+        </div>
+
+        <div className="solver-grid solver-grid--full" style={{ marginTop: '1rem' }}>
+          <div className="card">
+            <div className="card__head">
+              <div>
+                <div className="card__title">SOLVE PIPELINE</div>
+                <div className="card__sub">5-minute batch · per-corridor evaluation</div>
+              </div>
+            </div>
+            <div className="pipeline">
+              <div className="pipe-step">
+                <div className="num">STEP 01</div>
+                <div className="ttl">MATCH</div>
+                <div className="body">Order book pairs buyers and sellers within a service zone by price-time priority.</div>
+                <div className="meta">ORDER BOOK</div>
+              </div>
+              <div className="pipe-arrow">→</div>
+              <div className="pipe-step">
+                <div className="num">STEP 02</div>
+                <div className="ttl">PROJECT</div>
+                <div className="body">Project each match onto the physical feeder graph. Compute line loss, voltage band, thermal limit.</div>
+                <div className="meta">PostGIS · {districtCount} nodes</div>
+              </div>
+              <div className="pipe-arrow">→</div>
+              <div className="pipe-step">
+                <div className="num">STEP 03</div>
+                <div className="ttl">SOLVE</div>
+                <div className="body">AC-OPF non-convex split solver. Interior point + warm start. Score per corridor.</div>
+                <div className="meta">IPOPT</div>
+              </div>
+              <div className="pipe-arrow">→</div>
+              <div className="pipe-step">
+                <div className="num">STEP 04</div>
+                <div className="ttl">RE-ROUTE</div>
+                <div className="body">Sub-0.60 corridors fall back to MISO/PJM macro toll. Voltage trims clamp export.</div>
+                <div className="meta">FALLBACK · MISO</div>
+              </div>
+              <div className="pipe-arrow">→</div>
+              <div className="pipe-step">
+                <div className="num">STEP 05</div>
+                <div className="ttl">SETTLE</div>
+                <div className="body">Surviving trades batch-settle on Arbitrum L2. Tokens minted, ledger anchored.</div>
+                <div className="meta">L2 · 5min</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="solver-grid">
+          <div className="card">
+            <div className="card__head">
+              <div>
+                <div className="card__title cyan">CONVERGENCE · LAST 100 BATCHES</div>
+                <div className="card__sub">global solver score · trending toward 1.0</div>
+              </div>
+            </div>
+            <EmptyState label="SOLVER TELEMETRY FEED PENDING" />
+          </div>
+
+          <div className="card">
+            <div className="card__head">
+              <div>
+                <div className="card__title mag">CORRIDOR FEASIBILITY</div>
+                <div className="card__sub">sorted ascending · per batch</div>
+              </div>
+            </div>
+            <EmptyState label="CORRIDOR DATA FEED PENDING" />
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+</script>
+
+</body>
+</html>

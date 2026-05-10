@@ -18,8 +18,9 @@ from cloudsql_api import register_postgis_routes
 from chain_api import register_chain_routes
 from datetime import datetime
 from collections import deque
-from flask import Flask, render_template, jsonify, Response, request, session, redirect, url_for
+from flask import Flask, render_template, jsonify, Response, request, session, redirect, url_for, send_from_directory
 from openadr_vtn import oadr_bp, init_vtn
+from mchenry import mchenry_bp
 from smart_meter import get_meter_client
 from fraud_detection import get_detector
 from websocket_handler import init_socketio, broadcast_trade as ws_broadcast_trade, broadcast_stats as ws_broadcast_stats
@@ -40,6 +41,7 @@ MAPS_API_KEY = _os.environ.get("GOOGLE_MAPS_API_KEY", "")
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 app.register_blueprint(oadr_bp)
+app.register_blueprint(mchenry_bp)
 
 # ── Web Page Blueprints ─────────────────────────────────────
 from src.pages.landing.routes import landing_bp

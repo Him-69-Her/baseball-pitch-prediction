@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Tiny-Hub Ops · Complete Glossary</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap');
+
+:root {
+  --font-display: 'Orbitron', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+  --amber-1: #ffcc00;
+  --amber-2: #ff9500;
+  --cyan: #00f0ff;
+  --cyan-dim: rgba(0,240,255,.45);
+  --magenta: #ff2d95;
+  --green-live: #00ff88;
+  --ink: #e6f8ff;
+  --ink-body: #cdd8db;
+  --ink-dim: #7ba9b3;
+  --bg: #000;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink-body);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.7;
+  padding: 3rem 2rem 6rem;
+}
+
+.container { max-width: 960px; margin: 0 auto; }
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  letter-spacing: .08em;
+  color: var(--amber-1);
+  text-shadow: 0 0 12px var(--amber-2);
+  margin-bottom: .6rem;
+}
+
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-shadow: 0 0 4px var(--cyan-dim);
+  margin-bottom: 2.4rem;
+}
+
+.section-head {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: .1em;
+  color: var(--magenta);
+  text-shadow: 0 0 8px var(--magenta);
+  padding: 1rem 0 .6rem;
+  border-bottom: 1px solid rgba(255,45,149,.25);
+  margin: 3rem 0 1.4rem;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.2rem;
+  padding: 1rem 0;
+  border-bottom: 1px dashed rgba(0,240,255,.08);
+  align-items: baseline;
+}
+
+.entry:last-child { border-bottom: none; }
+
+.term {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .82rem;
+  letter-spacing: .08em;
+  color: var(--amber-1);
+  text-shadow: 0 0 4px var(--amber-2);
+  word-break: break-word;
+}
+
+.def { font-size: .94rem; line-height: 1.65; }
+.def code {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  color: var(--cyan);
+  background: rgba(0,240,255,.06);
+  padding: .1em .35em;
+}
+.def em {
+  font-style: normal;
+  color: var(--ink);
+  font-weight: 500;
+}
+.def .note {
+  display: block;
+  margin-top: .35rem;
+  font-size: .8rem;
+  color: var(--ink-dim);
+}
+
+@media (max-width: 700px) {
+  .entry { grid-template-columns: 1fr; gap: .3rem; }
+}
+</style>
+</head>
+<body>
+
+<style>
+.nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex; align-items: center; gap: 2rem;
+  padding: 0.85rem 1.6rem;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0,240,255,0.18);
+  font-family: 'JetBrains Mono', monospace;
+}
+.nav__brand {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700; font-size: 0.92rem;
+  letter-spacing: 0.12em; color: var(--amber-1);
+  text-shadow: 0 0 8px var(--amber-2);
+  text-transform: uppercase;
+}
+.nav__links { display: flex; gap: 0.4rem; margin-left: 0.5rem; }
+.nav__link {
+  font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-dim); padding: 0.45rem 0.8rem;
+  border: 1px solid transparent; transition: all 0.18s;
+  text-decoration: none;
+}
+.nav__link:hover {
+  color: var(--cyan); border-color: rgba(0,240,255,0.18);
+  background: rgba(0,240,255,0.04);
+}
+.nav__link.is-active {
+  color: var(--amber-1); border-color: rgba(255,149,0,0.22);
+  background: rgba(255,149,0,0.06);
+  text-shadow: 0 0 6px rgba(255,149,0,0.45);
+}
+body { padding-top: 5rem; }
+</style>
+
+<nav class="nav">
+  <div class="nav__brand">Tiny Hub: <span style="color:#fff">McHenry County</span></div>
+  <div class="nav__links">
+    <a class="nav__link" href="live-map.html">Map</a>
+    <a class="nav__link" href="analytics-console.html">Console</a>
+    <a class="nav__link" href="solver.html">Solver</a>
+    <a class="nav__link" href="final-report.html">Final Report</a>
+    <a class="nav__link is-active" href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<h1>Tiny-Hub Ops Glossary</h1>
+<div class="subtitle">TINYHUB ENERGY // Every term, metric, and label explained</div>
+
+<!-- ======== CORE CONCEPTS ======== -->
+<div class="section-head">Core Concepts</div>
+
+<div class="entry">
+  <div class="term">Tiny-Hub</div>
+  <div class="def">A peer-to-peer electricity marketplace. Neighbors trade rooftop solar at the block level — trades match on physics-aware proximity, settle in 5-minute batches on Arbitrum L2, and deliver over the existing utility wire. The "routing engine" for distributed energy.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Routing Engine</div>
+  <div class="def">Tiny-Hub's core identity. Rather than building new infrastructure, it routes energy more efficiently across the wire that already exists — matching nearby sellers and buyers to minimize line loss and delivery tolls.</div>
+</div>
+
+<div class="entry">
+  <div class="term">District</div>
+  <div class="def">A geographic service zone where trades are matched. Each district has a code (e.g. <code>MCH-01</code>, <code>D91</code>, <code>WB-04</code>) and covers a cluster of homes within ~5 km. Districts can be <em>LIVE</em>, <em>COMING SOON</em>, or <em>QUEUED</em>.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Service Zone</div>
+  <div class="def">The 5 km radius around a district's center within which PostGIS proximity queries match sellers and buyers. Closer trades lose less energy to line loss.</div>
+</div>
+
+<div class="entry">
+  <div class="term">House</div>
+  <div class="def">A single participant node in the network — a residential address with solar panels, a meter, and a wallet. Each house is identified by an Ethereum address (e.g. <code>0xA1f…ce4</code>) and a physical street address.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Operator</div>
+  <div class="def">The person or team running the Tiny-Hub dashboard — monitoring districts, reviewing matches, checking alerts, and managing the settlement pipeline. The dashboard is the operator's control surface.</div>
+</div>
+
+
+<!-- ======== MATCHING & TRADING ======== -->
+<div class="section-head">Matching &amp; Trading</div>
+
+<div class="entry">
+  <div class="term">Match</div>
+  <div class="def">Step 01 of the Tiny-Hub cycle. PostGIS proximity queries pair a seller (producing excess solar) with a buyer (consuming) inside the same service zone. Closer matches are preferred because they lose less energy in transit.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Match Queue</div>
+  <div class="def">The live queue of pending and completed trade matches for the current 5-minute batch. Visible in the operator dashboard — shows timestamp, seller address, buyer address, kWh quantity, and status (<em>MATCHED</em> or <em>PENDING</em>).</div>
+</div>
+
+<div class="entry">
+  <div class="term">MATCHED</div>
+  <div class="def">A trade pair has been found and confirmed. The seller and buyer are locked in for this batch's settlement. Displayed in green (<code>--green-live</code>) in the queue.</div>
+</div>
+
+<div class="entry">
+  <div class="term">PENDING</div>
+  <div class="def">A seller or buyer is in the queue but hasn't been paired yet. Displayed in magenta. May match before the batch closes, or roll to the next 5-minute window.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Seller</div>
+  <div class="def">A house producing more solar energy than it consumes — the excess is offered to the match queue. Displayed in amber (<code>--amber-1</code>) throughout the UI. Pulsing dots on the district map represent active sellers.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Buyer</div>
+  <div class="def">A house consuming more energy than it produces (or a house without solar panels). Displayed in cyan (<code>--cyan</code>) in the UI.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Idle</div>
+  <div class="def">A house in the district that is neither actively selling nor buying in the current batch. Shown as a dim dot on the district schematic map.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Trade</div>
+  <div class="def">A single matched transaction: one seller sends energy to one buyer. Each trade has a kWh quantity, a THN token amount, a distance, a line-loss percentage, and an on-chain receipt.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Trade Ticker</div>
+  <div class="def">The live-updating list of trades within the current settling block. Shows timestamp, seller → buyer addresses, kWh, and THN amount. Found on both the marketing site's Live Demo and the operator dashboard.</div>
+</div>
+
+
+<!-- ======== ENERGY & PHYSICS ======== -->
+<div class="section-head">Energy &amp; Physics</div>
+
+<div class="entry">
+  <div class="term">kWh</div>
+  <div class="def"><em>Kilowatt-hour.</em> The standard unit of energy traded on Tiny-Hub. A single trade might be 0.6–5.2 kWh. The dashboard tracks cumulative MWh (megawatt-hours = 1,000 kWh) per day across a district.</div>
+</div>
+
+<div class="entry">
+  <div class="term">MWh</div>
+  <div class="def"><em>Megawatt-hour</em> — 1,000 kWh. Used for district-level metrics: "14.2 MWh Today" means the district has settled 14,200 kWh across all trades that day.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Line Loss</div>
+  <div class="def">Energy lost as heat when electricity travels through wire. Shorter distances = less loss. A 412 ft trade might lose 0.3%. This is why proximity matching matters — closer trades are more efficient.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Distance</div>
+  <div class="def">Physical distance between seller and buyer, measured in feet. Displayed on trade receipts. Closer trades lose less to line loss and avoid long-haul delivery tolls.</div>
+</div>
+
+<div class="entry">
+  <div class="term">DNI</div>
+  <div class="def"><em>Direct Normal Irradiance</em> — the amount of solar radiation hitting a surface perpendicular to the sun's rays, measured in W/m² (watts per square meter). Pulled from Open-Meteo every 5 minutes. Higher DNI = more solar output. When DNI drops (clouds, dusk), the surge multiplier may rise.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Panel Count / Wattage</div>
+  <div class="def">Per-house hardware specs: number of solar panels and their rated wattage (e.g. 24 panels × 400 W). Combined with DNI to estimate real-time production every five minutes.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Azimuth</div>
+  <div class="def">The compass direction a rooftop's panels face (e.g. S · 192°). Affects how much sunlight the panels capture at different times of day. Part of the onboarding setup.</div>
+</div>
+
+
+<!-- ======== SETTLEMENT & BLOCKCHAIN ======== -->
+<div class="section-head">Settlement &amp; Blockchain</div>
+
+<div class="entry">
+  <div class="term">Settle / Settlement</div>
+  <div class="def">Step 02 of the cycle. Every 5 minutes, all matched trades within a district are batched and finalized on-chain. The match queue freezes at T+0, and the aggregator submits the batch to Arbitrum.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Block</div>
+  <div class="def">A single 5-minute settlement batch. Identified by a hex ID (e.g. <code>0x4F3A</code>). Each block contains N trades and a total kWh quantity. Status is either <em>SETTLING</em> (in progress) or <em>FINALIZED</em> (confirmed on-chain).</div>
+</div>
+
+<div class="entry">
+  <div class="term">SETTLING</div>
+  <div class="def">The current block is being written to chain. The pulsing green dot indicates the batch is actively being processed. Typically finalizes within ~12 seconds.</div>
+</div>
+
+<div class="entry">
+  <div class="term">FINALIZED</div>
+  <div class="def">The block has been confirmed on Arbitrum. Receipts are posted, THN balances updated. Shown with a static cyan dot in the settlement table.</div>
+</div>
+
+<div class="entry">
+  <div class="term">THN</div>
+  <div class="def"><em>TinyHub Network token.</em> The on-chain unit of account. <code>1 THN = 1 MWh</code>. A 2.4 kWh trade = 0.0024 THN. Deployed as <code>TinyHubToken</code> on Arbitrum L2.</div>
+</div>
+
+<div class="entry">
+  <div class="term">TinyHubMarket</div>
+  <div class="def">The Arbitrum L2 smart contract that receives settlement batches. The key function is <code>settleBatch()</code>, which takes the merkle root of all trades in the 5-minute window and writes it on-chain.</div>
+</div>
+
+<div class="entry">
+  <div class="term">TinyHubToken</div>
+  <div class="def">The ERC-20 token contract on Arbitrum for THN. Balances update automatically when a batch settles.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Arbitrum L2</div>
+  <div class="def">The Layer 2 rollup blockchain where Tiny-Hub settles trades. Chosen for low gas costs and fast finality. "L2" means it inherits Ethereum's security while processing transactions more cheaply.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Merkle Root</div>
+  <div class="def">A cryptographic hash summarizing all trades in a batch. The aggregator computes it and submits it to <code>TinyHubMarket.settleBatch()</code>. Allows anyone to verify that a specific trade was part of a settled block.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Gas / Gas Sponsored</div>
+  <div class="def">The transaction fee for writing to a blockchain. Tiny-Hub sponsors gas via Pimlico/Biconomy — the end user never pays gas fees or sees a wallet popup. The operator absorbs this cost.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Pimlico / Biconomy</div>
+  <div class="def">Third-party account abstraction providers that sponsor gas on behalf of Tiny-Hub users. They enable "gasless" transactions — the user signs, but the provider pays the chain fee.</div>
+</div>
+
+<div class="entry">
+  <div class="term">tx (Transaction Hash)</div>
+  <div class="def">The unique on-chain identifier for a settled batch or trade. Shown on receipts as a long hex string (e.g. <code>0x9c2f4a8b…</code>). Can be looked up on an Arbitrum block explorer.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Receipt</div>
+  <div class="def">The detail view for a single trade. Shows seller, buyer, kWh, THN, distance, line loss, settlement time, block ID, MISO LMP, savings vs utility, and the full transaction hash.</div>
+</div>
+
+
+<!-- ======== MARKET & PRICING ======== -->
+<div class="section-head">Market &amp; Pricing</div>
+
+<div class="entry">
+  <div class="term">MISO</div>
+  <div class="def"><em>Midcontinent Independent System Operator.</em> The regional grid operator for the central US (including McHenry, IL). Sets the wholesale electricity price via Locational Marginal Pricing. Tiny-Hub's pricing references MISO's LMP as the benchmark to beat.</div>
+</div>
+
+<div class="entry">
+  <div class="term">PJM</div>
+  <div class="def"><em>PJM Interconnection.</em> The regional grid operator for the eastern US. Referenced in statistics (e.g. "+1,000% PJM capacity surge") as evidence of grid pricing volatility.</div>
+</div>
+
+<div class="entry">
+  <div class="term">LMP</div>
+  <div class="def"><em>Locational Marginal Price</em> — the wholesale price of electricity at a specific point on the grid, set by MISO or PJM. Shown as $/MWh (e.g. "$42 / MWh"). This is the going rate that Tiny-Hub's local trades compete against.</div>
+</div>
+
+<div class="entry">
+  <div class="term">MISO LMP</div>
+  <div class="def">The current wholesale price from the MISO grid. Displayed in the dashboard status bar and on trade receipts. A lower Tiny-Hub trade price vs. MISO LMP = savings for both parties.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Surge Multiplier</div>
+  <div class="def">A dynamic pricing coefficient that adjusts the trade price based on supply/demand imbalance. <code>1.00×</code> = flat pricing. <code>1.04×</code> = 4% premium (high demand or low supply). Rises when DNI drops or demand spikes. Displayed in magenta as a warning-tier metric.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Delivery Toll</div>
+  <div class="def">The fee a traditional utility charges to transport electricity across its lines (e.g. $0.02/kWh for ComEd). Tiny-Hub's proximity matching reduces or eliminates these tolls by keeping trades local.</div>
+</div>
+
+<div class="entry">
+  <div class="term">VS Utility / Saved vs Utility</div>
+  <div class="def">The dollar savings compared to what the buyer would have paid through the traditional utility. A trade receipt showing "−$0.18" means the buyer saved 18 cents vs. the utility rate. The dashboard aggregates this across the district (e.g. "$2,140 saved").</div>
+</div>
+
+<div class="entry">
+  <div class="term">Capacity Auction</div>
+  <div class="def">Wholesale market auctions where grid operators procure future generating capacity. Referenced in stats ("22× MISO auction spike") to illustrate the volatility and cost inflation in the current grid market.</div>
+</div>
+
+
+<!-- ======== DASHBOARD METRICS ======== -->
+<div class="section-head">Dashboard Metrics</div>
+
+<div class="entry">
+  <div class="term">Houses Matched</div>
+  <div class="def">Total number of unique houses participating as either seller or buyer in the selected district. The delta (e.g. "+12") shows change vs. the 7-day average.</div>
+</div>
+
+<div class="entry">
+  <div class="term">MWh Today</div>
+  <div class="def">Cumulative megawatt-hours settled across all trades in the district since midnight UTC. The delta shows percentage change vs. prior day.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Saved vs Utility</div>
+  <div class="def">Total dollar savings across the entire district compared to what participants would have paid at utility rates. Aggregated from each trade's "VS UTILITY" line item.</div>
+</div>
+
+<div class="entry">
+  <div class="term">kWh / hour · last 12h</div>
+  <div class="def">Sparkline chart showing hourly energy throughput (in MWh) over the past 12 hours. Follows the solar curve — peaks midday, drops at dusk. Amber color.</div>
+</div>
+
+<div class="entry">
+  <div class="term">MISO LMP · $/MWh</div>
+  <div class="def">Sparkline chart of the MISO wholesale price over the past 12 hours. Cyan color. Operators watch this to understand whether Tiny-Hub pricing is competitive vs. the grid.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Surge Multiplier Chart</div>
+  <div class="def">Sparkline tracking the surge multiplier over the past 12 hours. Magenta color. Spikes correlate with low DNI or demand surges.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Delta (+ / −)</div>
+  <div class="def">The change indicator next to a metric card value. Green text for positive, magenta for negative. Shows absolute change (+12) or percentage (+8%) vs. a baseline (7-day average, prior day, etc.).</div>
+</div>
+
+
+<!-- ======== INFRASTRUCTURE ======== -->
+<div class="section-head">Infrastructure &amp; Data</div>
+
+<div class="entry">
+  <div class="term">PostGIS</div>
+  <div class="def">A spatial database extension for PostgreSQL. Powers the proximity matching engine — queries find the nearest available buyer to each seller within the 5 km service zone. The core "routing" technology.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Open-Meteo</div>
+  <div class="def">Open-source weather API providing Direct Normal Irradiance (DNI) data. Tiny-Hub polls it every 5 minutes to estimate real-time solar output per house (DNI × panel count × panel wattage × azimuth factor).</div>
+</div>
+
+<div class="entry">
+  <div class="term">OpenADR</div>
+  <div class="def"><em>Open Automated Demand Response.</em> Protocol for communicating with utility smart meters. How Tiny-Hub pairs with a house's existing meter during onboarding — no new hardware needed, just a 4-digit meter code.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Meter Code</div>
+  <div class="def">A 4-digit code from the homeowner's last utility bill, entered during onboarding to link their smart meter to Tiny-Hub via OpenADR.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Aggregator</div>
+  <div class="def">The server-side process that freezes the match queue every 5 minutes, computes the merkle root of all trades, and submits the batch to <code>TinyHubMarket.settleBatch()</code> on Arbitrum.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Audit Log</div>
+  <div class="def">A chronological record of every settled batch and receipt link. The operator's compliance and debugging surface. (Stub in the current dashboard — not yet fully built.)</div>
+</div>
+
+
+<!-- ======== STATUS & ALERTS ======== -->
+<div class="section-head">Status &amp; Alerts</div>
+
+<div class="entry">
+  <div class="term">LIVE</div>
+  <div class="def">A district or system that is actively matching and settling trades. Indicated by a pulsing green dot and the ⚡ emoji in the district picker. The status bar also shows "LIVE" as a pill badge.</div>
+</div>
+
+<div class="entry">
+  <div class="term">COMING SOON</div>
+  <div class="def">A district that is registered but not yet active. Shown with 🚧 / 🏗️ emoji and reduced opacity in the district picker. Clicking it is disabled.</div>
+</div>
+
+<div class="entry">
+  <div class="term">INFO (alert severity)</div>
+  <div class="def">An informational event logged for the operator — e.g. "Block finalized in 11.2s. Within target." or "DNI dropped below 400 W/m²." Displayed with a cyan border tag.</div>
+</div>
+
+<div class="entry">
+  <div class="term">WARN (alert severity)</div>
+  <div class="def">A warning event that may need attention — e.g. "House 0x9c2… reporting 12% under expected output. Inverter check queued." Displayed with a magenta border tag.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Pulse (animation)</div>
+  <div class="def">A 2-second ease-in-out glow animation applied to LIVE status dots and active seller nodes on the district map. Signals "this element is actively updating."</div>
+</div>
+
+
+<!-- ======== ONBOARDING ======== -->
+<div class="section-head">Onboarding Flow</div>
+
+<div class="entry">
+  <div class="term">Step 01: Connect Your Meter</div>
+  <div class="def">Enter the 4-digit meter code from your last utility bill. Tiny-Hub pairs with your existing smart meter via OpenADR — no hardware, no installer.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Step 02: Tell Us About Your Panels</div>
+  <div class="def">Enter panel count, rated wattage per panel, and roof azimuth. Combined with live DNI data to estimate output every 5 minutes.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Step 03: Pick Your Zone</div>
+  <div class="def">Select your service zone / district. You'll be matched with neighbors within 5 km. The card shows the district name, status, neighbor count, and daily throughput.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Activate</div>
+  <div class="def">The final CTA in onboarding. Submits your house to the match queue and begins participating in the next 5-minute batch.</div>
+</div>
+
+
+<!-- ======== DISTRICT CODES ======== -->
+<div class="section-head">Known Districts</div>
+
+<div class="entry">
+  <div class="term">MCH-01 · McHenry</div>
+  <div class="def">The first pilot district. McHenry County, Illinois. 847 houses matched, ~14.2 MWh/day. Status: LIVE. This is where all demo data originates.</div>
+</div>
+
+<div class="entry">
+  <div class="term">D91 · District 91</div>
+  <div class="def">Second district, queued. Status: COMING SOON. Location and house count TBD.</div>
+</div>
+
+<div class="entry">
+  <div class="term">WB-04 · West Bloomfield</div>
+  <div class="def">Third district, queued. Status: COMING SOON. Location and house count TBD.</div>
+</div>
+
+
+<!-- ======== UI PATTERNS ======== -->
+<div class="section-head">UI Conventions</div>
+
+<div class="entry">
+  <div class="term">// (double-slash)</div>
+  <div class="def">Separator between brand name and page/section title. CLI / log-line aesthetic. Examples: <code>TINY-HUB ENERGY // How It Works</code>, <code>TINYHUB // OPS</code>.</div>
+</div>
+
+<div class="entry">
+  <div class="term">→ (right arrow)</div>
+  <div class="def">Forward motion / CTA indicator. Used on every button and link that navigates forward: <code>Live Demo →</code>, <code>Continue →</code>, <code>Activate →</code>.</div>
+</div>
+
+<div class="entry">
+  <div class="term">← (left arrow)</div>
+  <div class="def">Back navigation. Used in sub-views: <code>← BACK TO TICKER</code>.</div>
+</div>
+
+<div class="entry">
+  <div class="term">▸ (triangle bullet)</div>
+  <div class="def">Section marker in dashboard panel headers: <code>▸ MATCH QUEUE</code>, <code>▸ RECENT ALERTS</code>, <code>▸ DISTRICT // MCHENRY</code>.</div>
+</div>
+
+<div class="entry">
+  <div class="term">· (middle dot)</div>
+  <div class="def">Inline separator for related data points: <code>MCH-01 · McHenry</code>, <code>847 NEIGHBORS · 14.2 MWh / DAY</code>, <code>BLOCK 0x4F3A · 14:32 UTC</code>.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Pill Badge</div>
+  <div class="def">A small status label with a pulsing dot. <code>pill--live</code> = green dot + text. Used for LIVE status, SETTLING status, and matched-count indicators.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Eyebrow</div>
+  <div class="def">A small mono-text label above a section heading, in magenta with glow. Examples: <code>TINY-HUB ENERGY // Trade Receipt</code>, <code>Thesis</code>, <code>Mechanics</code>.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Card · card--rail</div>
+  <div class="def">A content container with a cyan left-rail accent (2 px amber border-left). Used for emphasis cards: metric cards, chart cards, the "how a batch closes" explainer.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Card · card--bracket</div>
+  <div class="def">A content container with L-bracket corner accents — 16–24 px amber border crops at top-left and bottom-right. Terminal/brutalist feel. Used for thesis blocks and key callouts.</div>
+</div>
+
+<div class="entry">
+  <div class="term">Sparkline</div>
+  <div class="def">An inline SVG mini-chart (320×70) showing 12 data points with a filled area and glowing stroke. Color-coded: amber (energy), cyan (pricing), magenta (surge).</div>
+</div>
+
+<div class="entry">
+  <div class="term">District Map (Schematic)</div>
+  <div class="def">A 5×5 grid of dots representing houses in a district. Amber = seller (pulsing), cyan = buyer, dim = idle. Not a geographic map — a topological schematic showing network state.</div>
+</div>
+
+</div>
+</body>
+</html>

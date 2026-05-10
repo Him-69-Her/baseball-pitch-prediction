@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TINYHUB // Live Map</title>
+<link rel="stylesheet" href="assets/atmosphere.css" />
+<link rel="stylesheet" href="assets/livemap.css" />
+</head>
+<body>
+
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+
+<script src="assets/sim.js"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel">
+  window.Tweaks = {
+    TweaksPanel, useTweaks,
+    TweakSection, TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+    TweakText, TweakNumber, TweakColor, TweakButton,
+  };
+</script>
+<script type="text/babel" src="livemap.jsx"></script>
+
+</body>
+</html>
