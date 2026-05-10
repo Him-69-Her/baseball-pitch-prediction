@@ -23,7 +23,6 @@
             "name": "Launch file",
             "type": "node",
             "request": "launch",
-            "mode": "debug",
             "program": "${file}"
         },
         {
