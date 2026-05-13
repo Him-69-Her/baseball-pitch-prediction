@@ -4,14 +4,16 @@ Serves /mchenry/* from static/mchenry/ as a self-contained subsite.
 Forces trailing slash so relative asset paths resolve correctly.
 
 Endpoints:
-  /mchenry/             -> static index
-  /mchenry/<file>       -> any static asset
-  /mchenry/api/config.js -> runtime API key injection
-  /mchenry/api/pilot    -> pilot start/stop control (GET reads, POST toggles)
+  /mchenry/                  -> static index
+  /mchenry/<file>            -> any static asset
+  /mchenry/api/config.js     -> runtime API key injection
+  /mchenry/api/pilot         -> pilot state · GET reads, POST toggles (password-gated)
+  /mchenry/api/pilot/auth    -> "is auth required + verify password" endpoint
 """
 from flask import Blueprint, send_from_directory, redirect, Response, request, jsonify
 import os
 import json
+import hmac
 import threading
 from datetime import datetime, timezone
 
@@ -23,17 +25,30 @@ DEMO_DIR = os.path.join(
 )
 
 # ───────────────────────────────────────────────────────────────
+# Admin auth · env var `TINYHUB_ADMIN_PASSWORD`
+# Mounted via Cloud Run secret `tinyhub-admin-password:latest`.
+# If env unset (e.g. local dev), endpoint is open · "fail open".
+# ───────────────────────────────────────────────────────────────
+ADMIN_PASSWORD = os.environ.get('TINYHUB_ADMIN_PASSWORD', '')
+
+
+def _password_required():
+    """True if auth gating is active."""
+    return bool(ADMIN_PASSWORD)
+
+
+def _check_password(provided):
+    """Constant-time comparison · returns True if password matches."""
+    if not _password_required():
+        return True  # fail open for local dev
+    if not provided:
+        return False
+    return hmac.compare_digest(provided, ADMIN_PASSWORD)
+
+
+# ───────────────────────────────────────────────────────────────
 # Pilot state · in-memory for demo
-#
-# TODO · upgrade to Firestore for multi-instance + persistent state:
-#   from google.cloud import firestore
-#   db = firestore.Client()
-#   pilot_ref = db.collection('pilot').document('mchenry')
-#   def read():   doc = pilot_ref.get(); return doc.to_dict() if doc.exists else default
-#   def write(s): pilot_ref.set(s, merge=True)
-#
-# TODO · gate POST with @login_required when going beyond demo mode.
-# Auth scaffold already exists in app.py (currently no-op).
+# TODO · upgrade to Firestore for multi-instance + persistent state.
 # ───────────────────────────────────────────────────────────────
 _pilot_lock = threading.Lock()
 _pilot_state = {
@@ -68,9 +83,25 @@ def mchenry_config():
     )
 
 
+@mchenry_bp.route('/mchenry/api/pilot/auth', methods=['GET'])
+def pilot_auth_status():
+    """Tells the frontend whether the pilot control needs a password."""
+    return jsonify({'required': _password_required()})
+
+
+@mchenry_bp.route('/mchenry/api/pilot/auth', methods=['POST'])
+def pilot_auth_verify():
+    """Verify a password without changing pilot state."""
+    body = request.get_json(silent=True) or {}
+    provided = body.get('password', '')
+    if _check_password(provided):
+        return jsonify({'ok': True})
+    return jsonify({'ok': False, 'error': 'invalid password'}), 403
+
+
 @mchenry_bp.route('/mchenry/api/pilot', methods=['GET'])
 def pilot_get():
-    """Read the current pilot state."""
+    """Read current pilot state · no auth required for read."""
     with _pilot_lock:
         return jsonify(dict(_pilot_state))
 
@@ -78,13 +109,20 @@ def pilot_get():
 @mchenry_bp.route('/mchenry/api/pilot', methods=['POST'])
 def pilot_post():
     """
-    Toggle pilot state.
-    Body: {"action": "start"} or {"action": "stop"}
-
-    NOTE: This currently flips a UI flag only. Wire to real services
-    (matching engine kickoff, Pub/Sub subscribers, etc.) inside the
-    `if action == 'start'` / `'stop'` branches when ready.
+    Toggle pilot state · password-gated when TINYHUB_ADMIN_PASSWORD is set.
+    Body: { "action": "start"|"stop", "password": "..." }
+    Password preferred via X-Admin-Password header.
     """
+    if _password_required():
+        provided = request.headers.get('X-Admin-Password', '')
+        if not provided:
+            body = request.get_json(silent=True) or {}
+            provided = body.get('password', '')
+        if not provided:
+            return jsonify({'error': 'auth required'}), 401
+        if not _check_password(provided):
+            return jsonify({'error': 'invalid password'}), 403
+
     body = request.get_json(silent=True) or {}
     action = body.get('action', '').lower()
     if action not in ('start', 'stop'):
@@ -95,8 +133,7 @@ def pilot_post():
             _pilot_state['running'] = True
             _pilot_state['startedAt'] = _now_iso()
             _pilot_state['lastActor'] = request.headers.get('X-Forwarded-For', 'unknown')
-            # TODO: kick off real services here
-            #   e.g. matching_engine.start(), pubsub_subscribers.start(), ...
+            # TODO: kick off real services here · matching_engine.start(), etc.
         else:
             _pilot_state['running'] = False
             _pilot_state['stoppedAt'] = _now_iso()

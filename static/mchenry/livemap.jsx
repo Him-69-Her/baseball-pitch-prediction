@@ -161,8 +161,57 @@ function makeCustomerMarker(size = 28, color = '#0071ce', outline = '#003478', l
   return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
 }
 
+// ─── Pilot auth hook · session-persisted password ─────────────
+function usePilotAuth() {
+  // Read sessionStorage on init for stash-and-go after first auth
+  const [password, setPassword] = useState(() => {
+    try { return sessionStorage.getItem('tinyhubAdminPassword') || ''; }
+    catch (e) { return ''; }
+  });
+  const [authRequired, setAuthRequired] = useState(null); // null = unknown
+
+  useEffect(() => {
+    fetch('/mchenry/api/pilot/auth')
+      .then(r => r.ok ? r.json() : { required: false })
+      .then(d => setAuthRequired(!!d.required))
+      .catch(() => setAuthRequired(false));
+  }, []);
+
+  const setAndPersist = (pw) => {
+    setPassword(pw);
+    try {
+      if (pw) sessionStorage.setItem('tinyhubAdminPassword', pw);
+      else sessionStorage.removeItem('tinyhubAdminPassword');
+    } catch (e) { /* sessionStorage may be unavailable */ }
+  };
+
+  // Verify a password against the server. Persists on success.
+  const verify = async (pw) => {
+    try {
+      const r = await fetch('/mchenry/api/pilot/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      });
+      if (r.ok) {
+        setAndPersist(pw);
+        return { ok: true };
+      }
+      const data = await r.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'wrong password' };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  };
+
+  const clear = () => setAndPersist('');
+  const isAuthed = !authRequired || !!password;
+
+  return { authRequired, password, isAuthed, verify, clear };
+}
+
 // ─── Pilot state hook · poll /mchenry/api/pilot every 5s ──────
-function usePilotState() {
+function usePilotState(password) {
   const [pilot, setPilot] = useState({ running: false, startedAt: null, stoppedAt: null, lastActor: null });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -183,15 +232,24 @@ function usePilotState() {
   const toggle = async (action) => {
     setBusy(true); setError(null);
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (password) headers['X-Admin-Password'] = password;
       const r = await fetch('/mchenry/api/pilot', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ action })
       });
+      if (r.status === 401 || r.status === 403) {
+        // Caller (PilotControl) handles auth flow
+        setError('auth required');
+        return { ok: false, authError: true };
+      }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setPilot(await r.json());
+      return { ok: true };
     } catch (e) {
       setError(e.message);
+      return { ok: false };
     } finally {
       setBusy(false);
     }
@@ -201,10 +259,101 @@ function usePilotState() {
 }
 
 // ─── Pilot Control · top-right floating button ────────────────
-function PilotControl({ pilot, busy, error, onStart, onStop }) {
+function PilotControl({ pilot, busy, error, onStart, onStop, authRequired, isAuthed, verify, clearAuth }) {
   const [confirming, setConfirming] = useState(false);
-  useEffect(() => { if (!pilot.running) setConfirming(false); }, [pilot.running]);
+  const [authPrompt, setAuthPrompt] = useState(null); // null | 'start' | 'stop'
+  const [pw, setPw] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const inputRef = useRef(null);
 
+  useEffect(() => { if (!pilot.running) setConfirming(false); }, [pilot.running]);
+  useEffect(() => {
+    if (authPrompt && inputRef.current) inputRef.current.focus();
+  }, [authPrompt]);
+
+  const requestAction = (action) => {
+    // If auth needed and we don't have a password yet, prompt
+    if (authRequired && !isAuthed) {
+      setAuthPrompt(action);
+      setPw('');
+      setPwError('');
+      return;
+    }
+    // Otherwise fire immediately
+    if (action === 'start') onStart();
+    else if (action === 'stop') onStop();
+  };
+
+  const submitPw = async () => {
+    if (!pw.trim()) return;
+    setPwBusy(true);
+    setPwError('');
+    const result = await verify(pw.trim());
+    setPwBusy(false);
+    if (!result.ok) {
+      setPwError(result.error || 'wrong password');
+      setPw('');
+      return;
+    }
+    // Auth ok · fire the pending action
+    const action = authPrompt;
+    setAuthPrompt(null);
+    setPw('');
+    // Small delay to let auth state propagate
+    setTimeout(() => {
+      if (action === 'start') onStart();
+      else if (action === 'stop') {
+        // For stop, go through the confirm flow
+        setConfirming(true);
+      }
+    }, 50);
+  };
+
+  const cancelPw = () => {
+    setAuthPrompt(null);
+    setPw('');
+    setPwError('');
+  };
+
+  // ── Auth prompt mode ────────────────────────────────────────
+  if (authPrompt) {
+    return (
+      <div className="pilot pilot--auth">
+        <div className="pilot__head">
+          <div className="pilot__title">🔒 ADMIN AUTH</div>
+          <div className="pilot__sub">
+            Enter admin password to {authPrompt === 'start' ? 'start' : 'stop'} the pilot.
+          </div>
+        </div>
+        <input
+          ref={inputRef}
+          className="pilot__pw"
+          type="password"
+          placeholder="admin password"
+          value={pw}
+          onChange={e => setPw(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') submitPw();
+            if (e.key === 'Escape') cancelPw();
+          }}
+          disabled={pwBusy}
+          autoFocus
+        />
+        {pwError && <div className="pilot__error">{pwError}</div>}
+        <div className="pilot__btns">
+          <button className="pilot__btn pilot__btn--ghost" onClick={cancelPw} disabled={pwBusy}>
+            Cancel
+          </button>
+          <button className="pilot__btn pilot__btn--auth-go" onClick={submitPw} disabled={pwBusy || !pw.trim()}>
+            {pwBusy ? '…' : 'UNLOCK'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Stop confirmation mode ──────────────────────────────────
   if (confirming && pilot.running) {
     return (
       <div className="pilot pilot--confirm">
@@ -223,6 +372,7 @@ function PilotControl({ pilot, busy, error, onStart, onStop }) {
     );
   }
 
+  // ── Running ─────────────────────────────────────────────────
   if (pilot.running) {
     return (
       <div className="pilot pilot--running">
@@ -232,14 +382,21 @@ function PilotControl({ pilot, busy, error, onStart, onStop }) {
             <div className="pilot__state">LIVE</div>
             <div className="pilot__since">started {fmt.relativeTime(pilot.startedAt)}</div>
           </div>
+          {authRequired && isAuthed && (
+            <button className="pilot__lock-clear" title="Clear stored password"
+                    onClick={clearAuth}>🔓</button>
+          )}
         </div>
-        <button className="pilot__btn pilot__btn--stop" onClick={() => setConfirming(true)} disabled={busy}>
-          ■ STOP PILOT
+        <button className="pilot__btn pilot__btn--stop"
+                onClick={() => requestAction('stop')}
+                disabled={busy}>
+          ■ STOP PILOT {authRequired && !isAuthed ? '🔒' : ''}
         </button>
       </div>
     );
   }
 
+  // ── Stopped ─────────────────────────────────────────────────
   return (
     <div className="pilot pilot--stopped">
       <div className="pilot__status">
@@ -250,9 +407,15 @@ function PilotControl({ pilot, busy, error, onStart, onStop }) {
             {pilot.stoppedAt ? `stopped ${fmt.relativeTime(pilot.stoppedAt)}` : 'never started'}
           </div>
         </div>
+        {authRequired && isAuthed && (
+          <button className="pilot__lock-clear" title="Clear stored password"
+                  onClick={clearAuth}>🔓</button>
+        )}
       </div>
-      <button className="pilot__btn pilot__btn--start" onClick={onStart} disabled={busy}>
-        {busy ? 'Starting…' : '▶ START PILOT'}
+      <button className="pilot__btn pilot__btn--start"
+              onClick={() => requestAction('start')}
+              disabled={busy}>
+        {busy ? 'Starting…' : `▶ START PILOT ${authRequired && !isAuthed ? '🔒' : ''}`}
       </button>
       {error && <div className="pilot__error">{error}</div>}
     </div>
@@ -546,7 +709,8 @@ async function fetchBuildingInsights(lat, lng) {
 // ─── Main App ─────────────────────────────────────────────────
 function App() {
   const mapsReady = useMapsReady();
-  const { pilot, busy: pilotBusy, error: pilotError, start: startPilot, stop: stopPilot } = usePilotState();
+  const { authRequired, password, isAuthed, verify, clear: clearAuth } = usePilotAuth();
+  const { pilot, busy: pilotBusy, error: pilotError, start: startPilot, stop: stopPilot } = usePilotState(password);
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
 
@@ -969,6 +1133,10 @@ function App() {
               error={pilotError}
               onStart={startPilot}
               onStop={stopPilot}
+              authRequired={authRequired}
+              isAuthed={isAuthed}
+              verify={verify}
+              clearAuth={clearAuth}
             />
             <div className="zoom-hud">
               ZOOM <span className="cyan">{zoom}</span> · {layers.tiles3d ? '3D' : '2D'}

@@ -437,6 +437,64 @@
   letter-spacing: 0.05em;
 }
 
+/* ------ Auth prompt mode ------ */
+.pilot--auth {
+  border-color: rgba(255, 204, 0, 0.5);
+}
+.pilot--auth::before, .pilot--auth::after {
+  border-color: var(--sun-1);
+}
+
+.pilot__pw {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--hair-cyan-2);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  outline: none;
+  margin-bottom: 0.6rem;
+  box-sizing: border-box;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.pilot__pw:focus {
+  border-color: var(--sun-2);
+  box-shadow: 0 0 0 1px var(--sun-2), inset 0 0 8px rgba(255, 149, 0, 0.08);
+}
+.pilot__pw:disabled { opacity: 0.5; }
+.pilot__pw::placeholder {
+  color: var(--ink-dim);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+}
+
+.pilot__btn--auth-go {
+  color: var(--sun-1);
+  border-color: rgba(255, 204, 0, 0.6);
+  background: rgba(255, 204, 0, 0.08);
+}
+.pilot__btn--auth-go:not(:disabled):hover {
+  background: rgba(255, 204, 0, 0.16);
+  box-shadow: inset 0 0 12px rgba(255, 204, 0, 0.16), 0 0 8px rgba(255, 149, 0, 0.3);
+  text-shadow: 0 0 4px var(--sun-2);
+}
+
+.pilot__lock-clear {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  transition: opacity 0.15s;
+  opacity: 0.6;
+}
+.pilot__lock-clear:hover { opacity: 1; }
+
 /* ------ Hover tooltip ------ */
 .map-tooltip {
   position: fixed;
