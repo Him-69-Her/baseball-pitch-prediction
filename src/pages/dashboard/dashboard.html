@@ -213,6 +213,16 @@
     color:#00ff88;
     border:1px solid rgba(0,255,136,0.3);
     background:rgba(0,255,136,0.06);
+  .card-status.status-dev{
+    color:#ffcc00;
+    border:1px solid rgba(255,204,0,0.3);
+    background:rgba(255,204,0,0.06);
+  }
+  .card-status.status-dev .status-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:#ffcc00;box-shadow:0 0 8px #ff9500;
+    animation:pulse 2s ease-in-out infinite;
+  }
   }
   .card-status .status-dot{
     width:6px;height:6px;border-radius:50%;
@@ -341,7 +351,7 @@
   <div class="district-grid">
 
     <div class="district-card live" onclick="window.location.href='/mchenry'">
-      <span class="card-status status-live"><span class="status-dot"></span> LIVE</span>
+      <span class="card-status status-dev"><span class="status-dot"></span> UNDER DEVELOPMENT</span>
       <span class="card-emoji">⚡</span>
       <div class="card-name">McHENRY COUNTY</div>
       <a href="/mchenry" class="card-enter">ENTER →</a>
