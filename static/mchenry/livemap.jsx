@@ -29,7 +29,15 @@ const fmt = {
   num: (v, d = 0) => v == null ? dash : Number(v).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }),
   fixed: (v, d = 2) => v == null ? dash : Number(v).toFixed(d),
   money: v => v == null ? dash : '$' + Number(v).toLocaleString(),
-  kwh: v => v == null ? dash : Number(v).toLocaleString() + ' kWh'
+  kwh: v => v == null ? dash : Number(v).toLocaleString() + ' kWh',
+  relativeTime: iso => {
+    if (!iso) return dash;
+    const ago = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (ago < 60) return ago + 's ago';
+    if (ago < 3600) return Math.floor(ago / 60) + 'm ago';
+    if (ago < 86400) return Math.floor(ago / 3600) + 'h ago';
+    return Math.floor(ago / 86400) + 'd ago';
+  }
 };
 
 // ─── McHenry County rough bounds ──────────────────────────────
@@ -151,6 +159,104 @@ function makeCustomerMarker(size = 28, color = '#0071ce', outline = '#003478', l
             font-size="${size * 0.42}" font-weight="900" fill="#fff" text-anchor="middle">${letter}</text>
     </svg>`;
   return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+}
+
+// ─── Pilot state hook · poll /mchenry/api/pilot every 5s ──────
+function usePilotState() {
+  const [pilot, setPilot] = useState({ running: false, startedAt: null, stoppedAt: null, lastActor: null });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchState = async () => {
+    try {
+      const r = await fetch('/mchenry/api/pilot');
+      if (r.ok) setPilot(await r.json());
+    } catch (e) { /* silent */ }
+  };
+
+  useEffect(() => {
+    fetchState();
+    const id = setInterval(fetchState, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  const toggle = async (action) => {
+    setBusy(true); setError(null);
+    try {
+      const r = await fetch('/mchenry/api/pilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setPilot(await r.json());
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { pilot, busy, error, start: () => toggle('start'), stop: () => toggle('stop') };
+}
+
+// ─── Pilot Control · top-right floating button ────────────────
+function PilotControl({ pilot, busy, error, onStart, onStop }) {
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => { if (!pilot.running) setConfirming(false); }, [pilot.running]);
+
+  if (confirming && pilot.running) {
+    return (
+      <div className="pilot pilot--confirm">
+        <div className="pilot__head">
+          <div className="pilot__title">Stop pilot?</div>
+          <div className="pilot__sub">Halts trade routing across all 12 districts</div>
+        </div>
+        <div className="pilot__btns">
+          <button className="pilot__btn pilot__btn--ghost" onClick={() => setConfirming(false)}>Cancel</button>
+          <button className="pilot__btn pilot__btn--danger" disabled={busy}
+                  onClick={() => { onStop(); setConfirming(false); }}>
+            {busy ? 'Stopping…' : '■ STOP'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (pilot.running) {
+    return (
+      <div className="pilot pilot--running">
+        <div className="pilot__status">
+          <span className="pilot__dot" />
+          <div>
+            <div className="pilot__state">LIVE</div>
+            <div className="pilot__since">started {fmt.relativeTime(pilot.startedAt)}</div>
+          </div>
+        </div>
+        <button className="pilot__btn pilot__btn--stop" onClick={() => setConfirming(true)} disabled={busy}>
+          ■ STOP PILOT
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pilot pilot--stopped">
+      <div className="pilot__status">
+        <span className="pilot__dot" />
+        <div>
+          <div className="pilot__state">STANDBY</div>
+          <div className="pilot__since">
+            {pilot.stoppedAt ? `stopped ${fmt.relativeTime(pilot.stoppedAt)}` : 'never started'}
+          </div>
+        </div>
+      </div>
+      <button className="pilot__btn pilot__btn--start" onClick={onStart} disabled={busy}>
+        {busy ? 'Starting…' : '▶ START PILOT'}
+      </button>
+      {error && <div className="pilot__error">{error}</div>}
+    </div>
+  );
 }
 
 // ─── Nav ──────────────────────────────────────────────────────
@@ -440,6 +546,7 @@ async function fetchBuildingInsights(lat, lng) {
 // ─── Main App ─────────────────────────────────────────────────
 function App() {
   const mapsReady = useMapsReady();
+  const { pilot, busy: pilotBusy, error: pilotError, start: startPilot, stop: stopPilot } = usePilotState();
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
 
@@ -855,8 +962,17 @@ function App() {
             custErrors={custErrors}
           />
 
-          <div className="zoom-hud">
-            ZOOM <span className="cyan">{zoom}</span> · {layers.tiles3d ? '3D' : '2D'}
+          <div className="map-controls">
+            <PilotControl
+              pilot={pilot}
+              busy={pilotBusy}
+              error={pilotError}
+              onStart={startPilot}
+              onStop={stopPilot}
+            />
+            <div className="zoom-hud">
+              ZOOM <span className="cyan">{zoom}</span> · {layers.tiles3d ? '3D' : '2D'}
+            </div>
           </div>
 
           <DistrictInfoPanel
@@ -894,9 +1010,12 @@ function App() {
               <div className="live-stat__lbl">saved vs ComEd</div>
             </div>
             <div style={{ marginTop: '0.6rem' }}>
-              <span className="pill" style={{ borderColor: 'var(--hair-cyan-2)', color: 'var(--ink-dim)' }}>
-                DATA FEED · PENDING
-              </span>
+              {pilot.running
+                ? <span className="pill pill--live">PILOT · LIVE</span>
+                : <span className="pill" style={{ borderColor: 'var(--hair-cyan-2)', color: 'var(--ink-dim)' }}>
+                    PILOT · STANDBY
+                  </span>
+              }
             </div>
           </div>
 

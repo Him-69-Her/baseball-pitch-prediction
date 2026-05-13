@@ -240,9 +240,6 @@
 
 /* ------ Zoom HUD ------ */
 .zoom-hud {
-  position: absolute;
-  top: 1rem; right: 1rem;
-  z-index: 10;
   background: rgba(5, 8, 14, 0.92);
   backdrop-filter: blur(10px);
   border: 1px solid var(--hair-cyan-2);
@@ -252,8 +249,193 @@
   letter-spacing: 0.18em;
   color: var(--ink-dim);
   text-transform: uppercase;
+  text-align: center;
 }
 .zoom-hud .cyan { color: var(--cyan); }
+
+/* ------ Top-right control cluster (pilot + zoom HUD) ------ */
+.map-controls {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: stretch;
+  width: 280px;
+  max-width: calc(100% - 2rem);
+}
+
+/* ------ Pilot Control ------ */
+.pilot {
+  background: rgba(5, 8, 14, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--hair-cyan-2);
+  padding: 0.85rem 0.95rem;
+  font-family: var(--font-mono);
+  position: relative;
+}
+
+.pilot::before, .pilot::after {
+  content: ''; position: absolute;
+  width: 10px; height: 10px;
+  border: 1.5px solid var(--sun-2);
+  pointer-events: none;
+}
+.pilot::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.pilot::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+.pilot--running { border-color: rgba(0, 255, 136, 0.4); }
+.pilot--running::before, .pilot--running::after { border-color: rgba(0, 255, 136, 0.6); }
+.pilot--stopped { border-color: rgba(255, 45, 149, 0.3); }
+.pilot--stopped::before, .pilot--stopped::after { border-color: rgba(255, 149, 0, 0.6); }
+
+.pilot__status {
+  display: flex; align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px dashed rgba(0,240,255,0.08);
+}
+
+.pilot__dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pilot--running .pilot__dot {
+  background: var(--green-live);
+  box-shadow: 0 0 8px var(--green-live);
+  animation: pilot-pulse 1.6s ease-in-out infinite;
+}
+.pilot--stopped .pilot__dot {
+  background: var(--magenta);
+  box-shadow: 0 0 6px var(--magenta);
+  opacity: 0.7;
+}
+.pilot--confirm .pilot__dot {
+  background: var(--sun-1);
+  box-shadow: 0 0 8px var(--sun-2);
+}
+
+@keyframes pilot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+.pilot__state {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.pilot--running .pilot__state {
+  color: var(--green-live);
+  text-shadow: 0 0 5px var(--green-live);
+}
+.pilot--stopped .pilot__state {
+  color: var(--magenta);
+  text-shadow: 0 0 5px var(--magenta);
+}
+
+.pilot__since {
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-top: 0.15rem;
+}
+
+.pilot__btn {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.18s;
+  border: 1px solid;
+}
+.pilot__btn:disabled { opacity: 0.5; cursor: wait; }
+
+.pilot__btn--start {
+  color: var(--green-live);
+  border-color: rgba(0, 255, 136, 0.5);
+  background: rgba(0, 255, 136, 0.05);
+}
+.pilot__btn--start:not(:disabled):hover {
+  background: rgba(0, 255, 136, 0.12);
+  box-shadow: inset 0 0 12px rgba(0, 255, 136, 0.15), 0 0 8px rgba(0, 255, 136, 0.3);
+  text-shadow: 0 0 4px var(--green-live);
+}
+
+.pilot__btn--stop {
+  color: var(--magenta);
+  border-color: rgba(255, 45, 149, 0.5);
+  background: rgba(255, 45, 149, 0.05);
+}
+.pilot__btn--stop:not(:disabled):hover {
+  background: rgba(255, 45, 149, 0.12);
+  box-shadow: inset 0 0 12px rgba(255, 45, 149, 0.15), 0 0 8px rgba(255, 45, 149, 0.3);
+  text-shadow: 0 0 4px var(--magenta);
+}
+
+.pilot--confirm { border-color: rgba(255, 149, 0, 0.5); }
+.pilot--confirm::before, .pilot--confirm::after { border-color: var(--sun-1); }
+
+.pilot__head { margin-bottom: 0.7rem; padding-bottom: 0.7rem; border-bottom: 1px dashed rgba(255,149,0,0.18); }
+.pilot__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--sun-1);
+  text-shadow: 0 0 5px var(--sun-3);
+}
+.pilot__sub {
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  color: var(--ink-body);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.pilot__btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.pilot__btn--ghost {
+  color: var(--ink-dim);
+  border-color: var(--hair-cyan-2);
+}
+.pilot__btn--ghost:hover {
+  color: var(--cyan);
+  border-color: var(--cyan-dim);
+}
+
+.pilot__btn--danger {
+  color: var(--magenta);
+  border-color: var(--magenta);
+  background: rgba(255, 45, 149, 0.1);
+}
+.pilot__btn--danger:not(:disabled):hover {
+  background: rgba(255, 45, 149, 0.2);
+  box-shadow: inset 0 0 12px rgba(255, 45, 149, 0.25);
+}
+
+.pilot__error {
+  margin-top: 0.5rem;
+  font-size: 0.66rem;
+  color: var(--magenta);
+  letter-spacing: 0.05em;
+}
 
 /* ------ Hover tooltip ------ */
 .map-tooltip {
