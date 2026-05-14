@@ -3,435 +3,439 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TINY-HUB ENERGY // Peer-to-Peer Energy Grid</title>
-<meta name="description" content="Physics-aware, deterministic spatial matching engine for peer-to-peer electricity trading. Neighbors trading power, settled on-chain.">
+<title>Tiny Hub Energy — Peer-to-peer electricity</title>
+<meta name="description" content="A physics-aware, deterministic matching engine for neighbor-to-neighbor electricity trading, settled on-chain.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#000;
-    --cyan:#00f0ff;
-    --cyan-dim:#00b8c7;
-    --magenta:#ff2d95;
-    --sun-1:#ffcc00;
-    --sun-2:#ff9500;
-    --sun-3:#ff5500;
-    --sun-4:#c72c00;
-    --ink:#e6f8ff;
-    --ink-dim:#7ba9b3;
+    --bg:#fafaf7;
+    --surface:#ffffff;
+    --ink:#111111;
+    --ink-2:#444444;
+    --ink-3:#7a7a78;
+    --line:#e8e6e0;
+    --accent:#d2691e;          /* warm amber — solar */
+    --accent-soft:#f4ead8;
+    --radius:14px;
+    --maxw:1120px;
   }
 
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;overflow-x:hidden}
-
-  /* ─── CRT SCANLINES overlay ─────────────────────────────── */
-  body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
-    background:repeating-linear-gradient(
-      to bottom,
-      rgba(0,0,0,0) 0,
-      rgba(0,0,0,0) 2px,
-      rgba(0,0,0,0.18) 3px,
-      rgba(0,0,0,0) 4px
-    );
-    mix-blend-mode:multiply;
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:16px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   }
-  /* (VHS noise removed for cleaner texture) */
+  a{color:inherit;text-decoration:none}
+  img,svg{display:block;max-width:100%}
 
-  /* ─── NAV ───────────────────────────────────────────────── */
+  .container{max-width:var(--maxw);margin:0 auto;padding:0 1.5rem}
+
+  /* ── NAV ───────────────────────────────────────────────── */
   nav{
-    position:fixed;top:0;left:0;right:0;z-index:50;
-    display:flex;justify-content:space-between;align-items:center;
-    padding:1.2rem 2rem;
-    background:linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-    border-bottom:1px solid rgba(0,240,255,0.15);
+    position:sticky;top:0;z-index:50;
+    background:rgba(250,250,247,0.85);
+    backdrop-filter:saturate(180%) blur(12px);
+    -webkit-backdrop-filter:saturate(180%) blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:var(--maxw);margin:0 auto;padding:1rem 1.5rem;
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
   }
   .logo{
-    font-family:'Orbitron',sans-serif;font-size:1.6rem;letter-spacing:.15em;
-    color:var(--sun-1);
-    text-shadow:0 0 8px var(--sun-2),0 0 24px var(--sun-3);
+    font-family:'Fraunces',serif;font-weight:600;letter-spacing:-.01em;
+    font-size:1.15rem;display:flex;align-items:center;gap:.55rem;
   }
-  .nav-links{display:flex;gap:1.4rem;list-style:none;flex-wrap:wrap;justify-content:flex-end}
-  .nav-links a{
-    color:var(--cyan);text-decoration:none;font-size:.82rem;letter-spacing:.16em;
-    text-transform:uppercase;transition:all .2s;
-    text-shadow:0 0 4px var(--cyan-dim);white-space:nowrap;font-weight:700;
+  .logo-dot{
+    width:.7rem;height:.7rem;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 0 4px rgba(210,105,30,0.12);
   }
-  .nav-links a:hover{color:var(--magenta);text-shadow:0 0 8px var(--magenta)}
+  .nav-links{display:flex;gap:1.75rem;align-items:center;list-style:none}
+  .nav-links a{font-size:.92rem;color:var(--ink-2);transition:color .15s}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-cta{
+    font-size:.88rem;padding:.55rem 1rem;border-radius:999px;
+    background:var(--ink);color:var(--bg);transition:background .15s;
+  }
+  .nav-cta:hover{background:#000}
+  @media (max-width:760px){
+    .nav-links{display:none}
+  }
 
-  /* ─── HERO ──────────────────────────────────────────────── */
-  .hero{background:linear-gradient(to bottom,#000 0%,#020a18 30%,#0a1628 55%,#0d1a2d 80%,#000 100%);
-    position:relative;height:100vh;min-height:640px;overflow:hidden;
-    display:flex;flex-direction:column;align-items:center;
+  /* ── HERO ──────────────────────────────────────────────── */
+  .hero{padding:6.5rem 0 5rem}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:.5rem;
+    font-size:.78rem;color:var(--ink-3);letter-spacing:.02em;
+    padding:.4rem .75rem;border:1px solid var(--line);border-radius:999px;
+    background:var(--surface);
+  }
+  .eyebrow .pulse{
+    width:.45rem;height:.45rem;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 0 rgba(210,105,30,0.6);
+    animation:pulse 2.4s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(210,105,30,0.5)}
+    70%{box-shadow:0 0 0 10px rgba(210,105,30,0)}
+    100%{box-shadow:0 0 0 0 rgba(210,105,30,0)}
   }
 
-  /* Perspective grid floor */
-  /* Perspective wrapper keeps the grid pinned to the bottom */
-  .grid-wrap{
-    position:absolute;bottom:0;left:0;right:0;height:50vh;
-    perspective:400px;perspective-origin:50% 0%;
-    z-index:2;pointer-events:none;
+  .headline{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(2.2rem,5.6vw,4.25rem);
+    line-height:1.04;letter-spacing:-.02em;
+    margin:1.25rem 0 1.25rem;max-width:18ch;
+  }
+  .headline em{font-style:italic;color:var(--accent);font-weight:500}
+  .lede{
+    font-size:clamp(1.02rem,1.3vw,1.18rem);color:var(--ink-2);
+    max-width:54ch;line-height:1.6;
+  }
+
+  .cta-row{margin-top:2rem;display:flex;flex-wrap:wrap;gap:.75rem}
+  .btn{
+    display:inline-flex;align-items:center;gap:.5rem;
+    padding:.85rem 1.25rem;font-size:.95rem;font-weight:500;
+    border-radius:10px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);
+    transition:transform .15s,border-color .15s,background .15s;
+  }
+  .btn:hover{border-color:var(--ink);transform:translateY(-1px)}
+  .btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .btn.primary:hover{background:#000}
+  .btn .arrow{transition:transform .2s}
+  .btn:hover .arrow{transform:translateX(3px)}
+
+  /* ── HERO VISUAL (minimal grid graphic) ───────────────── */
+  .hero-figure{
+    margin-top:4rem;border:1px solid var(--line);border-radius:var(--radius);
+    background:
+      linear-gradient(180deg,var(--surface),#fbfaf6);
     overflow:hidden;
   }
-  .grid-floor{
-    position:absolute;bottom:0;left:-50%;width:200%;height:100%;
-    background-image:
-      linear-gradient(to right, var(--cyan) 2px, transparent 2px),
-      linear-gradient(to bottom, var(--cyan) 2px, transparent 2px);
-    background-size:80px 80px;
-    background-position:0 0;
-    transform:rotateX(70deg);
-    transform-origin:50% 100%;
-    animation:grid-scroll 6s linear infinite;
-    filter:drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 14px var(--cyan-dim));
-    opacity:.95;
-  }
-  @keyframes grid-scroll{
-    0%{background-position:0 0}
-    100%{background-position:0 80px}
-  }
-  /* Fade the far end of the grid into black (horizon haze) */
-  .grid-mask{
-    position:absolute;bottom:0;left:0;right:0;height:50vh;pointer-events:none;z-index:3;
-    background:linear-gradient(to top, transparent 0%, transparent 30%, rgba(0,0,0,0.55) 70%, #000 100%);
-  }
-  /* Pink/magenta overlay fading from horizon into cyan grid */
-  .grid-glow{
-    position:absolute;bottom:0;left:0;right:0;height:50vh;z-index:2;pointer-events:none;
-    background:linear-gradient(to bottom,
-      rgba(255,45,149,0.45) 0%,
-      rgba(255,45,149,0.28) 15%,
-      rgba(180,30,120,0.15) 35%,
-      rgba(100,20,80,0.06) 55%,
-      transparent 75%);
-  }
+  .hero-figure svg{width:100%;height:auto;display:block}
 
-  /* Neon horizon line sitting on top of the grid */
-  .horizon{
-    position:absolute;bottom:50vh;left:0;right:0;height:2px;z-index:4;
-    background:linear-gradient(to right, transparent, var(--cyan) 15%, var(--cyan) 85%, transparent);
-    box-shadow:0 0 12px var(--cyan), 0 0 32px var(--cyan), 0 0 60px var(--cyan-dim);
-  }
-
-  /* Full-width atmospheric wash — the sky glowing at the horizon */
-  /* Stars */
-  .stars{
-    position:absolute;inset:0;z-index:0;pointer-events:none;
-    background:
-      radial-gradient(1px 1px at 10% 15%, #fff 50%, transparent 100%),
-      radial-gradient(1px 1px at 25% 8%, rgba(255,255,255,0.8) 50%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 40% 22%, #fff 50%, transparent 100%),
-      radial-gradient(1px 1px at 55% 5%, rgba(255,255,255,0.7) 50%, transparent 100%),
-      radial-gradient(1px 1px at 70% 18%, #fff 50%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 85% 12%, rgba(255,255,255,0.9) 50%, transparent 100%),
-      radial-gradient(1px 1px at 15% 35%, rgba(255,255,255,0.6) 50%, transparent 100%),
-      radial-gradient(1px 1px at 30% 28%, #fff 50%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 50% 32%, rgba(255,255,255,0.8) 50%, transparent 100%),
-      radial-gradient(1px 1px at 65% 25%, rgba(255,255,255,0.7) 50%, transparent 100%),
-      radial-gradient(1px 1px at 80% 30%, #fff 50%, transparent 100%),
-      radial-gradient(1px 1px at 92% 20%, rgba(255,255,255,0.6) 50%, transparent 100%),
-      radial-gradient(1px 1px at 5% 10%, rgba(255,255,255,0.5) 50%, transparent 100%),
-      radial-gradient(2px 2px at 48% 12%, rgba(255,255,255,0.9) 50%, transparent 100%),
-      radial-gradient(1px 1px at 35% 42%, rgba(255,255,255,0.5) 50%, transparent 100%),
-      radial-gradient(1px 1px at 72% 38%, rgba(255,255,255,0.7) 50%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 18% 45%, rgba(255,255,255,0.6) 50%, transparent 100%),
-      radial-gradient(1px 1px at 88% 8%, #fff 50%, transparent 100%),
-      radial-gradient(1px 1px at 95% 35%, rgba(255,255,255,0.5) 50%, transparent 100%),
-      radial-gradient(1px 1px at 3% 25%, rgba(255,255,255,0.8) 50%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 60% 10%, rgba(255,255,255,0.7) 50%, transparent 100%),
-      radial-gradient(1px 1px at 45% 40%, rgba(255,255,255,0.4) 50%, transparent 100%);
-    animation:twinkle 4s ease-in-out infinite alternate;
-  }
-  @keyframes twinkle{0%{opacity:.8}100%{opacity:1}}
-
-  .atmosphere{
-    position:absolute;left:0;right:0;bottom:50vh;height:35vh;
-    z-index:1;pointer-events:none;
-    background:
-      radial-gradient(ellipse 50% 70% at 50% 100%,
-        rgba(255,204,0,0.4) 0%,
-        rgba(255,149,0,0.28) 20%,
-        rgba(255,85,0,0.15) 45%,
-        transparent 70%),
-      linear-gradient(to top,
-        rgba(255,149,0,0.3) 0%,
-        rgba(255,85,0,0.18) 25%,
-        rgba(199,44,0,0.1) 50%,
-        rgba(199,44,0,0.04) 75%,
-        transparent 100%);
-    filter:blur(4px);
-    animation:atmos-breathe 8s ease-in-out infinite;
-  }
-  @keyframes atmos-breathe{
-    0%,100%{opacity:.85}
-    50%{opacity:1}
-  }
-
-  /* Half-sun — SVG-rendered hero (atmosphere carries the glow) */
-  .sun-wrap{
-    position:absolute;bottom:50vh;left:50%;
-    width:min(520px,48vw);aspect-ratio:2/1;
-    z-index:3;pointer-events:none;
-    transform:translateX(-50%);
-    animation:sun-breathe 5s ease-in-out infinite, sun-flicker 6s infinite;
-  }
-  .sun-wrap svg{width:100%;height:100%;display:block;overflow:visible;
-    filter:drop-shadow(0 0 12px rgba(255,149,0,0.6));}
-  @keyframes sun-breathe{
-    0%,100%{transform:translateX(-50%) scale(1)}
-    50%{transform:translateX(-50%) scale(1.025)}
-  }
-  @keyframes sun-flicker{
-    0%,92%,100%{opacity:1}
-    93%{opacity:.88}
-    94%{opacity:1}
-    95%{opacity:.92}
-    96%{opacity:1}
-  }
-93%{opacity:.85}
-    94%{opacity:1}
-    95%{opacity:.9}
-    96%{opacity:1}
-  }
-50%{opacity:1;transform:scale(1.03)}
-  }
-50%{filter:drop-shadow(0 -15px 60px var(--sun-1)) drop-shadow(0 -25px 120px var(--sun-2))}
-  }
-
-  .hero{
-    justify-content:flex-start;
-    padding:0;
-  }
-  /* Position wordmark BELOW horizon, in dark band above grid */
-  .hero-content{
-    position:absolute;left:50%;
-    bottom:18vh;
-    transform:translateX(-50%);
-    z-index:6;text-align:center;
-    width:100%;
-  }
-  .wordmark{
-    font-family:'Orbitron',sans-serif;
-    font-size:clamp(1.8rem,5.2vw,4rem);
-    letter-spacing:.14em;line-height:1;
-    color:var(--sun-1);
-    text-shadow:
-      0 0 12px var(--sun-2),
-      0 0 28px var(--sun-3),
-      0 2px 0 rgba(0,0,0,0.6);
-    animation:flicker 5s infinite;
-    white-space:nowrap;
-  }
-  @keyframes flicker{
-    0%,18%,22%,25%,53%,57%,100%{opacity:1}
-    20%,24%,55%{opacity:.82}
-  }
-  .tagline{
-    margin-top:1rem;font-size:clamp(.7rem,1vw,.85rem);letter-spacing:.4em;
-    color:var(--cyan);text-transform:uppercase;
-    text-shadow:0 0 6px var(--cyan-dim);
-  }
-  .subline{
-    margin-top:.6rem;font-size:clamp(.85rem,1.3vw,1.05rem);
-    color:var(--ink-dim);max-width:640px;margin-left:auto;margin-right:auto;
-    line-height:1.5;
-  }
-
-  .cta-row{
-    margin-top:2.4rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;
-  }
-  .btn{
-    display:inline-block;padding:1rem 1.8rem;
-    font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;
-    letter-spacing:.22em;text-transform:uppercase;text-decoration:none;
-    border:1px solid var(--cyan);color:var(--cyan);background:rgba(0,240,255,0.04);
-    transition:all .25s;position:relative;overflow:hidden;
-    text-shadow:0 0 4px var(--cyan-dim);
-  }
-  .btn:hover{
-    background:var(--cyan);color:#000;text-shadow:none;
-    box-shadow:0 0 24px var(--cyan),0 0 48px var(--cyan-dim);
-    transform:translateY(-2px);
-  }
-  .btn.primary{border-color:var(--sun-1);color:var(--sun-1);text-shadow:0 0 4px var(--sun-2)}
-  .btn.primary:hover{background:var(--sun-1);color:#000;box-shadow:0 0 24px var(--sun-2),0 0 48px var(--sun-3)}
-
-  /* ─── STATS STRIP ───────────────────────────────────────── */
+  /* ── STATS ─────────────────────────────────────────────── */
   .stats{
-    position:relative;z-index:5;
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:0;border-top:1px solid rgba(0,240,255,0.2);border-bottom:1px solid rgba(0,240,255,0.2);
-    background:linear-gradient(90deg,transparent,rgba(0,240,255,0.04),transparent);
+    display:grid;grid-template-columns:repeat(4,1fr);
+    margin-top:3.5rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
   }
   .stat{
-    padding:2rem 1.5rem;text-align:center;
-    border-right:1px solid rgba(0,240,255,0.1);
+    padding:1.6rem 1rem;border-right:1px solid var(--line);
   }
   .stat:last-child{border-right:none}
   .stat-num{
-    font-family:'Orbitron',sans-serif;font-size:clamp(1.8rem,3.5vw,2.8rem);
-    color:var(--sun-1);text-shadow:0 0 10px var(--sun-2);letter-spacing:.05em;
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(1.6rem,2.6vw,2.1rem);letter-spacing:-.02em;
   }
-  .stat-label{
-    margin-top:.4rem;font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;
-    color:var(--cyan-dim);
+  .stat-label{font-size:.78rem;color:var(--ink-3);margin-top:.2rem}
+  @media (max-width:720px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .stat:nth-child(2){border-right:none}
+    .stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--line)}
   }
 
-  /* ─── SECTIONS ──────────────────────────────────────────── */
-  section{padding:6rem 2rem;position:relative;z-index:2}
-  .container{max-width:1200px;margin:0 auto}
-
-  .section-head{margin-bottom:3rem}
+  /* ── SECTIONS ──────────────────────────────────────────── */
+  section{padding:5.5rem 0}
+  .section-head{margin-bottom:3rem;max-width:60ch}
   .section-eyebrow{
-    font-size:.7rem;letter-spacing:.35em;color:var(--magenta);text-transform:uppercase;
-    text-shadow:0 0 6px var(--magenta);margin-bottom:.8rem;
+    font-size:.78rem;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;
+    margin-bottom:.75rem;
   }
   .section-title{
-    font-family:'Orbitron',sans-serif;font-size:clamp(1.8rem,4vw,3rem);
-    letter-spacing:.05em;color:var(--cyan);
-    text-shadow:0 0 12px var(--cyan-dim);
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(1.7rem,3.2vw,2.4rem);letter-spacing:-.015em;line-height:1.15;
   }
+  .section-sub{color:var(--ink-2);margin-top:.85rem;font-size:1.02rem}
 
-  .how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+  /* How it works */
+  .how-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;
+  }
+  @media (max-width:860px){.how-grid{grid-template-columns:1fr}}
   .how-card{
-    border:1px solid rgba(0,240,255,0.25);padding:2rem;
-    background:linear-gradient(135deg,rgba(0,240,255,0.03),rgba(255,45,149,0.02));
-    position:relative;transition:all .3s;
+    padding:1.75rem;border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--surface);transition:border-color .2s,transform .2s;
   }
-  .how-card::before{
-    content:"";position:absolute;top:-1px;left:-1px;width:20px;height:20px;
-    border-top:2px solid var(--sun-1);border-left:2px solid var(--sun-1);
-  }
-  .how-card::after{
-    content:"";position:absolute;bottom:-1px;right:-1px;width:20px;height:20px;
-    border-bottom:2px solid var(--sun-1);border-right:2px solid var(--sun-1);
-  }
-  .how-card:hover{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,240,255,0.3);transform:translateY(-4px)}
+  .how-card:hover{border-color:var(--ink-3);transform:translateY(-2px)}
   .how-num{
-    font-family:'Orbitron',sans-serif;font-size:2.4rem;color:var(--sun-2);
-    text-shadow:0 0 10px var(--sun-3);margin-bottom:.8rem;
+    font-family:'Fraunces',serif;font-size:.95rem;color:var(--accent);
+    letter-spacing:.05em;margin-bottom:1rem;
   }
-  .how-title{font-size:1.1rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.8rem;color:var(--ink)}
-  .how-body{font-size:.88rem;line-height:1.6;color:var(--ink-dim)}
+  .how-title{font-size:1.08rem;font-weight:600;margin-bottom:.55rem}
+  .how-body{color:var(--ink-2);font-size:.95rem;line-height:1.6}
 
-  /* Thesis split section */
+  /* Thesis split */
   .thesis{
-    display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;
+    display:grid;grid-template-columns:1.05fr .95fr;gap:4rem;align-items:center;
   }
-  @media (max-width:768px){.thesis{grid-template-columns:1fr}}
-  .thesis-body p{margin-bottom:1.2rem;line-height:1.7;color:var(--ink)}
-  .thesis-body strong{color:var(--cyan);text-shadow:0 0 4px var(--cyan-dim)}
-  .thesis-visual{
-    aspect-ratio:1/1;border:1px solid var(--cyan-dim);
-    background:
-      repeating-linear-gradient(0deg,transparent,transparent 18px,rgba(0,240,255,0.1) 19px),
-      repeating-linear-gradient(90deg,transparent,transparent 18px,rgba(0,240,255,0.1) 19px),
-      radial-gradient(circle at center, rgba(255,149,0,0.4), transparent 50%);
-    position:relative;
+  @media (max-width:860px){.thesis{grid-template-columns:1fr;gap:2.5rem}}
+  .thesis p{color:var(--ink-2);margin-bottom:1rem;line-height:1.7}
+  .thesis p strong{color:var(--ink);font-weight:600}
+  .thesis-card{
+    border:1px solid var(--line);border-radius:var(--radius);padding:2rem;
+    background:linear-gradient(180deg,var(--accent-soft),var(--surface));
+    aspect-ratio:1/1;display:flex;flex-direction:column;justify-content:space-between;
   }
-  .thesis-visual::after{
-    content:"PHYSICS-AWARE / DETERMINISTIC / SPATIAL";
-    position:absolute;bottom:1rem;left:1rem;right:1rem;text-align:center;
-    font-size:.65rem;letter-spacing:.3em;color:var(--sun-1);
+  .thesis-card .label{font-size:.78rem;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
+  .thesis-card .big{
+    font-family:'Fraunces',serif;font-size:clamp(1.6rem,3vw,2.2rem);
+    line-height:1.15;letter-spacing:-.015em;
   }
+  .thesis-card ul{list-style:none;display:grid;gap:.5rem;font-size:.92rem;color:var(--ink-2)}
+  .thesis-card li{display:flex;align-items:center;gap:.55rem}
+  .thesis-card li::before{
+    content:"";width:.42rem;height:.42rem;border-radius:50%;background:var(--accent);
+  }
+
+  /* Audience cards */
+  .audience{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+  @media (max-width:860px){.audience{grid-template-columns:1fr}}
+  .aud-card{
+    padding:1.75rem;border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--surface);display:flex;flex-direction:column;gap:.75rem;
+    transition:border-color .2s;
+  }
+  .aud-card:hover{border-color:var(--ink)}
+  .aud-tag{font-size:.78rem;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+  .aud-title{font-family:'Fraunces',serif;font-size:1.4rem;letter-spacing:-.01em}
+  .aud-body{color:var(--ink-2);font-size:.95rem;line-height:1.6}
+  .aud-link{margin-top:auto;font-size:.9rem;color:var(--accent);display:inline-flex;align-items:center;gap:.4rem}
+  .aud-link:hover{text-decoration:underline}
 
   /* Pilot callout */
   .pilot{
-    border:1px solid var(--magenta);padding:3rem 2rem;text-align:center;
-    background:radial-gradient(ellipse at center,rgba(255,45,149,0.08),transparent);
-    position:relative;
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:3rem 2rem;text-align:center;
+    background:linear-gradient(180deg,var(--surface),var(--accent-soft));
   }
-  .pilot-label{font-size:.7rem;letter-spacing:.35em;color:var(--magenta);text-transform:uppercase;text-shadow:0 0 6px var(--magenta)}
-  .pilot-title{font-family:'Orbitron',sans-serif;font-size:clamp(1.6rem,3.5vw,2.6rem);color:var(--sun-1);margin:.8rem 0;text-shadow:0 0 12px var(--sun-2)}
-  .pilot-body{color:var(--ink-dim);max-width:640px;margin:0 auto 1.5rem}
+  .pilot-label{font-size:.78rem;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+  .pilot-title{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(1.5rem,3vw,2.1rem);margin:.75rem 0 .75rem;letter-spacing:-.015em;
+  }
+  .pilot-body{color:var(--ink-2);max-width:52ch;margin:0 auto 1.5rem;font-size:1rem}
 
-  /* ─── FOOTER ────────────────────────────────────────────── */
+  /* Footer */
   footer{
-    padding:3rem 2rem 2rem;border-top:1px solid rgba(0,240,255,0.15);
-    display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;
-    font-size:.7rem;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase;
+    border-top:1px solid var(--line);padding:2.5rem 0;margin-top:2rem;
+    font-size:.88rem;color:var(--ink-3);
   }
-  footer .brand{color:var(--sun-2)}
-  @media (max-width:600px){footer{grid-template-columns:1fr;text-align:center}}
-
-  /* Disclaimer callout inline */
-  .disclaimer{
-    display:inline-block;padding:.3rem .7rem;border:1px dashed var(--ink-dim);
-    font-size:.62rem;letter-spacing:.2em;color:var(--ink-dim);margin-top:1rem;
+  .footer-inner{
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;
   }
+  .footer-inner a{color:var(--ink-3)}
+  .footer-inner a:hover{color:var(--ink)}
 
-  /* Reveal on scroll */
-  .reveal{opacity:0;transform:translateY(20px);transition:opacity .8s,transform .8s}
+  /* Reveal */
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
   .reveal.in{opacity:1;transform:translateY(0)}
+  @media (prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    .eyebrow .pulse{animation:none}
+  }
 </style>
 </head>
 <body>
 
 <nav>
-  <div class="logo">TINYHUB</div>
-  <ul class="nav-links">
-    <li><a href="/about">About</a></li>
-    <li><a href="/how-it-works">How It Works</a></li>
-    <li><a href="#suppliers">Suppliers</a></li>
-    <li><a href="#consumers">Consumers</a></li>
-    <li><a href="#investors">Investors</a></li>
-    <li><a href="/dashboard">Live Demo →</a></li>
-  </ul>
+  <div class="nav-inner">
+    <a href="/" class="logo">
+      <span class="logo-dot" aria-hidden="true"></span>
+      <span>Tiny Hub Energy</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/about">About</a></li>
+      <li><a href="/how-it-works">How it works</a></li>
+      <li><a href="#suppliers">Suppliers</a></li>
+      <li><a href="#consumers">Consumers</a></li>
+      <li><a href="#investors">Investors</a></li>
+    </ul>
+    <a href="/dashboard" class="nav-cta">Live demo →</a>
+  </div>
 </nav>
 
-<section class="hero">
-  <div class="stars"></div>
-  <div class="atmosphere"></div>
-  <div class="sun-wrap">
-    <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="sunBands" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#fff07a"/>
-          <stop offset="15%" stop-color="#ffe54a"/>
-          <stop offset="35%" stop-color="#ffcc00"/>
-          <stop offset="60%" stop-color="#ff9500"/>
-          <stop offset="82%" stop-color="#ff5500"/>
-          <stop offset="100%" stop-color="#c72c00"/>
-        </linearGradient>
-        <clipPath id="domeClip">
-          <path d="M 0,100 A 100,100 0 0 1 200,100 Z"/>
-        </clipPath>
-        <pattern id="sunScan" width="1" height="2" patternUnits="userSpaceOnUse">
-          <rect width="1" height="1" fill="rgba(0,0,0,0.2)"/>
-        </pattern>
-      </defs>
-      <g clip-path="url(#domeClip)">
-        <rect x="0" y="0" width="200" height="100" fill="url(#sunBands)"/>
-        <rect x="0" y="16" width="200" height="2" fill="#000"/>
-        <rect x="0" y="32" width="200" height="2.5" fill="#000"/>
-        <rect x="0" y="48" width="200" height="3" fill="#000"/>
-        <rect x="0" y="64" width="200" height="3.5" fill="#000"/>
-        <rect x="0" y="80" width="200" height="4.5" fill="#000"/>
-        <rect x="0" y="93" width="200" height="3" fill="#000"/>
-        <rect x="0" y="-4" width="200" height="108" fill="url(#sunScan)" opacity="0.4"/>
-      </g>
-    </svg>
-  </div>
-  </div>
-  <div class="horizon"></div>
-  <div class="grid-wrap"><div class="grid-floor"></div></div>
-  <div class="grid-glow"></div>
-  <div class="grid-mask"></div>
-
-  <div class="hero-content">
-    <h1 class="wordmark">TINY&nbsp;HUB&nbsp;ENERGY</h1>
+<header class="hero">
+  <div class="container">
+    <span class="eyebrow"><span class="pulse" aria-hidden="true"></span> Pilot live in McHenry, IL</span>
+    <h1 class="headline">Neighbors trading <em>power</em>, settled on-chain.</h1>
+    <p class="lede">
+      A physics-aware, deterministic matching engine for peer-to-peer electricity.
+      Local supply meets local demand — transparent, programmable, and grid-faithful.
+    </p>
     <div class="cta-row">
-      <a href="/login" class="btn primary">Sign In</a>
-      <a href="#" class="btn">Apply for New Account</a>
-      <a href="#" class="btn">Partner With Us</a>
-      <a href="#" class="btn">Career Opportunities</a>
+      <a href="/login" class="btn primary">Sign in <span class="arrow">→</span></a>
+      <a href="#how" class="btn">How it works</a>
+      <a href="#pilot" class="btn">Partner with us</a>
+    </div>
+
+    <figure class="hero-figure reveal" aria-hidden="true">
+      <svg viewBox="0 0 1120 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f4ead8"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </linearGradient>
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="#e8e6e0"/>
+          </pattern>
+        </defs>
+        <rect width="1120" height="360" fill="url(#dots)"/>
+        <rect width="1120" height="360" fill="url(#g)"/>
+        <!-- nodes -->
+        <g stroke="#d2691e" stroke-width="1.2" fill="none" opacity="0.55">
+          <path d="M120 230 C 260 130, 360 130, 460 200 S 700 280, 860 180 S 1020 120, 1080 150"/>
+          <path d="M80 280 C 220 230, 400 320, 560 250 S 780 200, 980 240"/>
+        </g>
+        <g fill="#111">
+          <circle cx="120" cy="230" r="4"/>
+          <circle cx="320" cy="160" r="4"/>
+          <circle cx="460" cy="200" r="4"/>
+          <circle cx="640" cy="240" r="4"/>
+          <circle cx="800" cy="200" r="4"/>
+          <circle cx="980" cy="160" r="4"/>
+        </g>
+        <g fill="#d2691e">
+          <circle cx="320" cy="160" r="9" opacity="0.18"/>
+          <circle cx="640" cy="240" r="9" opacity="0.18"/>
+          <circle cx="980" cy="160" r="9" opacity="0.18"/>
+        </g>
+        <g font-family="Inter,sans-serif" font-size="11" fill="#7a7a78">
+          <text x="130" y="222">household</text>
+          <text x="330" y="152">solar</text>
+          <text x="650" y="232">battery</text>
+          <text x="810" y="192">EV</text>
+          <text x="990" y="152">solar</text>
+        </g>
+      </svg>
+    </figure>
+
+    <div class="stats reveal">
+      <div class="stat"><div class="stat-num">300+</div><div class="stat-label">Pilot meters</div></div>
+      <div class="stat"><div class="stat-num">15s</div><div class="stat-label">Match interval</div></div>
+      <div class="stat"><div class="stat-num">L2</div><div class="stat-label">On-chain settlement</div></div>
+      <div class="stat"><div class="stat-num">99.9%</div><div class="stat-label">Determinism</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">How it works</div>
+      <h2 class="section-title">From rooftop to neighbor in three steps.</h2>
+      <p class="section-sub">The engine reads the grid, matches by physics, and settles by contract. No middlemen, no guesswork.</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-card reveal">
+        <div class="how-num">01 / Meter</div>
+        <div class="how-title">Stream telemetry</div>
+        <p class="how-body">Smart meters and inverters publish kWh and quality of supply at 15-second cadence to the matching engine.</p>
+      </div>
+      <div class="how-card reveal">
+        <div class="how-num">02 / Match</div>
+        <div class="how-title">Solve for the grid</div>
+        <p class="how-body">A deterministic solver pairs producers with neighbors using line losses, voltage and topology — not just price.</p>
+      </div>
+      <div class="how-card reveal">
+        <div class="how-num">03 / Settle</div>
+        <div class="how-title">On-chain receipts</div>
+        <p class="how-body">Trades clear to the L2 marketplace contract. Every kWh is auditable, programmable, and yours.</p>
+      </div>
     </div>
   </div>
 </section>
 
+<section>
+  <div class="container thesis">
+    <div class="reveal">
+      <div class="section-eyebrow">Thesis</div>
+      <h2 class="section-title" style="margin-bottom:1.25rem">The grid is a graph. <br/>Markets should respect it.</h2>
+      <p>Most energy markets ignore the wires. <strong>Tiny Hub</strong> is built on the premise that the physical grid — its topology, losses, and constraints — should shape every trade.</p>
+      <p>The result is a marketplace where local production stays local, congestion is priced honestly, and every settlement is reproducible from first principles.</p>
+    </div>
+    <aside class="thesis-card reveal" aria-hidden="true">
+      <div class="label">Engine properties</div>
+      <div class="big">Physics-aware. Deterministic. Spatial.</div>
+      <ul>
+        <li>Replays bit-for-bit from telemetry</li>
+        <li>Line-aware loss accounting</li>
+        <li>Topology-respecting clearing</li>
+        <li>L2-settled, KMS-signed</li>
+      </ul>
+    </aside>
+  </div>
+</section>
 
+<section id="audiences">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">Who it's for</div>
+      <h2 class="section-title">Built for the people on both sides of the meter.</h2>
+    </div>
+    <div class="audience">
+      <a href="#suppliers" id="suppliers" class="aud-card reveal">
+        <span class="aud-tag">Suppliers</span>
+        <div class="aud-title">Sell what you produce, to whom you choose.</div>
+        <p class="aud-body">Solar owners and storage operators earn from real local demand — with deterministic dispatch and on-chain proof of every kWh.</p>
+        <span class="aud-link">Become a supplier →</span>
+      </a>
+      <a href="#consumers" id="consumers" class="aud-card reveal">
+        <span class="aud-tag">Consumers</span>
+        <div class="aud-title">Buy power from your block.</div>
+        <p class="aud-body">Get cleaner, cheaper electricity sourced from neighbors first — not a faceless wholesale pool.</p>
+        <span class="aud-link">Join the pilot →</span>
+      </a>
+      <a href="#investors" id="investors" class="aud-card reveal">
+        <span class="aud-tag">Investors</span>
+        <div class="aud-title">A new layer of grid infrastructure.</div>
+        <p class="aud-body">We're building the matching and settlement substrate for distributed energy. Talk to us about the next round.</p>
+        <span class="aud-link">Get the deck →</span>
+      </a>
+    </div>
+  </div>
+</section>
 
+<section id="pilot">
+  <div class="container">
+    <div class="pilot reveal">
+      <div class="pilot-label">Pilot</div>
+      <h2 class="pilot-title">McHenry, Illinois — live now.</h2>
+      <p class="pilot-body">Our first live deployment is matching real meters and clearing trades to an L2 marketplace today. Operators, utilities and DER aggregators welcome.</p>
+      <div class="cta-row" style="justify-content:center">
+        <a href="/dashboard" class="btn primary">Open live dashboard <span class="arrow">→</span></a>
+        <a href="mailto:hello@tinyhub.energy" class="btn">Contact the team</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-inner">
+    <div>© <span id="yr"></span> Tiny Hub Energy. All rights reserved.</div>
+    <div style="display:flex;gap:1.25rem;flex-wrap:wrap">
+      <a href="/about">About</a>
+      <a href="/how-it-works">How it works</a>
+      <a href="/dashboard">Dashboard</a>
+      <a href="mailto:hello@tinyhub.energy">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }});
+  },{threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
 
 </body>
 </html>
